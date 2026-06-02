@@ -92,11 +92,12 @@ export default function GuestPageClient({
   };
 
   return (
-    <div className="guest-theme min-h-screen bg-background text-foreground flex flex-col max-w-md mx-auto relative shadow-2xl font-sans selection:bg-primary/30">
+    <div className="guest-theme min-h-screen w-full bg-background overflow-x-hidden">
+      <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background relative flex flex-col text-foreground font-sans shadow-2xl selection:bg-primary/30">
 
       {/* Top Banner / Notification Area */}
       {staffCallStatus && (
-        <div className="fixed top-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-top-4 flex justify-center pointer-events-none">
+        <div className="fixed top-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 p-4 animate-in slide-in-from-top-4 flex justify-center pointer-events-none">
           <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2">
             <Check className="h-4 w-4" />
             {staffCallStatus}
@@ -167,7 +168,7 @@ export default function GuestPageClient({
         {/* Menu Tabs */}
         <Tabs defaultValue="cat_hookah" className="w-full">
           <div className="px-5 sticky top-[73px] z-10 bg-background/95 backdrop-blur-md pt-2 pb-2">
-            <TabsList className="w-full justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20">
+            <TabsList className="w-full flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat.id}
@@ -186,7 +187,7 @@ export default function GuestPageClient({
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
                   .map((item) => (
-                    <Card key={item.id} className="overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors">
+                    <Card key={item.id} className="w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors">
                       <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
                         <div className="flex-1">
                           <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
@@ -234,8 +235,8 @@ export default function GuestPageClient({
       </main>
 
       {/* Floating Action Menu Container */}
-      <div className="fixed bottom-6 left-0 right-0 px-5 flex justify-center z-30 pointer-events-none">
-         <div className="max-w-md w-full flex justify-between gap-3 pointer-events-auto">
+      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5 pb-6 flex justify-center pointer-events-none">
+         <div className="w-full flex justify-between gap-3 pointer-events-auto">
             <Button
               size="lg"
               variant="outline"
@@ -454,6 +455,7 @@ export default function GuestPageClient({
         </DrawerContent>
       </Drawer>
 
+      </div>
     </div>
   );
 }
