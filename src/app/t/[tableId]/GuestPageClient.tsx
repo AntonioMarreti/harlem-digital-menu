@@ -27,7 +27,13 @@ export default function GuestPageClient({
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isStaffOpen, setIsStaffOpen] = useState(false);
-  const [orderStatus, setOrderStatus] = useState<'none' | 'new' | 'preparing' | 'delivered'>('none');
+  type SubmittedOrder = {
+    id: string;
+    items: { item: MenuItem; quantity: number; notes?: string }[];
+    total: number;
+    status: 'new' | 'accepted' | 'preparing' | 'delivered';
+  };
+  const [activeOrder, setActiveOrder] = useState<SubmittedOrder | null>(null);
   const [staffCallStatus, setStaffCallStatus] = useState<string | null>(null);
 
   // Hookah Builder State
@@ -49,13 +55,16 @@ export default function GuestPageClient({
     });
   };
 
-  const removeFromCart = (index: number) => {
+  const removeFromCart = (item: MenuItem, notes?: string) => {
     setCart(prev => {
       const newCart = [...prev];
-      if (newCart[index].quantity > 1) {
-        newCart[index].quantity -= 1;
-      } else {
-        newCart.splice(index, 1);
+      const index = newCart.findIndex(i => i.item.id === item.id && i.notes === notes);
+      if (index > -1) {
+        if (newCart[index].quantity > 1) {
+          newCart[index].quantity -= 1;
+        } else {
+          newCart.splice(index, 1);
+        }
       }
       return newCart;
     });
@@ -76,13 +85,30 @@ export default function GuestPageClient({
   };
 
   const submitOrder = () => {
-    setOrderStatus('new');
+    const orderId = `order_${Math.floor(Math.random() * 10000)}`;
+    const orderItems = [...cart];
+    const orderTotal = cartTotal;
+
+    setActiveOrder({
+      id: orderId,
+      items: orderItems,
+      total: orderTotal,
+      status: 'new'
+    });
+
     setIsCartOpen(false);
     setCart([]);
 
     // Simulate order progression
-    setTimeout(() => setOrderStatus('preparing'), 3000);
-    setTimeout(() => setOrderStatus('delivered'), 10000);
+    setTimeout(() => {
+      setActiveOrder(prev => prev ? { ...prev, status: 'accepted' } : null);
+    }, 3000);
+    setTimeout(() => {
+      setActiveOrder(prev => prev ? { ...prev, status: 'preparing' } : null);
+    }, 8000);
+    setTimeout(() => {
+      setActiveOrder(prev => prev ? { ...prev, status: 'delivered' } : null);
+    }, 15000);
   };
 
   const callStaff = (reason: string) => {
@@ -147,16 +173,16 @@ export default function GuestPageClient({
         </div>
 
         {/* Статус заказа Ribbon */}
-        {orderStatus !== 'none' && (
-          <div className="mx-5 mb-6 bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between shadow-sm" onClick={() => setIsCartOpen(true)}>
+        {activeOrder && (
+          <div className="mx-5 mb-6 bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between shadow-sm cursor-pointer" onClick={() => setIsCartOpen(true)}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                {orderStatus === 'new' && <Clock className="h-4 w-4" />}
-                {orderStatus === 'preparing' && <Flame className="h-4 w-4" />}
-                {orderStatus === 'delivered' && <Check className="h-4 w-4" />}
+                {(activeOrder.status === 'new' || activeOrder.status === 'accepted') && <Clock className="h-4 w-4" />}
+                {activeOrder.status === 'preparing' && <Flame className="h-4 w-4" />}
+                {activeOrder.status === 'delivered' && <Check className="h-4 w-4" />}
               </div>
               <div>
-                <p className="text-sm font-medium">Ваш заказ {orderStatus === "new" ? "отправлен" : orderStatus === "preparing" ? "готовится" : "выполнен"}</p>
+                <p className="text-sm font-medium">Ваш заказ {activeOrder.status === "new" ? "отправлен" : activeOrder.status === "accepted" ? "принят" : activeOrder.status === "preparing" ? "готовится" : "вынесен"}</p>
                 <p className="text-xs text-muted-foreground">Нажмите для деталей</p>
               </div>
             </div>
@@ -357,7 +383,7 @@ export default function GuestPageClient({
           </SheetHeader>
 
           <ScrollArea className="flex-1 px-6 py-4">
-            {cart.length === 0 && orderStatus === 'none' ? (
+            {cart.length === 0 && !activeOrder ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground space-y-4">
                 <ShoppingCart className="h-12 w-12 opacity-20" />
                 <p>Ваша корзина пуста</p>
@@ -365,51 +391,153 @@ export default function GuestPageClient({
               </div>
             ) : (
               <div className="space-y-6">
-                {orderStatus !== 'none' && (
-                   <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
-                     <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                        <Clock className="h-4 w-4" /> Статус заказа
-                     </h3>
-                     <p className="text-sm">Текущий статус: <strong className="uppercase tracking-wide">{orderStatus === "new" ? "ОТПРАВЛЕН" : orderStatus === "preparing" ? "ГОТОВИТСЯ" : "ВЫПОЛНЕН"}</strong></p>
+                {activeOrder && (
+                   <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-6">
+                     <div className="flex justify-between items-center mb-4">
+                       <h3 className="font-semibold text-primary flex items-center gap-2">
+                          <Clock className="h-4 w-4" /> Заказ #{activeOrder.id.split('_')[1]}
+                       </h3>
+                       <span className="font-bold">{activeOrder.total} ₽</span>
+                     </div>
+
+                     <div className="flex justify-between items-center text-xs text-muted-foreground mb-4">
+                       <div className={`flex flex-col items-center ${activeOrder.status === 'new' || activeOrder.status === 'accepted' || activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'text-primary font-bold' : ''}`}>
+                         <div className={`w-3 h-3 rounded-full mb-1 ${activeOrder.status === 'new' || activeOrder.status === 'accepted' || activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'bg-primary' : 'bg-muted'}`} />
+                         Отправлен
+                       </div>
+                       <div className={`flex flex-col items-center ${activeOrder.status === 'accepted' || activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'text-primary font-bold' : ''}`}>
+                         <div className={`w-3 h-3 rounded-full mb-1 ${activeOrder.status === 'accepted' || activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'bg-primary' : 'bg-muted'}`} />
+                         Принят
+                       </div>
+                       <div className={`flex flex-col items-center ${activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'text-primary font-bold' : ''}`}>
+                         <div className={`w-3 h-3 rounded-full mb-1 ${activeOrder.status === 'preparing' || activeOrder.status === 'delivered' ? 'bg-primary' : 'bg-muted'}`} />
+                         Готовится
+                       </div>
+                       <div className={`flex flex-col items-center ${activeOrder.status === 'delivered' ? 'text-primary font-bold' : ''}`}>
+                         <div className={`w-3 h-3 rounded-full mb-1 ${activeOrder.status === 'delivered' ? 'bg-primary' : 'bg-muted'}`} />
+                         Вынесен
+                       </div>
+                     </div>
+
+                     <div className="space-y-2 mt-4 pt-4 border-t border-primary/20">
+                       {activeOrder.items.map((cartItem, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{cartItem.quantity}x {cartItem.item.name}</span>
+                          </div>
+                       ))}
+                     </div>
                    </div>
                 )}
 
-                <div className="space-y-4">
-                  {cart.map((cartItem, idx) => (
-                    <div key={idx} className="flex gap-4 items-start">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <p className="font-medium">{cartItem.item.name}</p>
-                          <p className="font-semibold">{cartItem.item.price * cartItem.quantity} ₽</p>
-                        </div>
-                        {cartItem.notes && (
-                          <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
-                            {cartItem.notes}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 bg-secondary rounded-full p-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 rounded-full hover:bg-background"
-                          onClick={() => removeFromCart(idx)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-sm font-medium w-4 text-center">{cartItem.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 rounded-full hover:bg-background"
-                          onClick={() => addToCart(cartItem.item, cartItem.notes)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {cart.length > 0 && (
+                  <div className="space-y-6">
+                    {(() => {
+                      const harlemItems = cart.filter(i => i.item.source !== 'craft_beery');
+                      const craftBeeryItems = cart.filter(i => i.item.source === 'craft_beery');
+
+                      return (
+                        <>
+                          {harlemItems.length > 0 && (
+                            <div className="space-y-4">
+                              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Из Харлема</h4>
+                              {harlemItems.map((cartItem, idx) => (
+                                <div key={idx} className="flex gap-4 items-start">
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between">
+                                      <div>
+                                        <p className="font-medium">{cartItem.item.name}</p>
+                                        {cartItem.item.sourceLabel && (
+                                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1">
+                                            {cartItem.item.sourceLabel}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="font-semibold">{cartItem.item.price * cartItem.quantity} ₽</p>
+                                    </div>
+                                    {cartItem.notes && (
+                                      <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
+                                        {cartItem.notes}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 bg-secondary rounded-full p-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-sm font-medium w-4 text-center">{cartItem.quantity}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      onClick={() => addToCart(cartItem.item, cartItem.notes)}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {craftBeeryItems.length > 0 && (
+                            <div className="space-y-4 mt-6">
+                              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Из Craft Beery</h4>
+                              <div className="bg-secondary/40 border border-secondary p-3 rounded-xl text-xs text-muted-foreground text-center">
+                                Позиции Craft Beery готовятся в соседнем баре и будут переданы к вашему столику.
+                              </div>
+                              {craftBeeryItems.map((cartItem, idx) => (
+                                <div key={idx} className="flex gap-4 items-start">
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between">
+                                      <div>
+                                        <p className="font-medium">{cartItem.item.name}</p>
+                                        {cartItem.item.sourceLabel && (
+                                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1">
+                                            {cartItem.item.sourceLabel}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="font-semibold">{cartItem.item.price * cartItem.quantity} ₽</p>
+                                    </div>
+                                    {cartItem.notes && (
+                                      <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
+                                        {cartItem.notes}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 bg-secondary rounded-full p-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-sm font-medium w-4 text-center">{cartItem.quantity}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      onClick={() => addToCart(cartItem.item, cartItem.notes)}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </ScrollArea>
