@@ -1,0 +1,18 @@
+
+> harlem-digital-menu@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1682ms
+ ○ Compiling /t/[tableId] ...
+ ✓ Compiled /t/[tableId] in 7s (1112 modules)
+ ✓ Compiled in 544ms (541 modules)
+ GET /t/demo 200 in 8237ms
+ ○ Compiling /staff ...
+ ✓ Compiled /staff in 1021ms (1168 modules)
+ GET /staff 200 in 1259ms
+ GET /t/demo 200 in 256ms
+ GET /t/demo 200 in 77ms
