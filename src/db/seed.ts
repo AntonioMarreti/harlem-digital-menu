@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { tables, tableSessions, orders, orderItems } from './schema';
+import { eq, and, inArray } from 'drizzle-orm';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -35,12 +36,33 @@ async function runSeed() {
     }
     if (!demoTable) throw new Error('Demo table not created or found');
 
-    // 2. Create one active demo table session for testing
+    // 2. Find or create one active demo table session
     console.log('Seeding table sessions...');
-    const sessions = await db.insert(tableSessions).values([
-      { tableId: demoTable.id, status: 'active' },
-    ]).returning();
-    const demoSession = sessions[0];
+    let [demoSession] = await db.select().from(tableSessions).where(
+      and(
+        eq(tableSessions.tableId, demoTable.id),
+        eq(tableSessions.status, 'active')
+      )
+    ).limit(1);
+
+    if (!demoSession) {
+      const insertedSessions = await db.insert(tableSessions).values([
+        { tableId: demoTable.id, status: 'active' },
+      ]).returning();
+      demoSession = insertedSessions[0];
+    } else {
+      // If a session exists, clear existing seed orders for this demo session
+      // to keep the seed idempotent and prevent duplicate demo orders on multiple runs.
+      const existingDemoOrders = await db.select().from(orders).where(
+        eq(orders.tableSessionId, demoSession.id)
+      );
+
+      if (existingDemoOrders.length > 0) {
+        const orderIds = existingDemoOrders.map(o => o.id);
+        await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
+        await db.delete(orders).where(inArray(orders.id, orderIds));
+      }
+    }
 
     // 3. Seed some mock orders to ensure harlem and craft_beery sources are present
     console.log('Seeding orders...');
