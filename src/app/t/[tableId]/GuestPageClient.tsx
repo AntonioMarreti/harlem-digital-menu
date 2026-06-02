@@ -166,7 +166,7 @@ export default function GuestPageClient({
         )}
 
         {/* Menu Tabs */}
-        <Tabs defaultValue="cat_hookah" className="w-full">
+        <Tabs defaultValue="cat_hookah" className="w-full flex-col">
           <div className="px-5 sticky top-[73px] z-10 bg-background/95 backdrop-blur-md pt-2 pb-2">
             <TabsList className="w-full flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20">
               {categories.map((cat) => (
