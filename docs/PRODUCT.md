@@ -541,6 +541,7 @@ Relationships:
 
 ### 9.7 MVP behavior
 For the current mock MVP, this does not need to be implemented yet. But future real order sync must use table sessions, not just table IDs.
+*(See `BACKEND_PLAN.md` for the full backend plan for the first real order sync).*
 
 ## 10. Data model draft
 
