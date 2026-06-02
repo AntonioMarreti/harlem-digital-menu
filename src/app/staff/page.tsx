@@ -1,20 +1,54 @@
 "use client";
-import { useState } from "react";
-import { mockOrders, mockCalls } from '@/lib/mock-data';
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 
-function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'served' | 'closed') => void }) {
+type OrderItem = {
+  id: string;
+  menuItemId: string;
+  name: string;
+  source: 'harlem' | 'craft_beery';
+  quantity: number;
+  price: number;
+  options: unknown;
+};
+
+type Order = {
+  id: string;
+  status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled';
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  tableSessionId: string;
+  tableId: string;
+  tableName: string;
+  tableQrSlug: string;
+  items: OrderItem[];
+};
+
+type StaffCall = {
+  id: string;
+  reason: string;
+  status: 'new' | 'handled' | 'cancelled';
+  createdAt: string;
+  tableSessionId: string;
+  tableId: string;
+  tableName: string;
+  tableQrSlug: string;
+};
+
+function OrderGrid({ orders, onUpdateStatus }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
     preparing: 'Готовится',
-    served: 'Вынесен',
+    delivered: 'Вынесен',
+    cancelled: 'Отменён',
     closed: 'Закрыт'
   };
 
@@ -22,13 +56,14 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUp
     new: 'destructive',
     accepted: 'default',
     preparing: 'secondary',
-    served: 'outline',
+    delivered: 'outline',
+    cancelled: 'destructive',
     closed: 'outline'
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {orders.map((order) => {
+      {orders.map((order: Order) => {
         const harlemItems = order.items.filter(i => i.source === 'harlem');
         const craftBeeryItems = order.items.filter(i => i.source === 'craft_beery');
         const hasCraftBeery = craftBeeryItems.length > 0;
@@ -38,7 +73,7 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUp
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle>Стол {order.tableNumber}</CardTitle>
+                  <CardTitle>Стол {order.tableQrSlug || order.tableName}</CardTitle>
                   <div className="text-xs text-gray-400 mt-1">{order.id}</div>
                 </div>
                 <Badge variant={statusColors[order.status] as "default" | "destructive" | "outline" | "secondary"}>
@@ -48,7 +83,7 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUp
               <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
                 <div className="flex items-center">
                   <Clock className="w-3 h-3 mr-1" />
-                  {order.time}
+                  {new Date(order.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div className="font-semibold text-gray-800">{order.totalAmount} ₽</div>
               </div>
@@ -92,12 +127,15 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUp
                   <Button size="sm" onClick={() => onUpdateStatus(order.id, 'preparing')}>Готовить</Button>
               )}
               {order.status === 'preparing' && (
-                  <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => onUpdateStatus(order.id, 'served')}>
+                  <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => onUpdateStatus(order.id, 'delivered')}>
                     <CheckCircle2 className="w-4 h-4 mr-1" /> Вынесен
                   </Button>
               )}
-              {order.status === 'served' && (
+              {order.status === 'delivered' && (
                   <Button size="sm" variant="outline" onClick={() => onUpdateStatus(order.id, 'closed')}>Закрыть</Button>
+              )}
+              {(order.status === 'new' || order.status === 'accepted') && (
+                  <Button size="sm" variant="destructive" onClick={() => onUpdateStatus(order.id, 'cancelled')}>Отменить</Button>
               )}
             </CardFooter>
           </Card>
@@ -110,24 +148,122 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: typeof mockOrders, onUp
 
 
 export default function StaffDashboard() {
-  const [orders, setOrders] = useState(mockOrders);
-  const handleUpdateOrderStatus = (id: string, status: 'new' | 'accepted' | 'preparing' | 'served' | 'closed') => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [calls, setCalls] = useState<StaffCall[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setError(null);
+
+      const [ordersRes, callsRes] = await Promise.all([
+        fetch('/api/staff/orders'),
+        fetch('/api/staff-calls')
+      ]);
+
+      if (!ordersRes.ok || !callsRes.ok) {
+        throw new Error('Ошибка при загрузке данных');
+      }
+
+      const ordersData = await ordersRes.json();
+      const callsData = await callsRes.json();
+
+      setOrders(ordersData.orders || []);
+      setCalls(callsData.calls || []);
+    } catch (err) {
+      console.error(err);
+      setError('Не удалось загрузить данные. Проверьте подключение к базе данных.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-  const [calls, setCalls] = useState(mockCalls);
-  const handleMarkCallHandled = (id: string) => {
-    setCalls(calls.map(c => c.id === id ? { ...c, status: 'handled' } : c));
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleUpdateOrderStatus = async (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => {
+    try {
+      const res = await fetch(`/api/staff/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (!res.ok) {
+        throw new Error('Не удалось обновить статус');
+      }
+
+      if (status === 'closed') {
+        setFeedback('Заказ закрыт и скрыт из активных.');
+        setTimeout(() => setFeedback(null), 3000);
+      } else if (status === 'cancelled') {
+         setFeedback('Заказ отменён и скрыт из активных.');
+         setTimeout(() => setFeedback(null), 3000);
+      }
+
+      fetchData(); // Refresh data immediately
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка обновления статуса заказа');
+      setTimeout(() => setError(null), 3000);
+    }
   };
+
+  const handleMarkCallHandled = async (id: string) => {
+    try {
+      const res = await fetch(`/api/staff-calls/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'handled' })
+      });
+
+      if (!res.ok) {
+        throw new Error('Не удалось отметить вызов как обработанный');
+      }
+
+      setFeedback('Вызов обработан');
+      setTimeout(() => setFeedback(null), 3000);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка обновления статуса вызова');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      {feedback && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg flex items-center">
+          <CheckCircle2 className="w-4 h-4 mr-2" />
+          {feedback}
+        </div>
+      )}
+      {error && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg flex items-center">
+          <AlertCircle className="w-4 h-4 mr-2" />
+          {error}
+        </div>
+      )}
+
       <header className="bg-black text-white p-4 sticky top-0 z-10 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold">Панель персонала</h1>
           <p className="text-xs text-gray-400">Harlem Lounge</p>
         </div>
-        <Link href="/">
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchData} className="text-black bg-white hover:bg-gray-200">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Link href="/">
            <Button variant="ghost" size="sm" className="text-white hover:bg-gray-800">На главную</Button>
         </Link>
+        </div>
       </header>
 
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
@@ -149,16 +285,52 @@ export default function StaffDashboard() {
 
 
           <TabsContent value="all" className="space-y-4">
-             <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} />
+             {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
+                  <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
+                </div>
+             ) : orders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : (
+                <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} />
+             )}
           </TabsContent>
           <TabsContent value="new" className="space-y-4">
-             <OrderGrid orders={orders.filter(o => o.status === 'new')} onUpdateStatus={handleUpdateOrderStatus} />
+             {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
+                  <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
+                </div>
+             ) : orders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : (
+                <OrderGrid orders={orders.filter(o => o.status === 'new')} onUpdateStatus={handleUpdateOrderStatus} />
+             )}
           </TabsContent>
           <TabsContent value="harlem" className="space-y-4">
-             <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'harlem'))} onUpdateStatus={handleUpdateOrderStatus} />
+             {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
+                  <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
+                </div>
+             ) : orders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : (
+                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'harlem'))} onUpdateStatus={handleUpdateOrderStatus} />
+             )}
           </TabsContent>
           <TabsContent value="craft_beery" className="space-y-4">
-             <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'craft_beery'))} onUpdateStatus={handleUpdateOrderStatus} />
+             {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
+                  <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
+                </div>
+             ) : orders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : (
+                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'craft_beery'))} onUpdateStatus={handleUpdateOrderStatus} />
+             )}
           </TabsContent>
 
           <TabsContent value="calls" className="space-y-4">
@@ -167,13 +339,13 @@ export default function StaffDashboard() {
                   <Card key={call.id} className={`border-t-4 ${call.status === 'new' ? 'border-t-red-500 bg-red-50' : 'border-t-gray-300 bg-gray-50 opacity-60'}`}>
                      <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
-                          <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>Стол {call.tableNumber}</CardTitle>
+                          <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>Стол {call.tableQrSlug || call.tableName}</CardTitle>
                           {call.status === 'new' ? <AlertCircle className="text-red-500 w-5 h-5" /> : <CheckCircle2 className="text-gray-500 w-5 h-5" />}
                         </div>
-                        <div className="text-lg font-semibold mt-2">{call.type}</div>
+                        <div className="text-lg font-semibold mt-2">{(call.reason === 'waiter' ? 'Подойти' : call.reason === 'coals' ? 'Угли' : call.reason === 'bill' ? 'Счет' : call.reason)}</div>
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <Clock className="w-3 h-3 mr-1" />
-                          {call.time}
+                          {new Date(call.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                      </CardHeader>
                      <CardFooter>
