@@ -35,7 +35,18 @@ To prioritize easy local development, simple deployment, and maintainable archit
 - **State Management:** React Context or Zustand for client-side state (cart, session).
 - **Auth:** Simple session-based auth using `next-auth` or `lucia` for staff/admin, with guests remaining mostly anonymous (session cookie) for the MVP.
 
-## 3. Database Schema Proposal
+## 3. Future Architecture: Table Session Model
+
+While the MVP may start with basic ordering, the long-term architecture envisions a structured **Table Session Model** to handle multiple guests at the same table:
+
+- **Stable QR Codes**: Physical table QR codes point to stable URLs (e.g., `/t/[tableId]`).
+- **Table Sessions**: Each visit generates or attaches to an active session for that table.
+- **Shared State**: Submitted orders, staff calls, and statuses are tied to the session and visible to all guests at the table.
+- **Personal State**: Pre-submission draft carts are isolated to individual browser sessions so guests do not interfere with each other's drafts.
+- **Profile State**: Loyalty points, favorites, and notes are tied to individual guest profiles.
+- **Staff Visibility**: The staff dashboard groups orders and calls by table/session for easier operational flow.
+
+## 4. Database Schema Proposal
 
 A simplified schema to support the MVP:
 
@@ -48,14 +59,14 @@ A simplified schema to support the MVP:
 - **`hookah_orders`**: `id`, `order_id`, `strength`, `taste_profile`, `avoid_notes`, `comment`.
 - **`staff_calls`**: `id`, `table_id`, `type` (waiter, coals, bill, help), `status` (new, handled), `created_at`.
 
-## 4. User Roles and Permissions
+## 5. User Roles and Permissions
 
 - **Guest (Anonymous/Session):** Scans QR, browses menu, submits orders, requests staff assistance. Bound to a specific table session.
 - **Waiter:** Logs in to view orders and staff calls, updates order statuses (food/drink focus), marks calls as handled.
 - **Hookah Master:** Logs in to view hookah-specific orders, sees guest preferences, updates hookah preparation statuses.
 - **Admin/Manager:** Full access. Manages menu items, categories, tables, and staff accounts.
 
-## 5. Main Screens
+## 6. Main Screens
 
 **Guest Screens:**
 1. **Table Landing / Menu:** Displays venue branding, table number, and menu categories/items.
@@ -72,7 +83,7 @@ A simplified schema to support the MVP:
 1. **Menu Manager:** List and edit view for categories and items.
 2. **Table Manager:** List of tables, ability to add new ones, and QR code URL generation.
 
-## 6. Implementation Milestones
+## 7. Implementation Milestones
 
 - **Milestone 1: Project Scaffold & DB Setup**
   - Initialize Next.js project, Tailwind, and ORM.
@@ -96,7 +107,7 @@ A simplified schema to support the MVP:
   - Protect staff and admin routes.
   - Polish session handling for guests.
 
-## 7. Parallelization Opportunities
+## 8. Parallelization Opportunities
 
 After **Milestone 1** (scaffolding and DB schema) is complete, multiple agents can work in parallel:
 - **Agent A:** Build Admin Menu Management UI (Milestone 2).
@@ -106,7 +117,7 @@ After **Milestone 1** (scaffolding and DB schema) is complete, multiple agents c
 
 *Coordination note:* All agents must agree on API route contracts and database schema before parallelizing.
 
-## 8. Postponed Features
+## 9. Postponed Features
 
 These features are explicitly excluded from the MVP to maintain focus and delivery speed:
 - Real online payments and POS/cash register integrations.

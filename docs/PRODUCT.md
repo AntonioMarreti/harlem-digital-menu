@@ -476,7 +476,20 @@ Admin can:
 
 This can be simple at first.
 
-## 9. Data model draft
+## 9. Table Session Model (Future Architecture)
+
+In a hookah lounge, several guests may sit at the same physical table and scan the same QR code. The system must support both shared table state and personal guest state.
+
+- **Stable QR Codes**: Physical table QR codes are stable and point to a fixed URL like `/t/[tableId]`.
+- **Table Sessions**: Each visit to a table should create or join an active "table session".
+- **Shared Table State**: Submitted orders, staff calls, and order statuses belong to the table session. Multiple guests at one table should be able to see shared submitted orders and table status.
+- **Personal Guest State**: Draft carts before submission belong to the individual guest/browser session. Guests should not accidentally edit each other's draft carts.
+- **Personal Account State**: Guest profiles, favorite hookahs, loyalty points, and personal notes belong to the individual guest account.
+- **Staff View**: Staff should see orders grouped by table/session.
+
+This model is intended for future architecture and is not yet implemented.
+
+## 10. Data model draft
 
 This is a conceptual draft, not the final schema.
 
@@ -618,7 +631,7 @@ This is a conceptual draft, not the final schema.
 - created_at
 - reviewed_at
 
-## 10. MVP milestones
+## 11. MVP milestones
 
 ### Milestone 0: Planning
 
@@ -689,7 +702,7 @@ This is a conceptual draft, not the final schema.
 - Music requests queue.
 - Simple moderation.
 
-## 11. Parallelization plan
+## 12. Parallelization plan
 
 Safe parallel tasks after scaffold:
 
@@ -709,7 +722,7 @@ Tasks that should not run in parallel without coordination:
 - major UI redesign;
 - migration system.
 
-## 12. Risks
+## 13. Risks
 
 ### Scope creep
 
@@ -735,7 +748,7 @@ The system must be faster than existing workflow. Staff UI must be extremely sim
 
 Guests should be able to browse and order without mandatory registration. Auth should be optional until profile/loyalty features.
 
-## 13. What not to build first
+## 14. What not to build first
 
 Do not build these in the first implementation:
 
@@ -750,7 +763,7 @@ Do not build these in the first implementation:
 - heavy analytics;
 - complicated CRM.
 
-## 14. First version success criteria
+## 15. First version success criteria
 
 The first useful version is successful if:
 
@@ -764,7 +777,7 @@ The first useful version is successful if:
 - a hookah order can include preferences;
 - the system is easier to update than PDF files.
 
-## 15. Open questions
+## 16. Open questions
 
 - Should the first version be built as a regular web app, PWA, or Telegram Mini App?
 - Should guests be anonymous until they want a profile?
