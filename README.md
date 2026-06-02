@@ -165,7 +165,12 @@ Propose:
 1. **Install dependencies:**
    `npm install`
 
-2. **Run the development server:**
+2. **Database Setup (Optional for UI mock):**
+   Copy `.env.example` to `.env.local` and add your Vercel Postgres/Neon database URL:
+   `cp .env.example .env.local`
+   *(You can run `npm run dev` and build the app without a database if you are only working on UI).*
+
+3. **Run the development server:**
    `npm run dev`
 
 3. **Open the app in your browser:**

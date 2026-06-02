@@ -74,7 +74,7 @@ Minimal API routes required for the first real sync:
 
 Backend implementation will be split into small, reviewable PRs without breaking the current UI mock state until everything is ready.
 
-- **PR 1: Database Setup** - Add Drizzle ORM, Vercel Postgres config, and define the database schema.
+- **PR 1: Database Setup (Done)** - Add Drizzle ORM, Vercel Postgres config, and define the database schema.
 - **PR 2: Seed Data** - Add seed scripts for tables, menu items (with sources), and a mock table session.
 - **PR 3: Order API Routes** - Implement the API routes for table sessions, orders, and staff calls.
 - **PR 4: Connect Guest UI** - Connect the `/t/demo` submit order flow and staff calls to the real API.
