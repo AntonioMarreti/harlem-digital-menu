@@ -92,3 +92,205 @@ To keep the MVP focused strictly on order synchronization, the following items a
 - **Admin CRUD**: Real UI for editing menu items or categories.
 - **Loyalty**: Points and rewards logic.
 - **Music**: Track requests and moderation.
+## 9. API Request/Response Examples
+
+### GET /api/tables/[tableId]/session
+Request: `GET /api/tables/demo/session`
+Response `200 OK`:
+```json
+{
+  "session": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "tableId": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "active",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "closedAt": null
+  },
+  "table": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Demo Table",
+    "qrSlug": "demo",
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### POST /api/tables/[tableId]/session
+Request: `POST /api/tables/demo/session`
+Response `201 Created`:
+```json
+{
+  "session": {
+    "id": "123e4567-e89b-12d3-a456-426614174001",
+    "tableId": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "active",
+    "createdAt": "2023-01-01T01:00:00.000Z",
+    "closedAt": null
+  },
+  "table": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Demo Table",
+    "qrSlug": "demo",
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### POST /api/orders
+Request:
+```json
+{
+  "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+  "guestSessionId": null,
+  "totalAmount": 1570,
+  "items": [
+    {
+      "id": "item_2",
+      "name": "Кальян премиум",
+      "source": "harlem",
+      "quantity": 1,
+      "price": 1290
+    }
+  ]
+}
+```
+Response `201 Created`:
+```json
+{
+  "order": {
+    "id": "987e6543-e21b-12d3-a456-426614174000",
+    "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+    "guestSessionId": null,
+    "status": "new",
+    "totalAmount": 1570,
+    "createdAt": "2023-01-01T01:05:00.000Z",
+    "updatedAt": "2023-01-01T01:05:00.000Z"
+  },
+  "items": [
+    {
+      "id": "111e1111-e11b-11d1-a111-111111111111",
+      "orderId": "987e6543-e21b-12d3-a456-426614174000",
+      "menuItemId": "item_2",
+      "name": "Кальян премиум",
+      "source": "harlem",
+      "quantity": 1,
+      "price": 1290,
+      "options": null,
+      "createdAt": "2023-01-01T01:05:00.000Z"
+    }
+  ]
+}
+```
+
+### GET /api/staff/orders
+Request: `GET /api/staff/orders`
+Response `200 OK`:
+```json
+{
+  "orders": [
+    {
+      "id": "987e6543-e21b-12d3-a456-426614174000",
+      "status": "new",
+      "totalAmount": 1570,
+      "createdAt": "2023-01-01T01:05:00.000Z",
+      "updatedAt": "2023-01-01T01:05:00.000Z",
+      "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+      "tableId": "123e4567-e89b-12d3-a456-426614174000",
+      "tableName": "Demo Table",
+      "tableQrSlug": "demo",
+      "items": [
+        {
+          "id": "111e1111-e11b-11d1-a111-111111111111",
+          "menuItemId": "item_2",
+          "name": "Кальян премиум",
+          "source": "harlem",
+          "quantity": 1,
+          "price": 1290,
+          "options": null
+        }
+      ]
+    }
+  ]
+}
+```
+
+### PATCH /api/staff/orders/[orderId]
+Request:
+```json
+{
+  "status": "accepted"
+}
+```
+Response `200 OK`:
+```json
+{
+  "order": {
+    "id": "987e6543-e21b-12d3-a456-426614174000",
+    "status": "accepted",
+    "totalAmount": 1570,
+    "createdAt": "2023-01-01T01:05:00.000Z",
+    "updatedAt": "2023-01-01T01:10:00.000Z"
+  }
+}
+```
+
+### POST /api/staff-calls
+Request:
+```json
+{
+  "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+  "reason": "waiter"
+}
+```
+Response `201 Created`:
+```json
+{
+  "call": {
+    "id": "222e2222-e22b-22d2-a222-222222222222",
+    "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+    "guestSessionId": null,
+    "reason": "waiter",
+    "status": "new",
+    "createdAt": "2023-01-01T01:15:00.000Z",
+    "handledAt": null
+  }
+}
+```
+
+### GET /api/staff-calls
+Request: `GET /api/staff-calls`
+Response `200 OK`:
+```json
+{
+  "calls": [
+    {
+      "id": "222e2222-e22b-22d2-a222-222222222222",
+      "reason": "waiter",
+      "status": "new",
+      "createdAt": "2023-01-01T01:15:00.000Z",
+      "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+      "tableId": "123e4567-e89b-12d3-a456-426614174000",
+      "tableName": "Demo Table",
+      "tableQrSlug": "demo"
+    }
+  ]
+}
+```
+
+### PATCH /api/staff-calls/[callId]
+Request:
+```json
+{
+  "status": "handled"
+}
+```
+Response `200 OK`:
+```json
+{
+  "call": {
+    "id": "222e2222-e22b-22d2-a222-222222222222",
+    "status": "handled",
+    "handledAt": "2023-01-01T01:20:00.000Z"
+  }
+}
+```

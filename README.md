@@ -180,3 +180,13 @@ Propose:
    - **Admin Panel Preview:** http://localhost:3000/admin
 
 *Note: The current version is a frontend scaffold with mock data. There is no database or authentication yet.*
+
+### Database Management
+To generate migrations, run:
+`npm run db:generate`
+
+To apply migrations, ensure `.env.local` is set with your database URL, and run:
+`npm run db:migrate`
+
+To seed the database with initial demo data, run:
+`npm run db:seed`
