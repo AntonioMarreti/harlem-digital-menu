@@ -33,7 +33,8 @@ export default function GuestPageClient({
     async function fetchSession() {
       try {
         setSessionLoading(true);
-        const res = await fetch(`/api/tables/${table.id}/session`);
+        const tableSessionKey = table.qrSlug || table.id;
+        const res = await fetch(`/api/tables/${tableSessionKey}/session`);
         if (!res.ok) {
           throw new Error('Failed to fetch session');
         }
@@ -47,7 +48,7 @@ export default function GuestPageClient({
       }
     }
     fetchSession();
-  }, [table.id]);
+  }, [table.id, table.qrSlug]);
 
   const [cart, setCart] = useState<{item: MenuItem, quantity: number, notes?: string}[]>([]);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
