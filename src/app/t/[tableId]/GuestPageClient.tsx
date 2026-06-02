@@ -110,8 +110,7 @@ export default function GuestPageClient({
         <div>
           <h1 className="text-xl font-bold font-serif tracking-wide text-primary">Harlem</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span>
-            Table {table.number}
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span> Стол {table.number}
           </p>
         </div>
         <div className="flex gap-3">
@@ -143,11 +142,11 @@ export default function GuestPageClient({
       <main className="flex-1 pb-28">
         {/* Welcome Section */}
         <div className="px-5 py-6">
-          <h2 className="text-2xl font-serif mb-2">Welcome to Harlem</h2>
-          <p className="text-muted-foreground text-sm">Experience our premium selection of hookahs, teas, and signature drinks.</p>
+          <h2 className="text-2xl font-serif mb-2">Добро пожаловать в «Харлем»</h2>
+          <p className="text-muted-foreground text-sm">QR-меню · заказ со столика</p>
         </div>
 
-        {/* Order Status Ribbon */}
+        {/* Статус заказа Ribbon */}
         {orderStatus !== 'none' && (
           <div className="mx-5 mb-6 bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between shadow-sm" onClick={() => setIsCartOpen(true)}>
             <div className="flex items-center gap-3">
@@ -157,8 +156,8 @@ export default function GuestPageClient({
                 {orderStatus === 'delivered' && <Check className="h-4 w-4" />}
               </div>
               <div>
-                <p className="text-sm font-medium">Your order is {orderStatus}</p>
-                <p className="text-xs text-muted-foreground">Tap to view details</p>
+                <p className="text-sm font-medium">Ваш заказ {orderStatus === "new" ? "отправлен" : orderStatus === "preparing" ? "готовится" : "выполнен"}</p>
+                <p className="text-xs text-muted-foreground">Нажмите для деталей</p>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -184,13 +183,24 @@ export default function GuestPageClient({
           <div className="px-5 mt-4">
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="space-y-4 outline-none pb-6">
-                {menuItems
+                {cat.id === 'cat_food' && (
+                  <div className="bg-secondary/40 border border-secondary p-3 rounded-xl mb-4 text-xs text-muted-foreground text-center">
+                    Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
+                  </div>
+                )}
+
+              {menuItems
                   .filter((item) => item.categoryId === cat.id)
                   .map((item) => (
                     <Card key={item.id} className="w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors">
                       <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
                         <div className="flex-1">
                           <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
+                          {item.sourceLabel && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-1">
+                              {item.sourceLabel}
+                            </Badge>
+                          )}
                           {item.tags && item.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {item.tags.map(tag => (
@@ -213,7 +223,7 @@ export default function GuestPageClient({
                             className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5"
                             onClick={() => handleBuildHookah(item)}
                           >
-                            Build Hookah
+                            Настроить кальян
                           </Button>
                         ) : (
                           <Button
@@ -222,7 +232,7 @@ export default function GuestPageClient({
                             className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-5"
                             onClick={() => addToCart(item)}
                           >
-                            Add to Order
+                            Добавить
                           </Button>
                         )}
                       </CardFooter>
@@ -244,7 +254,7 @@ export default function GuestPageClient({
               onClick={() => setIsStaffOpen(true)}
             >
               <Bell className="h-5 w-5 text-primary" />
-              Call Staff
+              Позвать персонал
             </Button>
 
             <Button
@@ -253,7 +263,7 @@ export default function GuestPageClient({
               onClick={() => setIsCartOpen(true)}
             >
               <ShoppingCart className="h-5 w-5" />
-              My Order
+              Мой заказ
               {cartTotal > 0 && <span className="ml-1 font-semibold">{cartTotal} ₽</span>}
             </Button>
          </div>
@@ -264,22 +274,26 @@ export default function GuestPageClient({
         <DrawerContent className="guest-theme bg-card text-foreground border-border/50 max-h-[90vh]">
           <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mt-4 mb-2" />
           <DrawerHeader className="text-left pb-2">
-            <DrawerTitle className="text-xl font-serif text-primary">Build Your Hookah</DrawerTitle>
-            <DrawerDescription className="text-muted-foreground">Customize your {selectedHookahItem?.name?.toLowerCase()}</DrawerDescription>
+            <DrawerTitle className="text-xl font-serif text-primary">Настроить кальян</DrawerTitle>
+            <DrawerDescription className="text-muted-foreground">Настройте ваш {selectedHookahItem?.name?.toLowerCase()}</DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="px-4 py-2 overflow-y-auto">
             <div className="space-y-6 pb-6">
               <div className="space-y-3">
-                <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Strength</Label>
+                <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Крепость</Label>
                 <RadioGroup value={hookahStrength} onValueChange={setHookahStrength} className="grid grid-cols-3 gap-2">
-                  {['light', 'medium', 'strong'].map((s) => (
-                    <div key={s}>
-                      <RadioGroupItem value={s} id={`strength-${s}`} className="peer sr-only" />
+                  {[
+                    { value: 'light', label: 'Лёгкий' },
+                    { value: 'medium', label: 'Средний' },
+                    { value: 'strong', label: 'Крепкий' }
+                  ].map((s) => (
+                    <div key={s.value}>
+                      <RadioGroupItem value={s.value} id={`strength-${s.value}`} className="peer sr-only" />
                       <Label
-                        htmlFor={`strength-${s}`}
+                        htmlFor={`strength-${s.value}`}
                         className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background p-3 hover:bg-accent/50 hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                       >
-                        <span className="capitalize text-sm font-medium">{s}</span>
+                        <span className="text-sm font-medium">{s.label}</span>
                       </Label>
                     </div>
                   ))}
@@ -287,16 +301,23 @@ export default function GuestPageClient({
               </div>
 
               <div className="space-y-3">
-                <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Taste Profile</Label>
+                <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Вкусовой профиль</Label>
                 <RadioGroup value={hookahTaste} onValueChange={setHookahTaste} className="grid grid-cols-2 gap-2">
-                  {['sweet', 'sour', 'fresh', 'spicy', 'dessert', 'trust master'].map((t) => (
-                    <div key={t}>
-                      <RadioGroupItem value={t} id={`taste-${t}`} className="peer sr-only" />
+                  {[
+                    { value: 'sweet', label: 'сладкий' },
+                    { value: 'sour', label: 'кислый' },
+                    { value: 'fresh', label: 'свежий' },
+                    { value: 'spicy', label: 'пряный' },
+                    { value: 'dessert', label: 'десертный' },
+                    { value: 'trust master', label: 'на выбор мастера' }
+                  ].map((t) => (
+                    <div key={t.value}>
+                      <RadioGroupItem value={t.value} id={`taste-${t.value}`} className="peer sr-only" />
                       <Label
-                        htmlFor={`taste-${t}`}
+                        htmlFor={`taste-${t.value}`}
                         className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background p-3 hover:bg-accent/50 hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary cursor-pointer transition-all text-center"
                       >
-                        <span className="capitalize text-sm font-medium">{t}</span>
+                        <span className="text-sm font-medium text-center leading-tight">{t.label}</span>
                       </Label>
                     </div>
                   ))}
@@ -304,10 +325,10 @@ export default function GuestPageClient({
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="notes" className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Special Requests</Label>
+                <Label htmlFor="notes" className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Пожелания</Label>
                 <Textarea
                   id="notes"
-                  placeholder="E.g., avoid mint, more ice..."
+                  placeholder="Например, безо льда..."
                   className="bg-background border-border/50 focus-visible:ring-primary rounded-xl resize-none min-h-[80px]"
                   value={hookahNotes}
                   onChange={(e) => setHookahNotes(e.target.value)}
@@ -317,10 +338,10 @@ export default function GuestPageClient({
           </ScrollArea>
           <DrawerFooter className="pt-2 pb-6 border-t border-border/20 bg-card/80 backdrop-blur-sm">
             <Button className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" onClick={confirmHookahBuild}>
-              Add to Order • {selectedHookahItem?.price} ₽
+              Добавить • {selectedHookahItem?.price} ₽
             </Button>
             <DrawerClose asChild>
-              <Button variant="ghost" className="rounded-full w-full">Cancel</Button>
+              <Button variant="ghost" className="rounded-full w-full">Отмена</Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>
@@ -331,25 +352,25 @@ export default function GuestPageClient({
         <SheetContent side="bottom" className="guest-theme h-[90vh] bg-card text-foreground border-t border-border/50 rounded-t-3xl p-0 flex flex-col">
           <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mt-4 mb-2 absolute left-1/2 -translate-x-1/2" />
           <SheetHeader className="px-6 pt-10 pb-4 text-left border-b border-border/20">
-            <SheetTitle className="text-2xl font-serif text-primary">Your Order</SheetTitle>
-            <SheetDescription className="text-muted-foreground">Review your items before submitting.</SheetDescription>
+            <SheetTitle className="text-2xl font-serif text-primary">Ваш заказ</SheetTitle>
+            <SheetDescription className="text-muted-foreground">Проверьте позиции перед отправкой.</SheetDescription>
           </SheetHeader>
 
           <ScrollArea className="flex-1 px-6 py-4">
             {cart.length === 0 && orderStatus === 'none' ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground space-y-4">
                 <ShoppingCart className="h-12 w-12 opacity-20" />
-                <p>Your order is empty</p>
-                <SheetClose render={<Button variant="outline" className="rounded-full border-border/50">Browse Menu</Button>} />
+                <p>Ваша корзина пуста</p>
+                <SheetClose render={<Button variant="outline" className="rounded-full border-border/50">Вернуться в меню</Button>} />
               </div>
             ) : (
               <div className="space-y-6">
                 {orderStatus !== 'none' && (
                    <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
                      <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                        <Clock className="h-4 w-4" /> Order Status
+                        <Clock className="h-4 w-4" /> Статус заказа
                      </h3>
-                     <p className="text-sm">Your order is currently: <strong className="uppercase tracking-wide">{orderStatus}</strong></p>
+                     <p className="text-sm">Текущий статус: <strong className="uppercase tracking-wide">{orderStatus === "new" ? "ОТПРАВЛЕН" : orderStatus === "preparing" ? "ГОТОВИТСЯ" : "ВЫПОЛНЕН"}</strong></p>
                    </div>
                 )}
 
@@ -396,14 +417,14 @@ export default function GuestPageClient({
           {cart.length > 0 && (
             <div className="p-6 border-t border-border/20 bg-background/50 backdrop-blur-md">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-muted-foreground">Total</span>
+                <span className="text-muted-foreground">Итого</span>
                 <span className="text-xl font-bold text-primary">{cartTotal} ₽</span>
               </div>
               <Button
                 className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                 onClick={submitOrder}
               >
-                Submit Order
+                Отправить заказ
               </Button>
             </div>
           )}
@@ -415,8 +436,8 @@ export default function GuestPageClient({
         <DrawerContent className="guest-theme bg-card text-foreground border-border/50">
           <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mt-4 mb-2" />
           <DrawerHeader className="text-left pb-2">
-            <DrawerTitle className="text-xl font-serif text-primary">Need something?</DrawerTitle>
-            <DrawerDescription className="text-muted-foreground">We&apos;ll be right there.</DrawerDescription>
+            <DrawerTitle className="text-xl font-serif text-primary">Нужна помощь?</DrawerTitle>
+            <DrawerDescription className="text-muted-foreground">Мы скоро подойдем.</DrawerDescription>
           </DrawerHeader>
           <div className="p-4 grid grid-cols-2 gap-3 pb-8">
             <Button
@@ -425,7 +446,7 @@ export default function GuestPageClient({
               onClick={() => callStaff('Call waiter')}
             >
               <Utensils className="h-6 w-6" />
-              <span>Call Waiter</span>
+              <span>Позвать официанта</span>
             </Button>
             <Button
               variant="outline"
@@ -433,7 +454,7 @@ export default function GuestPageClient({
               onClick={() => callStaff('Replace coals')}
             >
               <Flame className="h-6 w-6" />
-              <span>Replace Coals</span>
+              <span>Заменить угли</span>
             </Button>
             <Button
               variant="outline"
@@ -441,7 +462,7 @@ export default function GuestPageClient({
               onClick={() => callStaff('Ask for bill')}
             >
               <span className="text-xl font-serif">₽</span>
-              <span>Ask for Bill</span>
+              <span>Попросить счёт</span>
             </Button>
             <Button
               variant="outline"
@@ -449,7 +470,7 @@ export default function GuestPageClient({
               onClick={() => callStaff('Need help')}
             >
               <HelpCircle className="h-6 w-6" />
-              <span>Need Help</span>
+              <span>Нужна помощь</span>
             </Button>
           </div>
         </DrawerContent>
