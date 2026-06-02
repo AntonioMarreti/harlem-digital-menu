@@ -19,6 +19,7 @@ export type Table = {
   id: string;
   name: string;
   number: number;
+  qrSlug?: string;
 };
 
 export const categories: Category[] = [

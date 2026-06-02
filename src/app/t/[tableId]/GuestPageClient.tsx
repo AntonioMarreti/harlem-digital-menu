@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight } from 'lucide-react';
+import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle } from 'lucide-react';
 
 export default function GuestPageClient({
   table,
@@ -23,6 +23,33 @@ export default function GuestPageClient({
   categories: Category[];
   menuItems: MenuItem[];
 }) {
+  const [tableSessionId, setTableSessionId] = useState<string | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        setSessionLoading(true);
+        const tableSessionKey = table.qrSlug || table.id;
+        const res = await fetch(`/api/tables/${tableSessionKey}/session`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch session');
+        }
+        const data = await res.json();
+        setTableSessionId(data.session.id);
+      } catch (err) {
+        console.error(err);
+        setSessionError('Не удалось загрузить сессию стола. Пожалуйста, обновите страницу.');
+      } finally {
+        setSessionLoading(false);
+      }
+    }
+    fetchSession();
+  }, [table.id, table.qrSlug]);
+
   const [cart, setCart] = useState<{item: MenuItem, quantity: number, notes?: string}[]>([]);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -84,38 +111,112 @@ export default function GuestPageClient({
     }
   };
 
-  const submitOrder = () => {
-    const orderId = `order_${Math.floor(Math.random() * 10000)}`;
-    const orderItems = [...cart];
-    const orderTotal = cartTotal;
+  const submitOrder = async () => {
+    if (!tableSessionId) {
+      setOrderSubmitError('Нет активной сессии стола.');
+      return;
+    }
 
-    setActiveOrder({
-      id: orderId,
-      items: orderItems,
-      total: orderTotal,
-      status: 'new'
-    });
+    setOrderSubmitting(true);
+    setOrderSubmitError(null);
 
-    setIsCartOpen(false);
-    setCart([]);
+    const orderPayload = {
+      tableSessionId,
+      totalAmount: cartTotal,
+      items: cart.map(item => ({
+        id: item.item.id,
+        name: item.item.name,
+        source: item.item.source,
+        quantity: item.quantity,
+        price: item.item.price,
+        options: item.notes ? { notes: item.notes } : undefined
+      }))
+    };
 
-    // Simulate order progression
-    setTimeout(() => {
-      setActiveOrder(prev => prev ? { ...prev, status: 'accepted' } : null);
-    }, 3000);
-    setTimeout(() => {
-      setActiveOrder(prev => prev ? { ...prev, status: 'preparing' } : null);
-    }, 8000);
-    setTimeout(() => {
-      setActiveOrder(prev => prev ? { ...prev, status: 'delivered' } : null);
-    }, 15000);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderPayload)
+      });
+
+      if (!res.ok) {
+        throw new Error('Не удалось отправить заказ');
+      }
+
+      const data = await res.json();
+
+      // Update local state to show the order
+      setActiveOrder({
+        id: data.order.id,
+        items: cart,
+        total: cartTotal,
+        status: data.order.status
+      });
+
+      setIsCartOpen(false);
+      setCart([]);
+    } catch (err) {
+      console.error(err);
+      setOrderSubmitError('Ошибка при отправке заказа. Пожалуйста, попробуйте еще раз.');
+    } finally {
+      setOrderSubmitting(false);
+    }
   };
 
-  const callStaff = (reason: string) => {
-    setStaffCallStatus(`Staff called: ${reason}`);
-    setIsStaffOpen(false);
-    setTimeout(() => setStaffCallStatus(null), 3000);
+  const callStaff = async (reason: string) => {
+    if (!tableSessionId) return;
+
+    try {
+      const res = await fetch('/api/staff-calls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tableSessionId, reason })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to call staff');
+      }
+
+      setStaffCallStatus(`Сотрудник вызван: ${reason === 'waiter' ? 'Подойти' : reason === 'coals' ? 'Угли' : reason === 'bill' ? 'Счет' : reason}`);
+    } catch (err) {
+      console.error(err);
+      setStaffCallStatus('Ошибка при вызове сотрудника. Попробуйте еще раз.');
+    } finally {
+      setIsStaffOpen(false);
+      setTimeout(() => setStaffCallStatus(null), 3000);
+    }
   };
+
+  if (sessionLoading) {
+    return (
+      <div className="guest-theme min-h-screen w-full bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Загрузка сессии...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="guest-theme min-h-screen w-full bg-background flex items-center justify-center p-4">
+        <div className="text-center bg-card p-6 rounded-lg shadow-sm max-w-sm w-full">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Ошибка</h2>
+          <p className="text-muted-foreground">{sessionError}</p>
+          <Button className="mt-6 w-full" onClick={() => window.location.reload()}>
+            Обновить
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="guest-theme min-h-screen w-full bg-background overflow-x-hidden">
@@ -548,11 +649,21 @@ export default function GuestPageClient({
                 <span className="text-muted-foreground">Итого</span>
                 <span className="text-xl font-bold text-primary">{cartTotal} ₽</span>
               </div>
+              {orderSubmitError && (
+                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4 flex items-start">
+                  <AlertCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                  <span>{orderSubmitError}</span>
+                </div>
+              )}
               <Button
                 className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                 onClick={submitOrder}
+                disabled={orderSubmitting}
               >
-                Отправить заказ
+                {orderSubmitting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
+                ) : null}
+                {orderSubmitting ? 'Отправка...' : 'Отправить заказ'}
               </Button>
             </div>
           )}
