@@ -30,8 +30,8 @@ To prioritize easy local development, simple deployment, and maintainable archit
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router) with React and TypeScript.
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/) for fast, accessible UI components.
-- **Database:** SQLite for initial local MVP, seamlessly upgradable to PostgreSQL for production.
-- **ORM:** [Prisma](https://www.prisma.io/) or [Drizzle ORM](https://orm.drizzle.team/) for type-safe database access.
+- **Database:** Vercel Postgres (Neon) for persistent storage compatible with serverless environments (see `BACKEND_PLAN.md`).
+- **ORM:** [Drizzle ORM](https://orm.drizzle.team/) for lightweight, edge-compatible type-safe database access.
 - **State Management:** React Context or Zustand for client-side state (cart, session).
 - **Auth:** Simple session-based auth using `next-auth` or `lucia` for staff/admin, with guests remaining mostly anonymous (session cookie) for the MVP.
 
