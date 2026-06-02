@@ -478,16 +478,69 @@ This can be simple at first.
 
 ## 9. Table Session Model (Future Architecture)
 
-In a hookah lounge, several guests may sit at the same physical table and scan the same QR code. The system must support both shared table state and personal guest state.
+A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They must belong to an active table session / visit.
 
-- **Stable QR Codes**: Physical table QR codes are stable and point to a fixed URL like `/t/[tableId]`.
-- **Table Sessions**: Each visit to a table should create or join an active "table session".
-- **Shared Table State**: Submitted orders, staff calls, and order statuses belong to the table session. Multiple guests at one table should be able to see shared submitted orders and table status.
-- **Personal Guest State**: Draft carts before submission belong to the individual guest/browser session. Guests should not accidentally edit each other's draft carts.
-- **Personal Account State**: Guest profiles, favorite hookahs, loyalty points, and personal notes belong to the individual guest account.
-- **Staff View**: Staff should see orders grouped by table/session.
+### 9.1 Physical table
+- A real table in the venue.
+- Has a stable table ID and stable QR code.
+- Example: `/t/1`.
+- The QR code stays the same across days and visits.
 
-This model is intended for future architecture and is not yet implemented.
+### 9.2 Table session / visit
+- A time-bounded visit by one guest or one group of guests at a table.
+- One physical table can have many sessions during one day.
+- Example:
+  - Table 1, session A: guests from 18:00 to 20:00.
+  - Table 1, session B: different guests from 20:30 to 23:00.
+- Orders, order statuses, staff calls, and active table state should belong to the table session, not directly to the table.
+- A session can be active, closed, cancelled, or expired.
+
+### 9.3 Individual guest session
+- Several people at the same table may scan the same QR code from different phones.
+- Each guest/browser can have a personal draft cart before submitting.
+- Draft carts should not accidentally overwrite each other.
+- After submission, the order becomes part of the shared table session and can be visible to staff and, later, to other guests at the table.
+
+### 9.4 Shared vs personal data
+**Shared table-session data:**
+- submitted orders
+- order statuses
+- staff calls
+- table comments
+- active visit state
+
+**Personal guest data:**
+- draft cart before submission
+- guest profile
+- favorite hookah preferences
+- loyalty points
+- personal notes
+- previous visits
+
+### 9.5 Staff dashboard implications
+- Staff should see orders grouped by active table session.
+- Staff should be able to distinguish current guests from previous guests at the same table.
+- Closing a table session should prevent new orders from being added to the old visit.
+- New guests at the same physical table should create/use a new active session.
+
+### 9.6 Future backend implications
+When real backend is implemented, the core model should look like:
+- Table
+- TableSession
+- GuestSession / User
+- Order
+- OrderItem
+- StaffCall
+
+Relationships:
+- Table has many TableSessions.
+- TableSession has many Orders.
+- TableSession has many StaffCalls.
+- Order has many OrderItems.
+- GuestSession/User can create draft carts and submit orders into the active TableSession.
+
+### 9.7 MVP behavior
+For the current mock MVP, this does not need to be implemented yet. But future real order sync must use table sessions, not just table IDs.
 
 ## 10. Data model draft
 

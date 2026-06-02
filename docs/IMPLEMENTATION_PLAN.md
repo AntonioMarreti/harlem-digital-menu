@@ -37,14 +37,14 @@ To prioritize easy local development, simple deployment, and maintainable archit
 
 ## 3. Future Architecture: Table Session Model
 
-While the MVP may start with basic ordering, the long-term architecture envisions a structured **Table Session Model** to handle multiple guests at the same table:
+While the MVP may start with basic ordering, the long-term architecture envisions a structured **Table Session Model** to handle multiple guests at the same table. A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They must belong to an active table session / visit.
 
-- **Stable QR Codes**: Physical table QR codes point to stable URLs (e.g., `/t/[tableId]`).
-- **Table Sessions**: Each visit generates or attaches to an active session for that table.
-- **Shared State**: Submitted orders, staff calls, and statuses are tied to the session and visible to all guests at the table.
-- **Personal State**: Pre-submission draft carts are isolated to individual browser sessions so guests do not interfere with each other's drafts.
+- **Stable QR Codes**: Physical table QR codes point to stable URLs (e.g., `/t/[tableId]`) and stay the same across days and visits.
+- **Table Sessions**: Each time-bounded visit generates or attaches to an active session for that table. One physical table can have many sessions during one day. A session can be active, closed, cancelled, or expired.
+- **Shared State**: Submitted orders, staff calls, active table state, and statuses are tied to the table session and visible to all guests at the table.
+- **Personal State**: Pre-submission draft carts are isolated to individual guest/browser sessions so guests do not accidentally overwrite each other's drafts.
 - **Profile State**: Loyalty points, favorites, and notes are tied to individual guest profiles.
-- **Staff Visibility**: The staff dashboard groups orders and calls by table/session for easier operational flow.
+- **Staff Visibility**: The staff dashboard groups orders and calls by active table session for easier operational flow. Staff should be able to distinguish current guests from previous guests at the same table. Closing a table session should prevent new orders from being added to the old visit.
 
 ## 4. Database Schema Proposal
 
