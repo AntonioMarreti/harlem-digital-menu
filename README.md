@@ -159,3 +159,19 @@ Propose:
 7. Tasks that can be done in parallel.
 8. Risks and postponed features.
 ```
+
+## Local Development Instructions
+
+1. **Install dependencies:**
+   `npm install`
+
+2. **Run the development server:**
+   `npm run dev`
+
+3. **Open the app in your browser:**
+   - **Main Entry:** http://localhost:3000
+   - **Guest Menu Preview:** http://localhost:3000/t/demo
+   - **Staff Dashboard Preview:** http://localhost:3000/staff
+   - **Admin Panel Preview:** http://localhost:3000/admin
+
+*Note: The current version is a frontend scaffold with mock data. There is no database or authentication yet.*
