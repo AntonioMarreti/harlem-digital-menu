@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
@@ -10,11 +11,10 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
     // Find table by id or qrSlug
     let table = null;
 
-    // First try by ID (if it's a valid UUID, otherwise it will throw, so we catch)
-    try {
+    // Check if tableId is a valid UUID
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    if (uuidRegex.test(params.tableId)) {
       table = await db.select().from(tables).where(eq(tables.id, params.tableId)).limit(1).then(res => res[0]);
-    } catch {
-      // Ignored
     }
 
     if (!table) {
@@ -55,10 +55,11 @@ export async function POST(request: NextRequest, { params }: { params: { tableId
     const db = getDb();
 
     let table = null;
-    try {
+
+    // Check if tableId is a valid UUID
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    if (uuidRegex.test(params.tableId)) {
       table = await db.select().from(tables).where(eq(tables.id, params.tableId)).limit(1).then(res => res[0]);
-    } catch {
-      // Ignored
     }
 
     if (!table) {

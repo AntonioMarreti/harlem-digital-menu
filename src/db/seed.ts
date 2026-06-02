@@ -26,10 +26,14 @@ async function runSeed() {
       { name: 'Demo Table', qrSlug: 'demo' },
       { name: 'Table 2', qrSlug: 't2' },
       { name: 'VIP Lounge', qrSlug: 't3' },
-    ]).returning();
+    ]).onConflictDoNothing({ target: tables.qrSlug }).returning();
 
-    const demoTable = createdTables.find(t => t.qrSlug === 'demo');
-    if (!demoTable) throw new Error('Demo table not created');
+    let demoTable = createdTables.find(t => t.qrSlug === 'demo');
+    if (!demoTable) {
+      const existingTables = await db.select().from(tables);
+      demoTable = existingTables.find(t => t.qrSlug === 'demo');
+    }
+    if (!demoTable) throw new Error('Demo table not created or found');
 
     // 2. Create one active demo table session for testing
     console.log('Seeding table sessions...');

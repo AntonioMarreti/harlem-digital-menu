@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders, tableSessions, tables, orderItems } from '@/db/schema';
-import { eq, inArray, notInArray } from 'drizzle-orm';
+import { eq, inArray, notInArray, and } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -17,7 +17,12 @@ export async function GET() {
     .from(orders)
     .innerJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
     .innerJoin(tables, eq(tableSessions.tableId, tables.id))
-    .where(notInArray(orders.status, ['closed', 'cancelled']));
+    .where(
+      and(
+        notInArray(orders.status, ['closed', 'cancelled']),
+        eq(tableSessions.status, 'active')
+      )
+    );
 
     if (activeOrders.length === 0) {
       return NextResponse.json({ orders: [] }, { status: 200 });

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse, NextRequest } from 'next/server';
 import { getDb } from '@/db';
 import { staffCalls, tableSessions, tables } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -17,7 +17,12 @@ export async function GET() {
     .from(staffCalls)
     .innerJoin(tableSessions, eq(staffCalls.tableSessionId, tableSessions.id))
     .innerJoin(tables, eq(tableSessions.tableId, tables.id))
-    .where(eq(staffCalls.status, 'new'));
+    .where(
+      and(
+        eq(staffCalls.status, 'new'),
+        eq(tableSessions.status, 'active')
+      )
+    );
 
     const formattedCalls = activeCalls.map(row => ({
       id: row.call.id,

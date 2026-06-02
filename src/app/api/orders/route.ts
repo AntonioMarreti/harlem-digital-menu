@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, orderItems } from '@/db/schema';
@@ -18,6 +19,25 @@ export async function POST(request: NextRequest) {
     const session = await db.select().from(tableSessions).where(eq(tableSessions.id, tableSessionId)).limit(1).then(res => res[0]);
     if (!session || session.status !== 'active') {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
+    }
+
+    // Validate items
+    for (const item of items) {
+      if (!item.menuItemId && !item.id) {
+        return NextResponse.json({ error: 'Item missing menuItemId or id' }, { status: 400 });
+      }
+      if (!item.name) {
+        return NextResponse.json({ error: 'Item missing name' }, { status: 400 });
+      }
+      if (item.source && !['harlem', 'craft_beery'].includes(item.source)) {
+        return NextResponse.json({ error: 'Invalid item source' }, { status: 400 });
+      }
+      if (item.quantity !== undefined && (typeof item.quantity !== 'number' || item.quantity <= 0)) {
+        return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 });
+      }
+      if (item.price !== undefined && (typeof item.price !== 'number' || item.price < 0)) {
+        return NextResponse.json({ error: 'Invalid item price' }, { status: 400 });
+      }
     }
 
     // Insert order
