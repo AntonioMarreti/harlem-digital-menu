@@ -6,26 +6,17 @@ import * as schema from './schema';
 // import { neonConfig } from '@neondatabase/serverless';
 // neonConfig.fetchConnectionCache = true;
 
-// Define a placeholder or empty client for build time if DATABASE_URL is missing
-const createDb = () => {
-  if (!process.env.DATABASE_URL) {
-    console.warn('DATABASE_URL is not set. A dummy database client is being used.');
-    // Return a dummy object that throws if methods are called,
-    // but allows import and build to succeed.
-    return new Proxy({}, {
-      get(target, prop) {
-        if (prop === 'select' || prop === 'insert' || prop === 'update' || prop === 'delete' || prop === 'transaction') {
-            return () => {
-                throw new Error('Database operation attempted without a DATABASE_URL');
-            }
-        }
-        return undefined;
-      }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }) as any;
-  }
-  const sql = neon(process.env.DATABASE_URL!);
-  return drizzle(sql, { schema });
-};
+let _db: ReturnType<typeof drizzle> | null = null;
 
-export const db = createDb();
+export const getDb = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required for database operations.');
+  }
+
+  if (!_db) {
+    const sql = neon(process.env.DATABASE_URL);
+    _db = drizzle(sql, { schema });
+  }
+
+  return _db;
+};
