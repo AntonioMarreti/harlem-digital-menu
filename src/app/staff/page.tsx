@@ -237,7 +237,7 @@ export default function StaffDashboard() {
   const handleCloseTableSession = async (tableId: string) => {
     if (!confirm('Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.')) return;
     try {
-      const res = await fetch(`/api/tables/${tableId}/session`, {
+      const res = await fetch(`/api/tables/${tableId}/session/close`, {
         method: 'POST',
       });
 
