@@ -60,6 +60,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
 
+    if (reason === 'bill') {
+      const existingBillCall = await db.select().from(staffCalls).where(
+        and(
+          eq(staffCalls.tableSessionId, tableSessionId),
+          eq(staffCalls.reason, 'bill'),
+          eq(staffCalls.status, 'new')
+        )
+      ).limit(1).then(res => res[0]);
+
+      if (existingBillCall) {
+        return NextResponse.json({ call: existingBillCall }, { status: 200 });
+      }
+    }
+
     // Insert staff call
     const [newCall] = await db.insert(staffCalls).values({
       tableSessionId,
