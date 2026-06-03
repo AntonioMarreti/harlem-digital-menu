@@ -301,6 +301,13 @@ export default function GuestPageClient({
   const callStaff = async (reason: string) => {
     if (!tableSessionId) return;
 
+    const reasonLabels: Record<string, string> = {
+      waiter: 'Подойти',
+      coals: 'Угли',
+      bill: 'Счёт',
+      help: 'Нужна помощь'
+    };
+
     try {
       const res = await fetch('/api/staff-calls', {
         method: 'POST',
@@ -314,7 +321,7 @@ export default function GuestPageClient({
         throw new Error('Failed to call staff');
       }
 
-      setStaffCallStatus(`Сотрудник вызван: ${reason === 'waiter' ? 'Подойти' : reason === 'coals' ? 'Угли' : reason === 'bill' ? 'Счет' : reason}`);
+      setStaffCallStatus(`Сотрудник вызван: ${reasonLabels[reason] || reason}`);
     } catch (err) {
       console.error(err);
       setStaffCallStatus('Ошибка при вызове сотрудника. Попробуйте еще раз.');
@@ -829,7 +836,7 @@ export default function GuestPageClient({
             <Button
               variant="outline"
               className="h-24 flex flex-col gap-3 rounded-2xl border-border/50 hover:bg-primary/10 hover:border-primary/50 hover:text-primary transition-all"
-              onClick={() => callStaff('Call waiter')}
+              onClick={() => callStaff('waiter')}
             >
               <Utensils className="h-6 w-6" />
               <span>Позвать официанта</span>
@@ -837,7 +844,7 @@ export default function GuestPageClient({
             <Button
               variant="outline"
               className="h-24 flex flex-col gap-3 rounded-2xl border-border/50 hover:bg-primary/10 hover:border-primary/50 hover:text-primary transition-all"
-              onClick={() => callStaff('Replace coals')}
+              onClick={() => callStaff('coals')}
             >
               <Flame className="h-6 w-6" />
               <span>Заменить угли</span>
@@ -853,7 +860,7 @@ export default function GuestPageClient({
             <Button
               variant="outline"
               className="h-24 flex flex-col gap-3 rounded-2xl border-border/50 hover:bg-primary/10 hover:border-primary/50 hover:text-primary transition-all"
-              onClick={() => callStaff('Need help')}
+              onClick={() => callStaff('help')}
             >
               <HelpCircle className="h-6 w-6" />
               <span>Нужна помощь</span>
