@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -63,37 +63,86 @@ export default function GuestPageClient({
   const [activeOrder, setActiveOrder] = useState<SubmittedOrder | null>(null);
   const [staffCallStatus, setStaffCallStatus] = useState<string | null>(null);
 
-  // Bill state
+  // Bill and Order state
   const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
 
-  useEffect(() => {
-    async function fetchBill() {
-      if (!tableSessionId) return;
-      try {
-        const tableSessionKey = table.qrSlug || table.id;
-        const res = await fetch(`/api/tables/${tableSessionKey}/bill`);
-        if (res.ok) {
-          const data = await res.json();
-          // Hide bill if it belongs to a different session, or if it is empty
-          if (data.tableSessionId !== tableSessionId) {
-            setBillData(null);
-          } else if (data.ordersCount === 0 && data.totalAmount === 0) {
-            setBillData(null);
-          } else {
-            setBillData({ totalAmount: data.totalAmount, ordersCount: data.ordersCount });
-          }
-        } else {
-          // If 404 or other error (e.g. no active session), clear the bill
+  // Use a ref to track active polling and force fetch
+  const [lastFetchAt, setLastFetchAt] = useState<number>(0);
+
+  const fetchSessionState = useCallback(async () => {
+    if (!tableSessionId) return;
+    try {
+      const billRes = await fetch(`/api/table-sessions/${tableSessionId}/bill`);
+      if (billRes.ok) {
+        const billData = await billRes.json();
+        if (billData.ordersCount === 0 && billData.totalAmount === 0) {
           setBillData(null);
+        } else {
+          setBillData({ totalAmount: billData.totalAmount, ordersCount: billData.ordersCount });
         }
-      } catch (err) {
-        console.error('Failed to fetch bill', err);
+      } else {
+        setBillData(null);
       }
+
+      const ordersRes = await fetch(`/api/table-sessions/${tableSessionId}/orders`);
+      if (ordersRes.ok) {
+        const data = await ordersRes.json();
+
+        // Find latest active order (not closed, not cancelled)
+        const activeOrders = data.orders.filter((o: Record<string, unknown>) => o.status !== 'closed' && o.status !== 'cancelled');
+
+        if (activeOrders.length > 0) {
+          const latestOrder = activeOrders[0];
+
+          // Map backend items back to the SubmittedOrder format for UI
+          const mappedItems = latestOrder.items.map((backendItem: Record<string, unknown>) => {
+            // Find full menu item definition if possible, or create a minimal one
+            const fullMenuItem = menuItems.find(m => m.id === backendItem.menuItemId) || {
+              id: backendItem.menuItemId,
+              name: backendItem.name,
+              price: backendItem.price,
+              source: backendItem.source,
+              categoryId: '',
+              description: ''
+            };
+
+            let notes = undefined;
+            try {
+              if (backendItem.options) {
+                const parsed = JSON.parse(backendItem.options as string);
+                notes = parsed.notes;
+              }
+            } catch { }
+
+            return {
+              item: fullMenuItem as MenuItem,
+              quantity: backendItem.quantity,
+              notes
+            };
+          });
+
+          setActiveOrder({
+            id: latestOrder.id,
+            items: mappedItems,
+            total: latestOrder.totalAmount,
+            status: latestOrder.status as SubmittedOrder['status']
+          });
+        } else {
+          setActiveOrder(null);
+        }
+      } else {
+        setActiveOrder(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch session state', err);
     }
-    fetchBill();
-    const interval = setInterval(fetchBill, 10000);
+  }, [tableSessionId, menuItems]);
+
+  useEffect(() => {
+    fetchSessionState();
+    const interval = setInterval(fetchSessionState, 10000);
     return () => clearInterval(interval);
-  }, [tableSessionId, table.id, table.qrSlug]);
+  }, [tableSessionId, lastFetchAt, fetchSessionState]);
 
   // Hookah Builder State
   const [hookahStrength, setHookahStrength] = useState('medium');
@@ -161,7 +210,7 @@ export default function GuestPageClient({
         source: item.item.source,
         quantity: item.quantity,
         price: item.item.price,
-        options: item.notes ? { notes: item.notes } : undefined
+        options: item.notes ? JSON.stringify({ notes: item.notes }) : undefined
       }))
     };
 
@@ -178,16 +227,10 @@ export default function GuestPageClient({
         throw new Error('Не удалось отправить заказ');
       }
 
-      const data = await res.json();
+      await res.json();
 
-      // Update local state to show the order
-      setActiveOrder({
-        id: data.order.id,
-        items: cart,
-        total: cartTotal,
-        status: data.order.status
-      });
-
+      // Immediately fetch fresh backend state
+      setLastFetchAt(Date.now());
       setIsCartOpen(false);
       setCart([]);
     } catch (err) {
@@ -543,7 +586,7 @@ export default function GuestPageClient({
                    <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-6">
                      <div className="flex justify-between items-center mb-4">
                        <h3 className="font-semibold text-primary flex items-center gap-2">
-                          <Clock className="h-4 w-4" /> Заказ #{activeOrder.id.split('_')[1]}
+                          <Clock className="h-4 w-4" /> Заказ #{activeOrder.id.substring(0, 8)}
                        </h3>
                        <span className="font-bold">{activeOrder.total} ₽</span>
                      </div>
