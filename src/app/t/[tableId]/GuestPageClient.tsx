@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,30 +30,7 @@ export default function GuestPageClient({
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchSession() {
-      try {
-        setSessionLoading(true);
-        const tableSessionKey = table.qrSlug || table.id;
-        const res = await fetch(`/api/tables/${tableSessionKey}/session?ts=${Date.now()}`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) {
-          throw new Error('Failed to fetch session');
-        }
-        const data = await res.json();
-        setTableSessionId(data.session.id);
-      } catch (err) {
-        console.error(err);
-        setSessionError('Не удалось загрузить сессию стола. Пожалуйста, обновите страницу.');
-      } finally {
-        setSessionLoading(false);
-      }
-    }
-    fetchSession();
-  }, [table.id, table.qrSlug]);
-
+  const tableSessionIdRef = useRef<string | null>(null);
   const [cart, setCart] = useState<{item: MenuItem, quantity: number, notes?: string}[]>([]);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -69,6 +46,47 @@ export default function GuestPageClient({
 
   // Bill and Order state
   const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
+
+  const refreshTableSession = useCallback(async (showLoading = false) => {
+    try {
+      if (showLoading) {
+        setSessionLoading(true);
+      }
+      setSessionError(null);
+
+      const tableSessionKey = table.qrSlug || table.id;
+      const res = await fetch(`/api/tables/${tableSessionKey}/session?ts=${Date.now()}`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch session');
+      }
+
+      const data = await res.json();
+      const nextSessionId = data.session.id;
+      const previousSessionId = tableSessionIdRef.current;
+
+      if (previousSessionId && previousSessionId !== nextSessionId) {
+        setActiveOrder(null);
+        setBillData(null);
+      }
+
+      tableSessionIdRef.current = nextSessionId;
+      setTableSessionId(nextSessionId);
+    } catch (err) {
+      console.error(err);
+      setSessionError('Не удалось загрузить сессию стола. Пожалуйста, обновите страницу.');
+      throw err;
+    } finally {
+      if (showLoading) {
+        setSessionLoading(false);
+      }
+    }
+  }, [table.id, table.qrSlug]);
+
+  useEffect(() => {
+    refreshTableSession(true).catch(() => {});
+  }, [refreshTableSession]);
 
   const fetchSessionState = useCallback(async () => {
     if (!tableSessionId) return;
@@ -205,6 +223,10 @@ export default function GuestPageClient({
   };
 
   const submitOrder = async () => {
+    if (orderSubmitting) {
+      return;
+    }
+
     if (!tableSessionId) {
       setOrderSubmitError('Нет активной сессии стола.');
       return;
@@ -236,6 +258,28 @@ export default function GuestPageClient({
       });
 
       if (!res.ok) {
+        let errorMessage = '';
+        try {
+          const errorBody = await res.json();
+          errorMessage = typeof errorBody.error === 'string' ? errorBody.error : '';
+        } catch {}
+
+        const normalizedError = errorMessage.toLowerCase();
+        const isStaleSessionError =
+          (res.status === 400 || res.status === 404) &&
+          (
+            normalizedError.includes('table session is not active') ||
+            normalizedError.includes('session') ||
+            normalizedError.includes('closed') ||
+            normalizedError.includes('inactive')
+          );
+
+        if (isStaleSessionError) {
+          await refreshTableSession();
+          setOrderSubmitError('Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз.');
+          return;
+        }
+
         throw new Error('Не удалось отправить заказ');
       }
 
