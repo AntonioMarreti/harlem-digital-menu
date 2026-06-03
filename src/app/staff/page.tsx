@@ -60,7 +60,7 @@ const callReasonLabels: Record<string, string> = {
   help: 'Нужна помощь'
 };
 
-function getOrderItemNotes(options: unknown): string | null {
+function formatOrderItemOptions(options: unknown): string | null {
   if (!options || typeof options !== 'object' || !('notes' in options)) {
     return null;
   }
@@ -72,7 +72,34 @@ function getOrderItemNotes(options: unknown): string | null {
   }
 
   const trimmedNotes = notes.trim();
-  return trimmedNotes.length > 0 ? trimmedNotes : null;
+  if (!trimmedNotes) {
+    return null;
+  }
+
+  const legacyMatch = trimmedNotes.match(/^Strength:\s*([^,]+),\s*Taste:\s*([^-]+?)(?:\s*-\s*(.+))?$/i);
+  if (!legacyMatch) {
+    return trimmedNotes;
+  }
+
+  const strengthLabels: Record<string, string> = {
+    light: 'Лёгкий',
+    medium: 'Средний',
+    strong: 'Крепкий'
+  };
+  const tasteLabels: Record<string, string> = {
+    sweet: 'сладкий',
+    sour: 'кислый',
+    fresh: 'свежий',
+    spicy: 'пряный',
+    dessert: 'десертный',
+    'trust master': 'на выбор мастера'
+  };
+
+  const strength = legacyMatch[1].trim();
+  const taste = legacyMatch[2].trim();
+  const guestNotes = legacyMatch[3]?.trim();
+
+  return `Крепость: ${strengthLabels[strength] || strength}; вкус: ${tasteLabels[taste] || taste}${guestNotes ? `; пожелания: ${guestNotes}` : ''}`;
 }
 
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
@@ -132,16 +159,16 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Харлем</h4>
                   <ul className="space-y-1 text-sm">
                     {harlemItems.map((item, idx) => {
-                      const itemNotes = getOrderItemNotes(item.options);
+                      const itemOptions = formatOrderItemOptions(item.options);
 
                       return (
                         <li key={idx}>
                           <div className="flex justify-between">
                             <span>{item.quantity}x {item.name}</span>
                           </div>
-                          {itemNotes && (
+                          {itemOptions && (
                             <div className="text-xs text-gray-500 mt-1 leading-snug">
-                              Параметры: {itemNotes}
+                              {itemOptions}
                             </div>
                           )}
                         </li>
@@ -156,16 +183,16 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                   <h4 className="text-xs font-semibold text-orange-600 uppercase mb-1">Craft Beery</h4>
                   <ul className="space-y-1 text-sm text-orange-900 bg-orange-50 p-2 rounded">
                     {craftBeeryItems.map((item, idx) => {
-                      const itemNotes = getOrderItemNotes(item.options);
+                      const itemOptions = formatOrderItemOptions(item.options);
 
                       return (
                         <li key={idx}>
                           <div className="flex justify-between">
                             <span>{item.quantity}x {item.name}</span>
                           </div>
-                          {itemNotes && (
+                          {itemOptions && (
                             <div className="text-xs text-gray-500 mt-1 leading-snug">
-                              Параметры: {itemNotes}
+                              {itemOptions}
                             </div>
                           )}
                         </li>
