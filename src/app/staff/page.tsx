@@ -60,6 +60,21 @@ const callReasonLabels: Record<string, string> = {
   help: 'Нужна помощь'
 };
 
+function getOrderItemNotes(options: unknown): string | null {
+  if (!options || typeof options !== 'object' || !('notes' in options)) {
+    return null;
+  }
+
+  const notes = (options as { notes?: unknown }).notes;
+
+  if (typeof notes !== 'string') {
+    return null;
+  }
+
+  const trimmedNotes = notes.trim();
+  return trimmedNotes.length > 0 ? trimmedNotes : null;
+}
+
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
@@ -116,11 +131,22 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Харлем</h4>
                   <ul className="space-y-1 text-sm">
-                    {harlemItems.map((item, idx) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                      </li>
-                    ))}
+                    {harlemItems.map((item, idx) => {
+                      const itemNotes = getOrderItemNotes(item.options);
+
+                      return (
+                        <li key={idx}>
+                          <div className="flex justify-between">
+                            <span>{item.quantity}x {item.name}</span>
+                          </div>
+                          {itemNotes && (
+                            <div className="text-xs text-gray-500 mt-1 leading-snug">
+                              Параметры: {itemNotes}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -129,11 +155,22 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                 <div>
                   <h4 className="text-xs font-semibold text-orange-600 uppercase mb-1">Craft Beery</h4>
                   <ul className="space-y-1 text-sm text-orange-900 bg-orange-50 p-2 rounded">
-                    {craftBeeryItems.map((item, idx) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                      </li>
-                    ))}
+                    {craftBeeryItems.map((item, idx) => {
+                      const itemNotes = getOrderItemNotes(item.options);
+
+                      return (
+                        <li key={idx}>
+                          <div className="flex justify-between">
+                            <span>{item.quantity}x {item.name}</span>
+                          </div>
+                          {itemNotes && (
+                            <div className="text-xs text-gray-500 mt-1 leading-snug">
+                              Параметры: {itemNotes}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="text-xs text-orange-600 mt-2 flex items-start gap-1">
                     <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />

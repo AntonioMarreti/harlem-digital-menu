@@ -215,7 +215,20 @@ export default function GuestPageClient({
 
   const confirmHookahBuild = () => {
     if (selectedHookahItem) {
-      const notes = `Strength: ${hookahStrength}, Taste: ${hookahTaste}${hookahNotes ? ` - ${hookahNotes}` : ''}`;
+      const strengthLabels: Record<string, string> = {
+        light: 'Лёгкий',
+        medium: 'Средний',
+        strong: 'Крепкий'
+      };
+      const tasteLabels: Record<string, string> = {
+        sweet: 'сладкий',
+        sour: 'кислый',
+        fresh: 'свежий',
+        spicy: 'пряный',
+        dessert: 'десертный',
+        'trust master': 'на выбор мастера'
+      };
+      const notes = `Крепость: ${strengthLabels[hookahStrength] || hookahStrength}; вкус: ${tasteLabels[hookahTaste] || hookahTaste}${hookahNotes ? `; пожелания: ${hookahNotes}` : ''}`;
       addToCart(selectedHookahItem, notes);
       setIsHookahBuilderOpen(false);
       setHookahNotes('');
