@@ -276,7 +276,7 @@ export default function GuestPageClient({
 
         if (isStaleSessionError) {
           await refreshTableSession();
-          setOrderSubmitError('Счёт был закрыт. Мы обновили сессию стола — попробуйте отправить заказ ещё раз.');
+          setOrderSubmitError('Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз.');
           return;
         }
 
