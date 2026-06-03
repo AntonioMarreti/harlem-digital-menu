@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { tableSessions, orders } from '@/db/schema';
+import { tableSessions, orders, tables } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest, { params }: { params: { tableSessionId: string } }) {
@@ -19,13 +19,25 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
       return NextResponse.json({ error: 'Session is closed', isClosed: true }, { status: 404 });
     }
 
-    const sessionOrders = await db.select().from(orders).where(eq(orders.tableSessionId, session.id));
+    // Fetch the orders using a reliable read approach with joins
+    const allOrders = await db.select({
+      order: orders,
+      tableSession: tableSessions,
+      table: tables,
+    })
+    .from(orders)
+    .leftJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
+    .leftJoin(tables, eq(tableSessions.tableId, tables.id));
+
+    // Filter by the specific tableSessionId in memory
+    const sessionOrders = allOrders.filter(row => row.tableSession?.id === tableSessionId);
 
     let totalAmount = 0;
     let ordersCount = 0;
     let activeOrdersCount = 0;
 
-    for (const order of sessionOrders) {
+    for (const row of sessionOrders) {
+      const order = row.order;
       if (order.status !== 'cancelled') {
         totalAmount += order.totalAmount;
         ordersCount += 1;
