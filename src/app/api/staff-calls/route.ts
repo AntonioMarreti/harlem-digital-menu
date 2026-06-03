@@ -6,12 +6,7 @@ import { eq, and } from 'drizzle-orm';
 
 export async function GET() {
   try {
-
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ call: { id: "mock-call", status: "new" } }, { status: 201 });
-  }
-  const db = getDb();
-
+    const db = getDb();
 
     // Fetch active staff calls (status = 'new')
     const activeCalls = await db.select({
@@ -63,6 +58,20 @@ export async function POST(request: NextRequest) {
     const session = await db.select().from(tableSessions).where(eq(tableSessions.id, tableSessionId)).limit(1).then(res => res[0]);
     if (!session || session.status !== 'active') {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
+    }
+
+    if (reason === 'bill') {
+      const existingBillCall = await db.select().from(staffCalls).where(
+        and(
+          eq(staffCalls.tableSessionId, tableSessionId),
+          eq(staffCalls.reason, 'bill'),
+          eq(staffCalls.status, 'new')
+        )
+      ).limit(1).then(res => res[0]);
+
+      if (existingBillCall) {
+        return NextResponse.json({ call: existingBillCall }, { status: 200 });
+      }
     }
 
     // Insert staff call

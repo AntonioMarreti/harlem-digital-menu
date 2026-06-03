@@ -13,12 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ order: { id: "mock-order-1", status: "new" } }, { status: 201 });
-    }
     const db = getDb();
-
 
     // Verify session is active
     const session = await db.select().from(tableSessions).where(eq(tableSessions.id, tableSessionId)).limit(1).then(res => res[0]);
