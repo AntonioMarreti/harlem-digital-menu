@@ -210,7 +210,7 @@ export default function GuestPageClient({
         source: item.item.source,
         quantity: item.quantity,
         price: item.item.price,
-        options: item.notes ? JSON.stringify({ notes: item.notes }) : undefined
+        options: item.notes ? { notes: item.notes } : undefined
       }))
     };
 
