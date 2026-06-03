@@ -42,6 +42,17 @@ type StaffCall = {
   tableQrSlug: string;
 };
 
+type TableSessionInfo = {
+  id: string;
+  tableId: string;
+  tableName: string;
+  tableQrSlug: string;
+  createdAt: string;
+  ordersCount: number;
+  activeOrdersCount: number;
+  totalAmount: number;
+};
+
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
@@ -155,6 +166,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
 export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [calls, setCalls] = useState<StaffCall[]>([]);
+  const [tableSessions, setTableSessions] = useState<TableSessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -163,20 +175,23 @@ export default function StaffDashboard() {
     try {
       setError(null);
 
-      const [ordersRes, callsRes] = await Promise.all([
+      const [ordersRes, callsRes, tableSessionsRes] = await Promise.all([
         fetch('/api/staff/orders'),
-        fetch('/api/staff-calls')
+        fetch('/api/staff-calls'),
+        fetch('/api/staff/table-sessions')
       ]);
 
-      if (!ordersRes.ok || !callsRes.ok) {
+      if (!ordersRes.ok || !callsRes.ok || !tableSessionsRes.ok) {
         throw new Error('Ошибка при загрузке данных');
       }
 
       const ordersData = await ordersRes.json();
       const callsData = await callsRes.json();
+      const tableSessionsData = await tableSessionsRes.json();
 
       setOrders(ordersData.orders || []);
       setCalls(callsData.calls || []);
+      setTableSessions(tableSessionsData.tableSessions || []);
     } catch (err) {
       console.error(err);
       setError('Не удалось загрузить данные. Проверьте подключение к базе данных.');
@@ -306,6 +321,7 @@ export default function StaffDashboard() {
                   <span className="ml-2 w-2 h-2 rounded-full bg-red-500 inline-block"></span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="tables">Счета ({tableSessions.length})</TabsTrigger>
             </TabsList>
           </div>
 
@@ -382,6 +398,58 @@ export default function StaffDashboard() {
                   </Card>
                ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="tables" className="space-y-4">
+             {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
+                  <span className="text-gray-500 font-medium my-auto">Загрузка столов...</span>
+                </div>
+             ) : tableSessions.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет занятых столов</div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tableSessions.map((session) => (
+                    <Card key={session.id} className="border-t-4 border-t-purple-500">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle>Стол {session.tableQrSlug || session.tableName}</CardTitle>
+                          <Badge variant={session.activeOrdersCount > 0 ? "default" : "outline"}>
+                            {session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+                          <div className="flex items-center">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="font-semibold text-gray-800">{session.totalAmount} ₽</div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="py-2 border-y my-2 space-y-1">
+                        <div className="text-sm text-gray-700 flex justify-between">
+                          <span>Всего заказов:</span>
+                          <span className="font-medium">{session.ordersCount}</span>
+                        </div>
+                        <div className="text-sm text-gray-700 flex justify-between">
+                          <span>Активных заказов:</span>
+                          <span className="font-medium">{session.activeOrdersCount}</span>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="pt-2">
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => handleCloseTableSession(session.tableId)}
+                        >
+                          Освободить стол / Закрыть счёт
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+             )}
           </TabsContent>
         </Tabs>
       </main>
