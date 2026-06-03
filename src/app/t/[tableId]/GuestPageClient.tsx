@@ -31,6 +31,7 @@ export default function GuestPageClient({
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
   const tableSessionIdRef = useRef<string | null>(null);
+  const orderSubmittingRef = useRef(false);
   const [cart, setCart] = useState<{item: MenuItem, quantity: number, notes?: string}[]>([]);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -223,7 +224,7 @@ export default function GuestPageClient({
   };
 
   const submitOrder = async () => {
-    if (orderSubmitting) {
+    if (orderSubmittingRef.current) {
       return;
     }
 
@@ -232,6 +233,7 @@ export default function GuestPageClient({
       return;
     }
 
+    orderSubmittingRef.current = true;
     setOrderSubmitting(true);
     setOrderSubmitError(null);
 
@@ -291,6 +293,7 @@ export default function GuestPageClient({
       console.error(err);
       setOrderSubmitError('Ошибка при отправке заказа. Пожалуйста, попробуйте еще раз.');
     } finally {
+      orderSubmittingRef.current = false;
       setOrderSubmitting(false);
     }
   };
