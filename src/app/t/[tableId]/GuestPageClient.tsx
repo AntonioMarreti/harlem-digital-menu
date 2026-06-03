@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle } from 'lucide-react';
 
+type OrderStatus = 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled';
+
 export default function GuestPageClient({
   table,
   categories,
@@ -34,7 +36,9 @@ export default function GuestPageClient({
       try {
         setSessionLoading(true);
         const tableSessionKey = table.qrSlug || table.id;
-        const res = await fetch(`/api/tables/${tableSessionKey}/session`);
+        const res = await fetch(`/api/tables/${tableSessionKey}/session?ts=${Date.now()}`, {
+          cache: 'no-store',
+        });
         if (!res.ok) {
           throw new Error('Failed to fetch session');
         }
@@ -58,7 +62,7 @@ export default function GuestPageClient({
     id: string;
     items: { item: MenuItem; quantity: number; notes?: string }[];
     total: number;
-    status: 'new' | 'accepted' | 'preparing' | 'delivered';
+    status: OrderStatus;
   };
   const [activeOrder, setActiveOrder] = useState<SubmittedOrder | null>(null);
   const [staffCallStatus, setStaffCallStatus] = useState<string | null>(null);
@@ -66,13 +70,14 @@ export default function GuestPageClient({
   // Bill and Order state
   const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
 
-  // Use a ref to track active polling and force fetch
-  const [lastFetchAt, setLastFetchAt] = useState<number>(0);
-
   const fetchSessionState = useCallback(async () => {
     if (!tableSessionId) return;
     try {
-      const billRes = await fetch(`/api/table-sessions/${tableSessionId}/bill`);
+      const cacheBuster = Date.now();
+
+      const billRes = await fetch(`/api/table-sessions/${tableSessionId}/bill?ts=${cacheBuster}`, {
+        cache: 'no-store',
+      });
       if (billRes.ok) {
         const billData = await billRes.json();
         if (billData.ordersCount === 0 && billData.totalAmount === 0) {
@@ -84,12 +89,19 @@ export default function GuestPageClient({
         setBillData(null);
       }
 
-      const ordersRes = await fetch(`/api/table-sessions/${tableSessionId}/orders`);
+      const ordersRes = await fetch(`/api/table-sessions/${tableSessionId}/orders?ts=${cacheBuster}`, {
+        cache: 'no-store',
+      });
       if (ordersRes.ok) {
         const data = await ordersRes.json();
 
-        // Find latest active order (not closed, not cancelled)
-        const activeOrders = data.orders.filter((o: Record<string, unknown>) => o.status !== 'closed' && o.status !== 'cancelled');
+        const activeOrders = (data.orders ?? [])
+          .filter((o: Record<string, unknown>) => o.status !== 'closed' && o.status !== 'cancelled')
+          .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+            const aCreatedAt = typeof a.createdAt === 'string' ? Date.parse(a.createdAt) : 0;
+            const bCreatedAt = typeof b.createdAt === 'string' ? Date.parse(b.createdAt) : 0;
+            return bCreatedAt - aCreatedAt;
+          });
 
         if (activeOrders.length > 0) {
           const latestOrder = activeOrders[0];
@@ -125,7 +137,7 @@ export default function GuestPageClient({
             id: latestOrder.id,
             items: mappedItems,
             total: latestOrder.totalAmount,
-            status: latestOrder.status as SubmittedOrder['status']
+            status: latestOrder.status as OrderStatus
           });
         } else {
           setActiveOrder(null);
@@ -142,7 +154,7 @@ export default function GuestPageClient({
     fetchSessionState();
     const interval = setInterval(fetchSessionState, 10000);
     return () => clearInterval(interval);
-  }, [tableSessionId, lastFetchAt, fetchSessionState]);
+  }, [tableSessionId, fetchSessionState]);
 
   // Hookah Builder State
   const [hookahStrength, setHookahStrength] = useState('medium');
@@ -228,9 +240,7 @@ export default function GuestPageClient({
       }
 
       await res.json();
-
-      // Immediately fetch fresh backend state
-      setLastFetchAt(Date.now());
+      await fetchSessionState();
       setIsCartOpen(false);
       setCart([]);
     } catch (err) {

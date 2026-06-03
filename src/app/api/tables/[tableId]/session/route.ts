@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest, { params }: { params: { tableId: string } }) {
   try {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
         eq(tableSessions.tableId, table.id),
         eq(tableSessions.status, 'active')
       )
-    ).limit(1).then(res => res[0]);
+    ).orderBy(desc(tableSessions.createdAt)).limit(1).then(res => res[0]);
 
     // Create a new active session if none exists
     if (!session) {
@@ -42,7 +42,10 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
       session = newSession;
     }
 
-    return NextResponse.json({ session, table }, { status: 200 });
+    return NextResponse.json({ session, table }, {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
+    });
 
   } catch (error: unknown) {
     console.error('Error fetching/creating table session:', error);
@@ -81,7 +84,10 @@ export async function POST(request: NextRequest, { params }: { params: { tableId
       status: 'active'
     }).returning();
 
-    return NextResponse.json({ session: newSession, table }, { status: 201 });
+    return NextResponse.json({ session: newSession, table }, {
+      status: 201,
+      headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
+    });
 
   } catch (error: unknown) {
     console.error('Error creating table session:', error);
