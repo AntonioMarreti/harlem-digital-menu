@@ -372,7 +372,7 @@ export default function GuestPageClient({
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border/50 px-5 py-4 flex justify-between items-center">
+      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border/50 px-5 pt-5 pb-4 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold font-serif tracking-wide text-primary">Harlem</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -447,13 +447,13 @@ export default function GuestPageClient({
 
         {/* Menu Tabs */}
         <Tabs defaultValue="cat_hookah" className="w-full flex-col">
-          <div className="px-5 sticky top-[73px] z-10 bg-background/95 backdrop-blur-md pt-2 pb-2">
-            <TabsList className="w-full flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20">
+          <div className="px-5 sticky top-[77px] z-10 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/20">
+            <TabsList className="w-full min-h-11 flex-nowrap justify-start overflow-x-auto h-auto py-1.5 px-1.5 bg-secondary/50 rounded-full gap-1.5 no-scrollbar border border-border/20 scroll-px-5">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat.id}
                   value={cat.id}
-                  className="rounded-full px-4 py-1.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all flex-shrink-0"
+                  className="rounded-full border border-transparent px-4 py-2 text-sm transition-all flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-sm"
                 >
                   {cat.name}
                 </TabsTrigger>
@@ -470,55 +470,88 @@ export default function GuestPageClient({
                   </div>
                 )}
 
-              {menuItems
+                {menuItems
                   .filter((item) => item.categoryId === cat.id)
-                  .map((item) => (
-                    <Card key={item.id} className="w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors">
-                      <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
-                          {item.sourceLabel && (
-                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-1">
-                              {item.sourceLabel}
-                            </Badge>
-                          )}
-                          {item.tags && item.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {item.tags.map(tag => (
-                                <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
-                                  {tag}
-                                </Badge>
-                              ))}
+                  .map((item) => {
+                    const cartQuantity = cart
+                      .filter((cartItem) => cartItem.item.id === item.id)
+                      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+                    const plainCartQuantity = cart.find((cartItem) => cartItem.item.id === item.id && !cartItem.notes)?.quantity ?? 0;
+                    const isInCart = cartQuantity > 0;
+
+                    return (
+                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : ''}`}>
+                        <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
+                            {item.sourceLabel && (
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-1">
+                                {item.sourceLabel}
+                              </Badge>
+                            )}
+                            {item.tags && item.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {item.tags.map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            {isInCart && (
+                              <Badge className="mt-2 bg-primary/10 text-primary/90 border-none rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-primary/15">
+                                В корзине: {cartQuantity}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3 pt-0 text-sm text-muted-foreground leading-relaxed">
+                          {item.description}
+                        </CardContent>
+                        <CardFooter className="px-4 pb-4 pt-2 border-t-0 bg-transparent flex justify-end">
+                          {cat.id === 'cat_hookah' ? (
+                            <Button
+                              size="sm"
+                              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5"
+                              onClick={() => handleBuildHookah(item)}
+                            >
+                              {isInCart ? 'Настроить ещё' : 'Настроить кальян'}
+                            </Button>
+                          ) : plainCartQuantity > 0 ? (
+                            <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full text-primary hover:bg-background"
+                                onClick={() => removeFromCart(item)}
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </Button>
+                              <span className="min-w-6 text-center text-sm font-semibold text-primary">{plainCartQuantity}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full text-primary hover:bg-background"
+                                onClick={() => addToCart(item)}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-5"
+                              onClick={() => addToCart(item)}
+                            >
+                              Добавить
+                            </Button>
                           )}
-                        </div>
-                        <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-2 text-sm text-muted-foreground leading-relaxed">
-                        {item.description}
-                      </CardContent>
-                      <CardFooter className="p-4 pt-0 flex justify-end">
-                        {cat.id === 'cat_hookah' ? (
-                          <Button
-                            size="sm"
-                            className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5"
-                            onClick={() => handleBuildHookah(item)}
-                          >
-                            Настроить кальян
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-5"
-                            onClick={() => addToCart(item)}
-                          >
-                            Добавить
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  ))}
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
               </TabsContent>
             ))}
           </div>
