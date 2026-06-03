@@ -325,7 +325,7 @@ export default function StaffDashboard() {
             <TabsList className="flex w-max min-w-full sm:w-full space-x-2">
               <TabsTrigger value="all">Все ({orders.length})</TabsTrigger>
               <TabsTrigger value="new">Новые ({newOrders.length})</TabsTrigger>
-              <TabsTrigger value="harlem">Кальяны ({harlemOrders.length})</TabsTrigger>
+              <TabsTrigger value="harlem">Harlem ({harlemOrders.length})</TabsTrigger>
               <TabsTrigger value="craft_beery">Craft Beery ({craftBeeryOrders.length})</TabsTrigger>
               <TabsTrigger value="calls" className="relative">
                 Вызовы
