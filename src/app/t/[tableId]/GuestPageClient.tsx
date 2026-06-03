@@ -74,7 +74,17 @@ export default function GuestPageClient({
         const res = await fetch(`/api/tables/${tableSessionKey}/bill`);
         if (res.ok) {
           const data = await res.json();
-          setBillData({ totalAmount: data.totalAmount, ordersCount: data.ordersCount });
+          // Hide bill if it belongs to a different session, or if it is empty
+          if (data.tableSessionId !== tableSessionId) {
+            setBillData(null);
+          } else if (data.ordersCount === 0 && data.totalAmount === 0) {
+            setBillData(null);
+          } else {
+            setBillData({ totalAmount: data.totalAmount, ordersCount: data.ordersCount });
+          }
+        } else {
+          // If 404 or other error (e.g. no active session), clear the bill
+          setBillData(null);
         }
       } catch (err) {
         console.error('Failed to fetch bill', err);
