@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle } from 'lucide-react';
@@ -593,30 +592,38 @@ export default function GuestPageClient({
           </DrawerHeader>
           <ScrollArea className="px-4 py-2 overflow-y-auto">
             <div className="space-y-6 pb-6">
-              <div className="space-y-3">
+              <div className="space-y-3 rounded-2xl border border-border/30 bg-background/40 p-3">
                 <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Крепость</Label>
-                <RadioGroup value={hookahStrength} onValueChange={setHookahStrength} className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Крепость кальяна">
                   {[
                     { value: 'light', label: 'Лёгкий' },
                     { value: 'medium', label: 'Средний' },
                     { value: 'strong', label: 'Крепкий' }
-                  ].map((s) => (
-                    <div key={s.value}>
-                      <RadioGroupItem value={s.value} id={`strength-${s.value}`} className="peer sr-only" />
-                      <Label
-                        htmlFor={`strength-${s.value}`}
-                        className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background p-3 hover:bg-accent/50 hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                  ].map((s) => {
+                    const isSelected = hookahStrength === s.value;
+
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        className={`relative flex min-h-12 w-full items-center justify-center rounded-xl border p-3 text-center transition-all ${isSelected ? 'border-primary bg-primary/15 text-primary shadow-sm shadow-primary/10' : 'border-border/50 bg-background text-foreground/80 hover:border-primary/40 hover:bg-accent/50 hover:text-foreground'}`}
+                        onClick={() => setHookahStrength(s.value)}
                       >
                         <span className="text-sm font-medium">{s.label}</span>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                        {isSelected && (
+                          <Check className="absolute right-2 top-2 h-3.5 w-3.5 text-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 rounded-2xl border border-border/30 bg-background/40 p-3">
                 <Label className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Вкусовой профиль</Label>
-                <RadioGroup value={hookahTaste} onValueChange={setHookahTaste} className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Вкусовой профиль кальяна">
                   {[
                     { value: 'sweet', label: 'сладкий' },
                     { value: 'sour', label: 'кислый' },
@@ -624,21 +631,29 @@ export default function GuestPageClient({
                     { value: 'spicy', label: 'пряный' },
                     { value: 'dessert', label: 'десертный' },
                     { value: 'trust master', label: 'на выбор мастера' }
-                  ].map((t) => (
-                    <div key={t.value}>
-                      <RadioGroupItem value={t.value} id={`taste-${t.value}`} className="peer sr-only" />
-                      <Label
-                        htmlFor={`taste-${t.value}`}
-                        className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background p-3 hover:bg-accent/50 hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary cursor-pointer transition-all text-center"
+                  ].map((t) => {
+                    const isSelected = hookahTaste === t.value;
+
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        className={`relative flex min-h-12 w-full items-center justify-center rounded-xl border p-3 text-center transition-all ${isSelected ? 'border-primary bg-primary/15 text-primary shadow-sm shadow-primary/10' : 'border-border/50 bg-background text-foreground/80 hover:border-primary/40 hover:bg-accent/50 hover:text-foreground'}`}
+                        onClick={() => setHookahTaste(t.value)}
                       >
                         <span className="text-sm font-medium text-center leading-tight">{t.label}</span>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                        {isSelected && (
+                          <Check className="absolute right-2 top-2 h-3.5 w-3.5 text-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 rounded-2xl border border-border/30 bg-background/40 p-3">
                 <Label htmlFor="notes" className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Пожелания</Label>
                 <Textarea
                   id="notes"
