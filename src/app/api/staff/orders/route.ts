@@ -1,15 +1,17 @@
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders, tableSessions, tables, orderItems } from '@/db/schema';
-import { eq, inArray, notInArray, and, desc } from 'drizzle-orm';
+import { eq, inArray, desc } from 'drizzle-orm';
 
 export async function GET() {
   try {
     const db = getDb();
 
-    // Fetch active orders (not closed, not cancelled)
-    const activeOrders = await db.select({
+    // Fetch the latest active orders, using similar read approach to debug/orders
+    const allOrders = await db.select({
       order: orders,
       tableSession: tableSessions,
       table: tables,
@@ -17,18 +19,18 @@ export async function GET() {
     .from(orders)
     .leftJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
     .leftJoin(tables, eq(tableSessions.tableId, tables.id))
-    .where(
-      and(
-        notInArray(orders.status, ['closed', 'cancelled']),
-        eq(tableSessions.status, 'active')
-      )
-    )
     .orderBy(desc(orders.createdAt));
+
+    const activeOrders = allOrders.filter(row =>
+      row.order.status !== 'closed' &&
+      row.order.status !== 'cancelled' &&
+      row.tableSession?.status === 'active'
+    );
 
     if (activeOrders.length === 0) {
       return NextResponse.json({ orders: [] }, {
         status: 200,
-        headers: { 'Cache-Control': 'no-store, max-age=0' }
+        headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
       });
     }
 
@@ -62,14 +64,14 @@ export async function GET() {
 
     return NextResponse.json({ orders: formattedOrders }, {
       status: 200,
-      headers: { 'Cache-Control': 'no-store, max-age=0' }
+      headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
     });
 
   } catch (error: unknown) {
     console.error('Error fetching staff orders:', error);
     return NextResponse.json({ error: 'Internal server error' }, {
       status: 500,
-      headers: { 'Cache-Control': 'no-store, max-age=0' }
+      headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
     });
   }
 }
