@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders, tableSessions, tables, orderItems } from '@/db/schema';
-import { eq, inArray, notInArray, and } from 'drizzle-orm';
+import { eq, inArray, notInArray, and, desc } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -15,17 +15,21 @@ export async function GET() {
       table: tables,
     })
     .from(orders)
-    .innerJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
-    .innerJoin(tables, eq(tableSessions.tableId, tables.id))
+    .leftJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
+    .leftJoin(tables, eq(tableSessions.tableId, tables.id))
     .where(
       and(
         notInArray(orders.status, ['closed', 'cancelled']),
         eq(tableSessions.status, 'active')
       )
-    );
+    )
+    .orderBy(desc(orders.createdAt));
 
     if (activeOrders.length === 0) {
-      return NextResponse.json({ orders: [] }, { status: 200 });
+      return NextResponse.json({ orders: [] }, {
+        status: 200,
+        headers: { 'Cache-Control': 'no-store, max-age=0' }
+      });
     }
 
     const orderIds = activeOrders.map(o => o.order.id);
@@ -40,10 +44,10 @@ export async function GET() {
         totalAmount: row.order.totalAmount,
         createdAt: row.order.createdAt,
         updatedAt: row.order.updatedAt,
-        tableSessionId: row.tableSession.id,
-        tableId: row.table.id,
-        tableName: row.table.name,
-        tableQrSlug: row.table.qrSlug,
+        tableSessionId: row.tableSession?.id,
+        tableId: row.table?.id,
+        tableName: row.table?.name,
+        tableQrSlug: row.table?.qrSlug,
         items: items.filter(i => i.orderId === row.order.id).map(i => ({
           id: i.id,
           menuItemId: i.menuItemId,
@@ -56,10 +60,16 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ orders: formattedOrders }, { status: 200 });
+    return NextResponse.json({ orders: formattedOrders }, {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store, max-age=0' }
+    });
 
   } catch (error: unknown) {
     console.error('Error fetching staff orders:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store, max-age=0' }
+    });
   }
 }
