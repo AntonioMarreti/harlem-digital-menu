@@ -63,6 +63,28 @@ export default function GuestPageClient({
   const [activeOrder, setActiveOrder] = useState<SubmittedOrder | null>(null);
   const [staffCallStatus, setStaffCallStatus] = useState<string | null>(null);
 
+  // Bill state
+  const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
+
+  useEffect(() => {
+    async function fetchBill() {
+      if (!tableSessionId) return;
+      try {
+        const tableSessionKey = table.qrSlug || table.id;
+        const res = await fetch(`/api/tables/${tableSessionKey}/bill`);
+        if (res.ok) {
+          const data = await res.json();
+          setBillData({ totalAmount: data.totalAmount, ordersCount: data.ordersCount });
+        }
+      } catch (err) {
+        console.error('Failed to fetch bill', err);
+      }
+    }
+    fetchBill();
+    const interval = setInterval(fetchBill, 10000);
+    return () => clearInterval(interval);
+  }, [tableSessionId, table.id, table.qrSlug]);
+
   // Hookah Builder State
   const [hookahStrength, setHookahStrength] = useState('medium');
   const [hookahTaste, setHookahTaste] = useState('sweet');
@@ -272,6 +294,21 @@ export default function GuestPageClient({
           <h2 className="text-2xl font-serif mb-2">Добро пожаловать в «Харлем»</h2>
           <p className="text-muted-foreground text-sm">QR-меню · заказ со столика</p>
         </div>
+
+        {/* Bill block */}
+        {billData && billData.totalAmount > 0 && (
+          <div className="mx-5 mb-4 bg-primary/10 border border-primary/20 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium text-primary">Ваш счёт (заказов: {billData.ordersCount})</p>
+                <p className="text-xl font-bold text-foreground">{billData.totalAmount} ₽</p>
+              </div>
+              <Button size="sm" variant="outline" className="rounded-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => callStaff('bill')}>
+                Попросить счёт
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Статус заказа Ribbon */}
         {activeOrder && (
@@ -698,7 +735,7 @@ export default function GuestPageClient({
             <Button
               variant="outline"
               className="h-24 flex flex-col gap-3 rounded-2xl border-border/50 hover:bg-primary/10 hover:border-primary/50 hover:text-primary transition-all"
-              onClick={() => callStaff('Ask for bill')}
+              onClick={() => callStaff('bill')}
             >
               <span className="text-xl font-serif">₽</span>
               <span>Попросить счёт</span>

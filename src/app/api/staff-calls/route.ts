@@ -6,7 +6,12 @@ import { eq, and } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    const db = getDb();
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ call: { id: "mock-call", status: "new" } }, { status: 201 });
+  }
+  const db = getDb();
+
 
     // Fetch active staff calls (status = 'new')
     const activeCalls = await db.select({

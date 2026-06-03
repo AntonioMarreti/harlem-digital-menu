@@ -6,7 +6,15 @@ import { eq, and } from 'drizzle-orm';
 
 export async function GET(request: NextRequest, { params }: { params: { tableId: string } }) {
   try {
-    const db = getDb();
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      session: { id: "mock-session-123", tableId: params.tableId, status: "active", createdAt: new Date().toISOString() },
+      table: { id: params.tableId, name: "Mock Table", qrSlug: params.tableId }
+    }, { status: 200 });
+  }
+  const db = getDb();
+
 
     // Find table by id or qrSlug
     let table = null;

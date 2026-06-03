@@ -6,18 +6,992 @@
   - Local:        http://localhost:3000
 
  ✓ Starting...
- ✓ Ready in 1722ms
- ○ Compiling /staff ...
- ✓ Compiled /staff in 7.3s (757 modules)
- GET /staff 200 in 8133ms
- ✓ Compiled in 906ms (367 modules)
- GET /staff 200 in 53ms
- GET /staff 200 in 36ms
+ ✓ Ready in 1732ms
  ○ Compiling /t/[tableId] ...
- ✓ Compiled /t/[tableId] in 3.1s (1145 modules)
- GET /t/demo 200 in 3938ms
- GET /t/demo 200 in 92ms
- GET /staff 200 in 93ms
- ✓ Compiled in 953ms (1159 modules)
- GET /staff 200 in 219ms
- GET /staff 200 in 50ms
+ ✓ Compiled /t/[tableId] in 10.6s (1114 modules)
+ ✓ Compiled in 709ms (542 modules)
+ GET /t/demo 200 in 12233ms
+ ○ Compiling /api/tables/[tableId]/session ...
+ ✓ Compiled /api/tables/[tableId]/session in 5.6s (700 modules)
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 6358ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 29ms
+ GET /t/demo 200 in 278ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 25ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 14ms
+ GET /t/demo 200 in 67ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 24ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 19ms
+ GET /t/demo 200 in 40ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 31ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 13ms
+ GET /t/demo 200 in 47ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 29ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 11ms
+ GET /t/demo 200 in 52ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 23ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 19ms
+ GET /t/demo 200 in 45ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 23ms
+Error fetching/creating table session: Error: DATABASE_URL is required for database operations.
+    at getDb (webpack-internal:///(rsc)/./src/db/index.ts:17:15)
+    at GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:18:62)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /app/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/app/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/app/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/app/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:46)
+    at ResponseCache.get (/app/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:53)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/tables/demo/session 500 in 12ms
+   Reload env: .env.local
+ ✓ Compiled in 633ms (1228 modules)
+ ✓ Compiled /api/tables/[tableId]/bill in 212ms (700 modules)
+Error fetching bill: DrizzleQueryError: Failed query: select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2
+params: demo,1
+    at NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:53:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+    ... 18 lines matching cause stack trace ...
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  query: 'select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2',
+  params: [ 'demo', 1 ],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+      at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+      at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+      at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/bill/route.ts:26:21)
+      at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+      at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+      at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+      at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+      at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+      at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+      at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+      at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+      at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+      at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+      at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+      at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+      at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+      at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+      at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+      at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+      at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:14902:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:4)
+        at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+        at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+        at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+        at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/bill/route.ts:26:21)
+        at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+        at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+        at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+        at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+        at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+        at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+        at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+        at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+        at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+        at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+        at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+        at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+        at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+        at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+        at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+        at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+        at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+        at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+      [cause]: [AggregateError]
+    }
+  }
+}
+ GET /api/tables/demo/bill 500 in 839ms
+ ✓ Compiled in 624ms (1105 modules)
+ GET /t/demo 200 in 277ms
+ ✓ Compiled /api/tables/[tableId]/session in 170ms (700 modules)
+Error fetching/creating table session: DrizzleQueryError: Failed query: select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2
+params: demo,1
+    at NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:53:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+    ... 18 lines matching cause stack trace ...
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  query: 'select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2',
+  params: [ 'demo', 1 ],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+      at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+      at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+      at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:27:21)
+      at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+      at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+      at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+      at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+      at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+      at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+      at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+      at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+      at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+      at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+      at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+      at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+      at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+      at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+      at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+      at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+      at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:14902:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:4)
+        at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+        at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+        at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+        at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:27:21)
+        at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+        at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+        at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+        at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+        at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+        at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+        at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+        at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+        at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+        at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+        at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+        at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+        at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+        at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+        at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+        at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+        at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+        at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+      [cause]: [AggregateError]
+    }
+  }
+}
+ GET /api/tables/demo/session 500 in 295ms
+Error fetching/creating table session: DrizzleQueryError: Failed query: select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2
+params: demo,1
+    at NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:53:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+    ... 18 lines matching cause stack trace ...
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  query: 'select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2',
+  params: [ 'demo', 1 ],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+      at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+      at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+      at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:27:21)
+      at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+      at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+      at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+      at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+      at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+      at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+      at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+      at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+      at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+      at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+      at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+      at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+      at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+      at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+      at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+      at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+      at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:14902:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:4)
+        at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+        at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+        at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+        at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:27:21)
+        at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+        at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+        at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+        at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+        at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+        at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+        at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+        at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+        at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+        at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+        at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+        at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+        at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+        at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+        at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+        at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+        at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+        at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+      [cause]: [AggregateError]
+    }
+  }
+}
+ GET /api/tables/demo/session 500 in 15ms
+ ✓ Compiled in 729ms (1242 modules)
+ ✓ Compiled in 217ms (542 modules)
+ ✓ Compiled in 299ms (542 modules)
+ GET /t/demo 200 in 262ms
+Error fetching/creating table session: DrizzleQueryError: Failed query: select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2
+params: demo,1
+    at NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:53:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+    ... 18 lines matching cause stack trace ...
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  query: 'select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2',
+  params: [ 'demo', 1 ],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+      at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+      at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+      at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:44:21)
+      at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+      at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+      at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+      at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+      at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+      at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+      at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+      at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+      at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+      at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+      at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+      at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+      at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+      at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+      at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+      at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+      at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:14902:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:4)
+        at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+        at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+        at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+        at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:44:21)
+        at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+        at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+        at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+        at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+        at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+        at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+        at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+        at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+        at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+        at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+        at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+        at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+        at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+        at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+        at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+        at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+        at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+        at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+      [cause]: [AggregateError]
+    }
+  }
+}
+ GET /api/tables/demo/session 500 in 115ms
+Error fetching/creating table session: DrizzleQueryError: Failed query: select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2
+params: demo,1
+    at NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:53:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+    ... 18 lines matching cause stack trace ...
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  query: 'select "id", "name", "qr_slug", "created_at" from "tables" where "tables"."qr_slug" = $1 limit $2',
+  params: [ 'demo', 1 ],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+      at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+      at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+      at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:44:21)
+      at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+      at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+      at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+      at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+      at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+      at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+      at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+      at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+      at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+      at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+      at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+      at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+      at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+      at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+      at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+      at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+      at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:14902:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async dr.execute (webpack-internal:///(rsc)/./node_modules/@neondatabase/serverless/index.mjs:1310:4)
+        at async eval (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:58:14)
+        at async NeonHttpPreparedQuery.queryWithCache (webpack-internal:///(rsc)/./node_modules/drizzle-orm/pg-core/session.js:51:16)
+        at async NeonHttpPreparedQuery.execute (webpack-internal:///(rsc)/./node_modules/drizzle-orm/neon-http/session.js:57:20)
+        at async GET (webpack-internal:///(rsc)/./src/app/api/tables/[tableId]/session/route.ts:44:21)
+        at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+        at async eT.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+        at async eT.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+        at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+        at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1576:40)
+        at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+        at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+        at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+        at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:922:25)
+        at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+        at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:818:17)
+        at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+        at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+        at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+        at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:179:21)
+        at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:359:24)
+        at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:383:13)
+        at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+      [cause]: [AggregateError]
+    }
+  }
+}
+ GET /api/tables/demo/session 500 in 20ms

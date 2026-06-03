@@ -384,7 +384,7 @@ export default function StaffDashboard() {
                           <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>Стол {call.tableQrSlug || call.tableName}</CardTitle>
                           {call.status === 'new' ? <AlertCircle className="text-red-500 w-5 h-5" /> : <CheckCircle2 className="text-gray-500 w-5 h-5" />}
                         </div>
-                        <div className="text-lg font-semibold mt-2">{(call.reason === 'waiter' ? 'Подойти' : call.reason === 'coals' ? 'Угли' : call.reason === 'bill' ? 'Счет' : call.reason)}</div>
+                        <div className="text-lg font-semibold mt-2">{(call.reason === 'waiter' ? 'Подойти' : call.reason === 'coals' ? 'Угли' : call.reason === 'bill' ? 'Просит счёт' : call.reason)}</div>
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <Clock className="w-3 h-3 mr-1" />
                           {new Date(call.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
