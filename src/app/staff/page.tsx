@@ -42,7 +42,7 @@ type StaffCall = {
   tableQrSlug: string;
 };
 
-function OrderGrid({ orders, onUpdateStatus }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void }) {
+function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
@@ -76,9 +76,14 @@ function OrderGrid({ orders, onUpdateStatus }: { orders: Order[], onUpdateStatus
                   <CardTitle>Стол {order.tableQrSlug || order.tableName}</CardTitle>
                   <div className="text-xs text-gray-400 mt-1">{order.id}</div>
                 </div>
-                <Badge variant={statusColors[order.status] as "default" | "destructive" | "outline" | "secondary"}>
-                  {statusTranslations[order.status]}
-                </Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={statusColors[order.status] as "default" | "destructive" | "outline" | "secondary"}>
+                    {statusTranslations[order.status]}
+                  </Badge>
+                  <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => onCloseTableSession(order.tableId)}>
+                    Освободить стол
+                  </Button>
+                </div>
               </div>
               <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
                 <div className="flex items-center">
@@ -214,6 +219,27 @@ export default function StaffDashboard() {
     }
   };
 
+  const handleCloseTableSession = async (tableId: string) => {
+    if (!confirm('Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.')) return;
+    try {
+      const res = await fetch(`/api/tables/${tableId}/session`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        throw new Error('Не удалось освободить стол');
+      }
+
+      setFeedback('Стол освобожден, сессия закрыта.');
+      setTimeout(() => setFeedback(null), 3000);
+      fetchData(); // Refresh data immediately
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка при освобождении стола');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const handleMarkCallHandled = async (id: string) => {
     try {
       const res = await fetch(`/api/staff-calls/${id}`, {
@@ -293,7 +319,7 @@ export default function StaffDashboard() {
              ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
              ) : (
-                <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} />
+                <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
           <TabsContent value="new" className="space-y-4">
@@ -305,7 +331,7 @@ export default function StaffDashboard() {
              ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.status === 'new')} onUpdateStatus={handleUpdateOrderStatus} />
+                <OrderGrid orders={orders.filter(o => o.status === 'new')} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
           <TabsContent value="harlem" className="space-y-4">
@@ -317,7 +343,7 @@ export default function StaffDashboard() {
              ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'harlem'))} onUpdateStatus={handleUpdateOrderStatus} />
+                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'harlem'))} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
           <TabsContent value="craft_beery" className="space-y-4">
@@ -329,7 +355,7 @@ export default function StaffDashboard() {
              ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'craft_beery'))} onUpdateStatus={handleUpdateOrderStatus} />
+                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'craft_beery'))} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
 
