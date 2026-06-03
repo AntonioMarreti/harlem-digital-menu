@@ -53,6 +53,13 @@ type TableSessionInfo = {
   totalAmount: number;
 };
 
+const callReasonLabels: Record<string, string> = {
+  waiter: 'Подойти',
+  coals: 'Угли',
+  bill: 'Счёт',
+  help: 'Нужна помощь'
+};
+
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
@@ -277,6 +284,11 @@ export default function StaffDashboard() {
     }
   };
 
+  const newOrders = orders.filter(o => o.status === 'new');
+  const harlemOrders = orders.filter(o => o.items.some(i => i.source === 'harlem'));
+  const craftBeeryOrders = orders.filter(o => o.items.some(i => i.source === 'craft_beery'));
+  const activeCalls = calls.filter(c => c.status === 'new');
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {feedback && (
@@ -312,12 +324,12 @@ export default function StaffDashboard() {
           <div className="w-full overflow-x-auto pb-2 mb-4">
             <TabsList className="flex w-max min-w-full sm:w-full space-x-2">
               <TabsTrigger value="all">Все ({orders.length})</TabsTrigger>
-              <TabsTrigger value="new">Новые ({orders.filter(o => o.status === 'new').length})</TabsTrigger>
-              <TabsTrigger value="harlem">Кальяны ({orders.filter(o => o.items.some(i => i.source === 'harlem')).length})</TabsTrigger>
-              <TabsTrigger value="craft_beery">Craft Beery ({orders.filter(o => o.items.some(i => i.source === 'craft_beery')).length})</TabsTrigger>
+              <TabsTrigger value="new">Новые ({newOrders.length})</TabsTrigger>
+              <TabsTrigger value="harlem">Кальяны ({harlemOrders.length})</TabsTrigger>
+              <TabsTrigger value="craft_beery">Craft Beery ({craftBeeryOrders.length})</TabsTrigger>
               <TabsTrigger value="calls" className="relative">
                 Вызовы
-                {calls.filter(c => c.status === 'new').length > 0 && (
+                {activeCalls.length > 0 && (
                   <span className="ml-2 w-2 h-2 rounded-full bg-red-500 inline-block"></span>
                 )}
               </TabsTrigger>
@@ -344,10 +356,10 @@ export default function StaffDashboard() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
-             ) : orders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : newOrders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет новых заказов</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.status === 'new')} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={newOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
           <TabsContent value="harlem" className="space-y-4">
@@ -356,10 +368,10 @@ export default function StaffDashboard() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
-             ) : orders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : harlemOrders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Harlem</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'harlem'))} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={harlemOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
           <TabsContent value="craft_beery" className="space-y-4">
@@ -368,23 +380,26 @@ export default function StaffDashboard() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mr-3"></div>
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
-             ) : orders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+             ) : craftBeeryOrders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Craft Beery</div>
              ) : (
-                <OrderGrid orders={orders.filter(o => o.items.some(i => i.source === 'craft_beery'))} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={craftBeeryOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
              )}
           </TabsContent>
 
           <TabsContent value="calls" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-               {calls.map((call) => (
+            {activeCalls.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 font-medium">Нет активных вызовов</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+               {activeCalls.map((call) => (
                   <Card key={call.id} className={`border-t-4 ${call.status === 'new' ? 'border-t-red-500 bg-red-50' : 'border-t-gray-300 bg-gray-50 opacity-60'}`}>
                      <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
                           <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>Стол {call.tableQrSlug || call.tableName}</CardTitle>
                           {call.status === 'new' ? <AlertCircle className="text-red-500 w-5 h-5" /> : <CheckCircle2 className="text-gray-500 w-5 h-5" />}
                         </div>
-                        <div className="text-lg font-semibold mt-2">{(call.reason === 'waiter' ? 'Подойти' : call.reason === 'coals' ? 'Угли' : call.reason === 'bill' ? 'Просит счёт' : call.reason)}</div>
+                        <div className="text-lg font-semibold mt-2">{callReasonLabels[call.reason] || call.reason}</div>
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <Clock className="w-3 h-3 mr-1" />
                           {new Date(call.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
@@ -397,7 +412,8 @@ export default function StaffDashboard() {
                      </CardFooter>
                   </Card>
                ))}
-            </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="tables" className="space-y-4">
