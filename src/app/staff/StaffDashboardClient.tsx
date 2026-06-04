@@ -60,6 +60,25 @@ const callReasonLabels: Record<string, string> = {
   help: 'Нужна помощь'
 };
 
+function formatTableLabel(tableName?: string | null, tableQrSlug?: string | null) {
+  const name = tableName?.trim();
+  if (name) {
+    return name;
+  }
+
+  const qrSlug = tableQrSlug?.trim();
+  if (!qrSlug) {
+    return 'Стол';
+  }
+
+  const harlemPilotTableMatch = qrSlug.match(/^h0?([1-9]\d*)$/i);
+  if (harlemPilotTableMatch) {
+    return `Стол ${Number(harlemPilotTableMatch[1])}`;
+  }
+
+  return `Стол ${qrSlug}`;
+}
+
 function formatOrderItemOptions(options: unknown): string[] {
   if (!options || typeof options !== 'object' || !('notes' in options)) {
     return [];
@@ -149,7 +168,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle>Стол {order.tableQrSlug || order.tableName}</CardTitle>
+                  <CardTitle>{formatTableLabel(order.tableName, order.tableQrSlug)}</CardTitle>
                   <div className="text-xs text-gray-400 mt-1">{order.id}</div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -490,7 +509,7 @@ export default function StaffDashboard() {
                   <Card key={call.id} className={`border-t-4 ${call.status === 'new' ? 'border-t-red-500 bg-red-50' : 'border-t-gray-300 bg-gray-50 opacity-60'}`}>
                      <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
-                          <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>Стол {call.tableQrSlug || call.tableName}</CardTitle>
+                          <CardTitle className={call.status === 'new' ? 'text-red-700' : 'text-gray-700'}>{formatTableLabel(call.tableName, call.tableQrSlug)}</CardTitle>
                           {call.status === 'new' ? <AlertCircle className="text-red-500 w-5 h-5" /> : <CheckCircle2 className="text-gray-500 w-5 h-5" />}
                         </div>
                         <div className="text-lg font-semibold mt-2">{callReasonLabels[call.reason] || call.reason}</div>
@@ -524,7 +543,7 @@ export default function StaffDashboard() {
                     <Card key={session.id} className="border-t-4 border-t-purple-500">
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
-                          <CardTitle>Стол {session.tableQrSlug || session.tableName}</CardTitle>
+                          <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
                           <Badge variant={session.activeOrdersCount > 0 ? "default" : "outline"}>
                             {session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
                           </Badge>

@@ -25,6 +25,7 @@ export default function GuestPageClient({
   menuItems: MenuItem[];
 }) {
   const [tableSessionId, setTableSessionId] = useState<string | null>(null);
+  const [displayTableName, setDisplayTableName] = useState(table.name || `Стол ${table.number}`);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
@@ -63,6 +64,11 @@ export default function GuestPageClient({
       }
 
       const data = await res.json();
+      const nextTableName = typeof data.table?.name === 'string' ? data.table.name.trim() : '';
+      if (nextTableName) {
+        setDisplayTableName(nextTableName);
+      }
+
       const nextSessionId = data.session.id;
       const previousSessionId = tableSessionIdRef.current;
 
@@ -388,7 +394,7 @@ export default function GuestPageClient({
         <div>
           <h1 className="text-xl font-bold font-serif tracking-wide text-primary">Harlem</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span> Стол {table.number}
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span> {displayTableName}
           </p>
         </div>
         <div className="flex gap-3">
