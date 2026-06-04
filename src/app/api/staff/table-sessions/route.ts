@@ -1,12 +1,16 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, tables, orders } from '@/db/schema';
 import { eq, desc, inArray } from 'drizzle-orm';
+import { requireStaffAccess } from '@/lib/staff-auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const unauthorized = requireStaffAccess(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const db = getDb();
 

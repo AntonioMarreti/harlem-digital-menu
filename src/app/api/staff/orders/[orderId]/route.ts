@@ -3,8 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { requireStaffAccess } from '@/lib/staff-auth';
 
 export async function PATCH(request: NextRequest, { params }: { params: { orderId: string } }) {
+  const unauthorized = requireStaffAccess(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await request.json();
     const { status } = body;
