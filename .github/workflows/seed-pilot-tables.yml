@@ -1,0 +1,35 @@
+name: Seed pilot tables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed-pilot-tables:
+    name: Seed pilot tables
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check DATABASE_URL secret
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "DATABASE_URL GitHub secret is missing."
+            echo "Add it in: Repository Settings -> Secrets and variables -> Actions -> New repository secret."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed pilot tables
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run db:seed:tables
