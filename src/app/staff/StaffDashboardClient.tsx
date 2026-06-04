@@ -145,7 +145,7 @@ function formatOrderItemOptions(options: unknown): string[] {
   ];
 }
 
-function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string, isEmptySession?: boolean) => void }) {
+function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
@@ -358,12 +358,8 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleCloseTableSession = async (tableId: string, isEmptySession = false) => {
-    const confirmationMessage = isEmptySession
-      ? 'На этом столе пока нет заказов, но гость мог открыть QR и выбирать позиции. Освободить пустой стол?'
-      : 'Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.';
-
-    if (!confirm(confirmationMessage)) return;
+  const handleCloseTableSession = async (tableId: string) => {
+    if (!confirm('Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.')) return;
     try {
       const res = await fetch(`/api/tables/${tableId}/session/close`, {
         method: 'POST',
@@ -379,6 +375,32 @@ export default function StaffDashboard() {
     } catch (err) {
       console.error(err);
       setError('Ошибка при освобождении стола');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleReleaseEmptyTableSession = async (sessionId: string) => {
+    if (!confirm('На этом столе пока нет заказов, но гость мог открыть QR и выбирать позиции. Освободить пустой стол?')) return;
+
+    try {
+      const res = await fetch(`/api/staff/table-sessions/${sessionId}/release-empty`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
+          throw new Error('На этом столе уже появился заказ. Обновите список.');
+        }
+        throw new Error('Не удалось освободить пустой стол');
+      }
+
+      setFeedback('Пустой стол освобожден.');
+      setTimeout(() => setFeedback(null), 3000);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Ошибка при освобождении пустого стола');
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -711,7 +733,7 @@ export default function StaffDashboard() {
                               <Button
                                 className="w-full"
                                 variant="outline"
-                                onClick={() => handleCloseTableSession(session.tableId, true)}
+                                onClick={() => handleReleaseEmptyTableSession(session.id)}
                               >
                                 Освободить пустой стол
                               </Button>
