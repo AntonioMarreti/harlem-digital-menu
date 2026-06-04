@@ -53,6 +53,14 @@ type TableSessionInfo = {
   totalAmount: number;
 };
 
+type StaffTable = {
+  id: string;
+  name: string;
+  qrSlug: string;
+  activeSessionId: string | null;
+  isOccupied: boolean;
+};
+
 const callReasonLabels: Record<string, string> = {
   waiter: 'Подойти',
   coals: 'Угли',
@@ -277,6 +285,9 @@ export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [calls, setCalls] = useState<StaffCall[]>([]);
   const [tableSessions, setTableSessions] = useState<TableSessionInfo[]>([]);
+  const [tables, setTables] = useState<StaffTable[]>([]);
+  const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
+  const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -285,23 +296,26 @@ export default function StaffDashboard() {
     try {
       setError(null);
 
-      const [ordersRes, callsRes, tableSessionsRes] = await Promise.all([
+      const [ordersRes, callsRes, tableSessionsRes, tablesRes] = await Promise.all([
         fetch('/api/staff/orders'),
         fetch('/api/staff-calls'),
-        fetch('/api/staff/table-sessions')
+        fetch('/api/staff/table-sessions'),
+        fetch('/api/staff/tables')
       ]);
 
-      if (!ordersRes.ok || !callsRes.ok || !tableSessionsRes.ok) {
+      if (!ordersRes.ok || !callsRes.ok || !tableSessionsRes.ok || !tablesRes.ok) {
         throw new Error('Ошибка при загрузке данных');
       }
 
       const ordersData = await ordersRes.json();
       const callsData = await callsRes.json();
       const tableSessionsData = await tableSessionsRes.json();
+      const tablesData = await tablesRes.json();
 
       setOrders(ordersData.orders || []);
       setCalls(callsData.calls || []);
       setTableSessions(tableSessionsData.tableSessions || []);
+      setTables(tablesData.tables || []);
     } catch (err) {
       console.error(err);
       setError('Не удалось загрузить данные. Проверьте подключение к базе данных.');
@@ -362,6 +376,45 @@ export default function StaffDashboard() {
       console.error(err);
       setError('Ошибка при освобождении стола');
       setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleMoveTableSession = async (sessionId: string) => {
+    const targetTableIdOrSlug = transferTargets[sessionId];
+    if (!targetTableIdOrSlug) {
+      setError('Выберите новый стол.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    try {
+      setMovingSessionId(sessionId);
+
+      const res = await fetch(`/api/staff/table-sessions/${sessionId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetTableIdOrSlug })
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const errorMessage = typeof body?.error === 'string' ? body.error : 'Не удалось перенести стол';
+        throw new Error(errorMessage);
+      }
+
+      const data = await res.json();
+      const nextTableName = typeof data.table?.name === 'string' ? data.table.name : 'новый стол';
+
+      setFeedback(`Сессия перенесена на ${nextTableName}.`);
+      setTimeout(() => setFeedback(null), 3000);
+      setTransferTargets((current) => ({ ...current, [sessionId]: '' }));
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Ошибка при переносе стола');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setMovingSessionId(null);
     }
   };
 
@@ -566,7 +619,38 @@ export default function StaffDashboard() {
                           <span className="font-medium">{session.activeOrdersCount}</span>
                         </div>
                       </CardContent>
-                      <CardFooter className="pt-2">
+                      <CardFooter className="pt-2 flex flex-col gap-2">
+                        <div className="flex w-full gap-2">
+                          <select
+                            className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 text-sm"
+                            value={transferTargets[session.id] || ''}
+                            onChange={(event) => setTransferTargets((current) => ({
+                              ...current,
+                              [session.id]: event.target.value
+                            }))}
+                            disabled={movingSessionId === session.id}
+                          >
+                            <option value="">Новый стол</option>
+                            {tables.map((table) => {
+                              const isCurrentTable = table.id === session.tableId;
+                              const isDisabled = isCurrentTable || (table.isOccupied && table.activeSessionId !== session.id);
+
+                              return (
+                                <option key={table.id} value={table.qrSlug} disabled={isDisabled}>
+                                  {formatTableLabel(table.name, table.qrSlug)}
+                                  {isCurrentTable ? ' — текущий' : table.isOccupied ? ' — занят' : ''}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <Button
+                            variant="outline"
+                            disabled={!transferTargets[session.id] || movingSessionId === session.id}
+                            onClick={() => handleMoveTableSession(session.id)}
+                          >
+                            Перенести стол
+                          </Button>
+                        </div>
                         <Button
                           className="w-full"
                           variant="outline"
