@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, orderItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyTableSessionOwnership } from '@/lib/table-session-ownership';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableSessionId, items, totalAmount, guestSessionId } = body;
+    const { tableSessionId, tableIdOrSlug, items, totalAmount, guestSessionId } = body;
 
     if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0 || totalAmount === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
     if (!session || session.status !== 'active') {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
+
+    const ownershipError = await verifyTableSessionOwnership(db, session, tableIdOrSlug);
+    if (ownershipError) return ownershipError;
 
     // Validate items
     for (const item of items) {

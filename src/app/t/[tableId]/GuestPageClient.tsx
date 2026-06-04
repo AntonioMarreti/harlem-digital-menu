@@ -15,6 +15,12 @@ import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Cl
 
 type OrderStatus = 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled';
 
+type MovedTableSessionNotice = {
+  message: string;
+  targetUrl?: string;
+  targetLabel?: string;
+};
+
 export default function GuestPageClient({
   table,
   categories,
@@ -28,6 +34,7 @@ export default function GuestPageClient({
   const [displayTableName, setDisplayTableName] = useState(table.name || `Стол ${table.number}`);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [movedTableSessionNotice, setMovedTableSessionNotice] = useState<MovedTableSessionNotice | null>(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
   const tableSessionIdRef = useRef<string | null>(null);
@@ -47,6 +54,40 @@ export default function GuestPageClient({
 
   // Bill and Order state
   const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
+  const tableIdOrSlug = table.qrSlug || table.id;
+
+  const getMovedTableSessionNotice = useCallback(async (res: Response): Promise<MovedTableSessionNotice | null> => {
+    if (res.status !== 409) {
+      return null;
+    }
+
+    const body = await res.json().catch(() => null);
+    if (!body || typeof body !== 'object' || !('code' in body) || body.code !== 'TABLE_SESSION_MOVED') {
+      return null;
+    }
+
+    const targetTableName = 'targetTableName' in body && typeof body.targetTableName === 'string'
+      ? body.targetTableName
+      : '';
+    const targetTableQrSlug = 'targetTableQrSlug' in body && typeof body.targetTableQrSlug === 'string'
+      ? body.targetTableQrSlug
+      : '';
+
+    return {
+      message: targetTableName
+        ? `Вас пересадили за ${targetTableName}. Откройте QR нового стола. Корзина на этой странице не отправлена.`
+        : 'Вас пересадили за другой стол. Откройте QR нового стола. Корзина на этой странице не отправлена.',
+      targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
+      targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
+    };
+  }, []);
+
+  const handleMovedTableSession = useCallback((notice: MovedTableSessionNotice) => {
+    setMovedTableSessionNotice(notice);
+    setBillData(null);
+    setActiveOrder(null);
+    setOrderSubmitError(notice.message);
+  }, []);
 
   const refreshTableSession = useCallback(async (showLoading = false) => {
     try {
@@ -55,8 +96,7 @@ export default function GuestPageClient({
       }
       setSessionError(null);
 
-      const tableSessionKey = table.qrSlug || table.id;
-      const res = await fetch(`/api/tables/${tableSessionKey}/session?ts=${Date.now()}`, {
+      const res = await fetch(`/api/tables/${tableIdOrSlug}/session?ts=${Date.now()}`, {
         cache: 'no-store',
       });
       if (!res.ok) {
@@ -79,6 +119,7 @@ export default function GuestPageClient({
 
       tableSessionIdRef.current = nextSessionId;
       setTableSessionId(nextSessionId);
+      setMovedTableSessionNotice(null);
     } catch (err) {
       console.error(err);
       setSessionError('Не удалось загрузить сессию стола. Пожалуйста, обновите страницу.');
@@ -88,7 +129,7 @@ export default function GuestPageClient({
         setSessionLoading(false);
       }
     }
-  }, [table.id, table.qrSlug]);
+  }, [tableIdOrSlug]);
 
   useEffect(() => {
     refreshTableSession(true).catch(() => {});
@@ -99,7 +140,9 @@ export default function GuestPageClient({
     try {
       const cacheBuster = Date.now();
 
-      const billRes = await fetch(`/api/table-sessions/${tableSessionId}/bill?ts=${cacheBuster}`, {
+      const encodedTableIdOrSlug = encodeURIComponent(tableIdOrSlug);
+
+      const billRes = await fetch(`/api/table-sessions/${tableSessionId}/bill?ts=${cacheBuster}&tableIdOrSlug=${encodedTableIdOrSlug}`, {
         cache: 'no-store',
       });
       if (billRes.ok) {
@@ -110,13 +153,20 @@ export default function GuestPageClient({
           setBillData({ totalAmount: billData.totalAmount, ordersCount: billData.ordersCount });
         }
       } else {
+        const movedNotice = await getMovedTableSessionNotice(billRes);
+        if (movedNotice) {
+          handleMovedTableSession(movedNotice);
+          return;
+        }
+
         setBillData(null);
       }
 
-      const ordersRes = await fetch(`/api/table-sessions/${tableSessionId}/orders?ts=${cacheBuster}`, {
+      const ordersRes = await fetch(`/api/table-sessions/${tableSessionId}/orders?ts=${cacheBuster}&tableIdOrSlug=${encodedTableIdOrSlug}`, {
         cache: 'no-store',
       });
       if (ordersRes.ok) {
+        setMovedTableSessionNotice(null);
         const data = await ordersRes.json();
 
         const activeOrders = (data.orders ?? [])
@@ -167,12 +217,18 @@ export default function GuestPageClient({
           setActiveOrder(null);
         }
       } else {
+        const movedNotice = await getMovedTableSessionNotice(ordersRes);
+        if (movedNotice) {
+          handleMovedTableSession(movedNotice);
+          return;
+        }
+
         setActiveOrder(null);
       }
     } catch (err) {
       console.error('Failed to fetch session state', err);
     }
-  }, [tableSessionId, menuItems]);
+  }, [tableSessionId, menuItems, tableIdOrSlug, getMovedTableSessionNotice, handleMovedTableSession]);
 
   useEffect(() => {
     fetchSessionState();
@@ -257,6 +313,7 @@ export default function GuestPageClient({
 
     const orderPayload = {
       tableSessionId,
+      tableIdOrSlug,
       totalAmount: cartTotal,
       items: cart.map(item => ({
         id: item.item.id,
@@ -278,11 +335,25 @@ export default function GuestPageClient({
       });
 
       if (!res.ok) {
+        let errorBody: Record<string, unknown> | null = null;
         let errorMessage = '';
         try {
-          const errorBody = await res.json();
-          errorMessage = typeof errorBody.error === 'string' ? errorBody.error : '';
+          errorBody = await res.json();
+          errorMessage = typeof errorBody?.error === 'string' ? errorBody.error : '';
         } catch {}
+
+        if (res.status === 409 && errorBody?.code === 'TABLE_SESSION_MOVED') {
+          const targetTableName = typeof errorBody.targetTableName === 'string' ? errorBody.targetTableName : '';
+          const targetTableQrSlug = typeof errorBody.targetTableQrSlug === 'string' ? errorBody.targetTableQrSlug : '';
+          handleMovedTableSession({
+            message: targetTableName
+              ? `Вас пересадили за ${targetTableName}. Откройте QR нового стола. Корзина на этой странице не отправлена.`
+              : 'Вас пересадили за другой стол. Откройте QR нового стола. Корзина на этой странице не отправлена.',
+            targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
+            targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
+          });
+          return;
+        }
 
         const normalizedError = errorMessage.toLowerCase();
         const isStaleSessionError =
@@ -385,6 +456,25 @@ export default function GuestPageClient({
           <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2">
             <Check className="h-4 w-4" />
             {staffCallStatus}
+          </div>
+        </div>
+      )}
+
+      {movedTableSessionNotice && (
+        <div className="fixed top-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 p-4 animate-in slide-in-from-top-4">
+          <div className="bg-destructive text-destructive-foreground px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span>{movedTableSessionNotice.message}</span>
+            </div>
+            {movedTableSessionNotice.targetUrl && (
+              <a
+                className="self-start rounded-md bg-background px-3 py-1 text-xs font-semibold text-foreground"
+                href={movedTableSessionNotice.targetUrl}
+              >
+                {movedTableSessionNotice.targetLabel || 'Открыть новый стол'}
+              </a>
+            )}
           </div>
         </div>
       )}
