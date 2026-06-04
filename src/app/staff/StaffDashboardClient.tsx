@@ -145,7 +145,7 @@ function formatOrderItemOptions(options: unknown): string[] {
   ];
 }
 
-function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
+function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string, isEmptySession?: boolean) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
@@ -358,8 +358,12 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleCloseTableSession = async (tableId: string) => {
-    if (!confirm('Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.')) return;
+  const handleCloseTableSession = async (tableId: string, isEmptySession = false) => {
+    const confirmationMessage = isEmptySession
+      ? 'На этом столе пока нет заказов, но гость мог открыть QR и выбирать позиции. Освободить пустой стол?'
+      : 'Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.';
+
+    if (!confirm(confirmationMessage)) return;
     try {
       const res = await fetch(`/api/tables/${tableId}/session/close`, {
         method: 'POST',
@@ -593,12 +597,12 @@ export default function StaffDashboard() {
              ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {tableSessions.map((session) => (
-                    <Card key={session.id} className="border-t-4 border-t-purple-500">
+                    <Card key={session.id} className={`border-t-4 ${session.ordersCount === 0 ? 'border-t-gray-400 bg-gray-50' : 'border-t-purple-500'}`}>
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
                           <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
-                          <Badge variant={session.activeOrdersCount > 0 ? "default" : "outline"}>
-                            {session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
+                          <Badge variant={session.ordersCount === 0 || session.activeOrdersCount === 0 ? "outline" : "default"}>
+                            {session.ordersCount === 0 ? 'Пустая сессия' : session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
                           </Badge>
                         </div>
                         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
@@ -610,6 +614,11 @@ export default function StaffDashboard() {
                         </div>
                       </CardHeader>
                       <CardContent className="py-2 border-y my-2 space-y-1">
+                        {session.ordersCount === 0 && (
+                          <div className="text-sm text-gray-600 bg-white border border-gray-200 rounded-md p-2 mb-2">
+                            Гость открыл меню, но заказов пока нет.
+                          </div>
+                        )}
                         <div className="text-sm text-gray-700 flex justify-between">
                           <span>Всего заказов:</span>
                           <span className="font-medium">{session.ordersCount}</span>
@@ -654,7 +663,7 @@ export default function StaffDashboard() {
                         <Button
                           className="w-full"
                           variant="outline"
-                          onClick={() => handleCloseTableSession(session.tableId)}
+                          onClick={() => handleCloseTableSession(session.tableId, session.ordersCount === 0)}
                         >
                           Освободить стол / Закрыть счёт
                         </Button>
