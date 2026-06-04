@@ -1,135 +1,196 @@
 # Harlem Digital Menu
 
-QR-based digital system for a hookah lounge.
+MVP of a QR-based digital menu and table ordering system for Harlem Lounge.
 
-The project starts as a replacement for a static PDF menu opened from table QR codes, but the long-term goal is a full guest, staff, and admin system for a lounge: interactive menu, table-based ordering, hookah preferences, bookings, loyalty points, music requests, and staff dashboards.
+Production: https://harlem-digital-menu.vercel.app
 
-## Product idea
+The stable local workspace is:
 
-Guests scan a QR code at their table and open a mobile-first web app where they can:
+```bash
+~/projects/harlem-digital-menu
+```
 
-- browse an interactive menu instead of PDF files;
-- build or order a hookah with preferences;
-- add drinks, food, tea, and services to a cart;
-- send an order from a specific table;
-- call a waiter or hookah master;
-- save favorite hookah mixes and personal notes;
-- book a table for a future visit;
-- collect loyalty points and use them for perks;
-- request music in a controlled queue.
+Do not use the old Desktop/iCloud workspace:
 
-Staff members use a dashboard to receive orders, manage statuses, see table numbers, process hookah requests, and handle guest calls.
+```bash
+~/Desktop/work/Харлем/InteractiveAPP/harlem-digital-menu
+```
 
-Managers use an admin panel to edit the menu, manage tables, bookings, staff shifts, stop-list items, loyalty rules, and basic analytics.
+## Current MVP
 
-## Target users
+Guests open the table menu, add menu items to a cart, configure hookah options, call staff, and send an order for the active table session.
 
-- Lounge guests
-- Waiters
-- Hookah masters
-- Managers
-- Venue owners
+Staff open the dashboard, see active orders, staff calls, and table sessions, update order and call statuses, and close the bill by freeing the table session.
 
-## MVP goal
+Main screens:
 
-The first MVP should prove the core value:
+- `/t/demo` - guest demo table.
+- `/staff` - staff dashboard.
+- `/admin` - placeholder admin panel.
 
-**QR code → interactive menu → table-based order → staff dashboard → order status → guest preferences.**
+## Backend Runtime
 
-The MVP should not try to build the entire ecosystem at once.
+The project already uses a real backend for the guest and staff MVP flows:
 
-## MVP scope
+- Next.js App Router API routes.
+- Neon Postgres for persistent storage.
+- Drizzle ORM for schema, migrations, and database access.
+- `DATABASE_URL` for runtime database connections.
+- Vercel deployment with `DATABASE_URL` configured in the Vercel environment.
 
-### Guest side
+Local `npm run build` and `npx tsc --noEmit` should not require a database connection. The database is required when runtime API endpoints are called, for example from `/t/demo` or `/staff`.
 
-- Mobile-first landing screen for a table QR code.
-- Menu categories and menu items.
-- Hookah order flow with preferences.
-- Cart / draft order.
-- Submit order from a specific table.
-- Call staff buttons:
-  - call waiter;
-  - request coals;
-  - ask for bill;
-  - other help.
-- Basic guest profile or local session for favorite hookah preferences.
+We do not run a local database for this MVP, and Docker is not required.
 
-### Staff side
+## API Overview
 
-- Staff dashboard with incoming orders.
-- Order details with table number.
-- Separate view or filters for:
-  - hookah orders;
-  - food and drinks;
-  - staff calls.
-- Order statuses:
-  - new;
-  - accepted;
-  - preparing;
-  - ready;
-  - delivered;
-  - cancelled.
+Implemented API routes include:
 
-### Admin side
+- `GET /api/tables/[tableId]/session`
+- `POST /api/tables/[tableId]/session`
+- `POST /api/tables/[tableId]/session/close`
+- `GET /api/tables/[tableId]/bill`
+- `POST /api/orders`
+- `GET /api/table-sessions/[tableSessionId]/orders`
+- `GET /api/table-sessions/[tableSessionId]/bill`
+- `GET /api/staff/orders`
+- `PATCH /api/staff/orders/[orderId]`
+- `GET /api/staff/table-sessions`
+- `GET /api/staff-calls`
+- `POST /api/staff-calls`
+- `PATCH /api/staff-calls/[callId]`
 
-- Basic menu management.
-- Categories.
-- Menu items.
-- Prices.
-- Availability / stop-list.
-- Tables and QR codes.
+This README intentionally keeps the route contract high level. See the route files under `src/app/api` for implementation details.
 
-## Postponed features
-
-These ideas are important but should be postponed until the MVP works:
-
-- real online payments;
-- POS/cash register integration;
-- complex booking map;
-- loyalty economy;
-- direct music system integration;
-- AI recommendations;
-- advanced analytics;
-- multi-location/franchise support;
-- native mobile apps.
-
-## Suggested tech direction
-
-The final stack can be decided after architecture planning, but the project should prioritize:
-
-- easy local development;
-- simple deployment;
-- mobile-first UI;
-- maintainable architecture;
-- clear separation between guest, staff, and admin flows.
-
-Possible stack:
-
-- Next.js / React for the web app;
-- PostgreSQL or SQLite for early MVP;
-- Prisma or Drizzle for database access;
-- simple session-based auth first;
-- Telegram login or VK login later;
-- PWA support later.
-
-## Repository structure proposal
+## Project Structure
 
 ```text
 .
 ├── README.md
 ├── AGENTS.md
 ├── docs/
-│   └── PRODUCT.md
-├── app/
-├── components/
-├── lib/
-├── db/
-└── tests/
+├── drizzle/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── staff/
+│   │   └── t/[tableId]/
+│   ├── components/
+│   ├── db/
+│   └── lib/
+├── package.json
+├── package-lock.json
+├── next.config.mjs
+├── drizzle.config.ts
+└── tsconfig.json
 ```
 
-This structure can change after the first architecture task.
+## Development Setup
 
-## Development principles
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+Open:
+
+- Main entry: http://localhost:3000
+- Guest demo table: http://localhost:3000/t/demo
+- Staff dashboard: http://localhost:3000/staff
+- Admin placeholder: http://localhost:3000/admin
+
+Useful checks:
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+Notes:
+
+- Docker is not needed.
+- A local database is not required for `tsc` or `build`.
+- Runtime API calls need `DATABASE_URL`.
+- Do not commit `.env`, `.env.local`, `.codex.env`, tokens, or secrets.
+- Do not print `.codex.env` or other local secret files in logs.
+- Do not run `npm audit fix --force` or major Next/React upgrades without a separate migration task.
+
+## Environment
+
+For local runtime API testing against Neon, create a local `.env.local` with `DATABASE_URL`.
+
+```bash
+cp .env.example .env.local
+```
+
+Then edit `.env.local` locally. Never commit local env files.
+
+Vercel runtime uses `DATABASE_URL` configured in the Vercel project environment.
+
+## Database And Seed
+
+Database files:
+
+- Drizzle schema: `src/db/schema.ts`
+- Database client: `src/db/index.ts`
+- Migration runner: `src/db/migrate.ts`
+- Seed script: `src/db/seed.ts`
+- SQL migrations: `drizzle/`
+- Drizzle config: `drizzle.config.ts`
+
+Available scripts:
+
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
+
+`db:migrate` and `db:seed` require `DATABASE_URL`. Use them only when intentionally applying changes to the configured Neon database.
+
+## Demo Checklist
+
+Before showing the MVP:
+
+1. Open `/staff`.
+2. If there are old orders or an old bill, close the active table session from `Счета` using the free/close table action.
+3. Open `/t/demo`.
+4. Add a regular menu item to the cart.
+5. Configure a hookah item with strength, taste, and optional notes.
+6. Submit the order.
+7. On `/staff`, show the order, hookah option lines, status changes, staff calls, and bill/session information.
+8. At the end, close the bill/free the table session.
+
+## Product Scope
+
+The MVP focuses on:
+
+- QR-based guest menu.
+- Table-based ordering.
+- Staff order dashboard.
+- Hookah preferences in the order flow.
+- Staff call buttons.
+- Basic bill/session handling.
+
+Postponed features:
+
+- Real online payments.
+- POS/cash register integration.
+- Complex analytics.
+- AI recommendations.
+- Direct music playback integration.
+- Multi-location/franchise support.
+- Native mobile apps.
+
+## Development Principles
 
 - MVP first.
 - Small reviewable changes.
@@ -139,54 +200,3 @@ This structure can change after the first architecture task.
 - No large rewrites without approval.
 - Guest experience must be fast and mobile-friendly.
 - Staff dashboard must be simple enough to use during a real shift.
-
-## First AI-agent task
-
-Before writing code, the first task for Jules or any other coding agent should be planning only:
-
-```text
-Read README.md, docs/PRODUCT.md, and AGENTS.md.
-
-Do not write application code yet.
-
-Propose:
-1. MVP scope.
-2. Tech stack.
-3. Database schema.
-4. User roles and permissions.
-5. Main guest, staff, and admin screens.
-6. Implementation milestones.
-7. Tasks that can be done in parallel.
-8. Risks and postponed features.
-```
-
-## Local Development Instructions
-
-1. **Install dependencies:**
-   `npm install`
-
-2. **Database Setup (Optional for UI mock):**
-   Copy `.env.example` to `.env.local` and add your Vercel Postgres/Neon database URL:
-   `cp .env.example .env.local`
-   *(You can run `npm run dev` and build the app without a database if you are only working on UI).*
-
-3. **Run the development server:**
-   `npm run dev`
-
-3. **Open the app in your browser:**
-   - **Main Entry:** http://localhost:3000
-   - **Guest Menu Preview:** http://localhost:3000/t/demo
-   - **Staff Dashboard Preview:** http://localhost:3000/staff
-   - **Admin Panel Preview:** http://localhost:3000/admin
-
-*Note: The current version is a frontend scaffold with mock data. There is no database or authentication yet.*
-
-### Database Management
-To generate migrations, run:
-`npm run db:generate`
-
-To apply migrations, ensure `.env.local` is set with your database URL, and run:
-`npm run db:migrate`
-
-To seed the database with initial demo data, run:
-`npm run db:seed`
