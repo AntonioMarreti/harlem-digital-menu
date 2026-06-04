@@ -60,6 +60,64 @@ const callReasonLabels: Record<string, string> = {
   help: 'Нужна помощь'
 };
 
+function formatOrderItemOptions(options: unknown): string[] {
+  if (!options || typeof options !== 'object' || !('notes' in options)) {
+    return [];
+  }
+
+  const notes = (options as { notes?: unknown }).notes;
+
+  if (typeof notes !== 'string') {
+    return [];
+  }
+
+  const trimmedNotes = notes.trim();
+  if (!trimmedNotes) {
+    return [];
+  }
+
+  const legacyMatch = trimmedNotes.match(/^Strength:\s*([^,]+),\s*Taste:\s*([^-]+?)(?:\s*-\s*(.+))?$/i);
+  if (!legacyMatch) {
+    return trimmedNotes
+      .split(';')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        if (line.toLowerCase().startsWith('вкус:')) {
+          return `Вкус:${line.slice(line.indexOf(':') + 1)}`;
+        }
+        if (line.toLowerCase().startsWith('пожелания:')) {
+          return `Пожелания:${line.slice(line.indexOf(':') + 1)}`;
+        }
+        return line;
+      });
+  }
+
+  const strengthLabels: Record<string, string> = {
+    light: 'Лёгкий',
+    medium: 'Средний',
+    strong: 'Крепкий'
+  };
+  const tasteLabels: Record<string, string> = {
+    sweet: 'сладкий',
+    sour: 'кислый',
+    fresh: 'свежий',
+    spicy: 'пряный',
+    dessert: 'десертный',
+    'trust master': 'на выбор мастера'
+  };
+
+  const strength = legacyMatch[1].trim();
+  const taste = legacyMatch[2].trim();
+  const guestNotes = legacyMatch[3]?.trim();
+
+  return [
+    `Крепость: ${strengthLabels[strength] || strength}`,
+    `Вкус: ${tasteLabels[taste] || taste}`,
+    ...(guestNotes ? [`Пожелания: ${guestNotes}`] : [])
+  ];
+}
+
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
@@ -116,11 +174,24 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Харлем</h4>
                   <ul className="space-y-1 text-sm">
-                    {harlemItems.map((item, idx) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                      </li>
-                    ))}
+                    {harlemItems.map((item, idx) => {
+                      const itemOptionLines = formatOrderItemOptions(item.options);
+
+                      return (
+                        <li key={idx}>
+                          <div className="flex justify-between">
+                            <span>{item.quantity}x {item.name}</span>
+                          </div>
+                          {itemOptionLines.length > 0 && (
+                            <div className="mt-1 space-y-0.5 text-xs text-gray-500 leading-snug">
+                              {itemOptionLines.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -129,11 +200,24 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                 <div>
                   <h4 className="text-xs font-semibold text-orange-600 uppercase mb-1">Craft Beery</h4>
                   <ul className="space-y-1 text-sm text-orange-900 bg-orange-50 p-2 rounded">
-                    {craftBeeryItems.map((item, idx) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                      </li>
-                    ))}
+                    {craftBeeryItems.map((item, idx) => {
+                      const itemOptionLines = formatOrderItemOptions(item.options);
+
+                      return (
+                        <li key={idx}>
+                          <div className="flex justify-between">
+                            <span>{item.quantity}x {item.name}</span>
+                          </div>
+                          {itemOptionLines.length > 0 && (
+                            <div className="mt-1 space-y-0.5 text-xs text-gray-500 leading-snug">
+                              {itemOptionLines.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="text-xs text-orange-600 mt-2 flex items-start gap-1">
                     <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
