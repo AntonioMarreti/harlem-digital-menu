@@ -60,25 +60,37 @@ const callReasonLabels: Record<string, string> = {
   help: 'Нужна помощь'
 };
 
-function formatOrderItemOptions(options: unknown): string | null {
+function formatOrderItemOptions(options: unknown): string[] {
   if (!options || typeof options !== 'object' || !('notes' in options)) {
-    return null;
+    return [];
   }
 
   const notes = (options as { notes?: unknown }).notes;
 
   if (typeof notes !== 'string') {
-    return null;
+    return [];
   }
 
   const trimmedNotes = notes.trim();
   if (!trimmedNotes) {
-    return null;
+    return [];
   }
 
   const legacyMatch = trimmedNotes.match(/^Strength:\s*([^,]+),\s*Taste:\s*([^-]+?)(?:\s*-\s*(.+))?$/i);
   if (!legacyMatch) {
-    return trimmedNotes;
+    return trimmedNotes
+      .split(';')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        if (line.toLowerCase().startsWith('вкус:')) {
+          return `Вкус:${line.slice(line.indexOf(':') + 1)}`;
+        }
+        if (line.toLowerCase().startsWith('пожелания:')) {
+          return `Пожелания:${line.slice(line.indexOf(':') + 1)}`;
+        }
+        return line;
+      });
   }
 
   const strengthLabels: Record<string, string> = {
@@ -99,7 +111,11 @@ function formatOrderItemOptions(options: unknown): string | null {
   const taste = legacyMatch[2].trim();
   const guestNotes = legacyMatch[3]?.trim();
 
-  return `Крепость: ${strengthLabels[strength] || strength}; вкус: ${tasteLabels[taste] || taste}${guestNotes ? `; пожелания: ${guestNotes}` : ''}`;
+  return [
+    `Крепость: ${strengthLabels[strength] || strength}`,
+    `Вкус: ${tasteLabels[taste] || taste}`,
+    ...(guestNotes ? [`Пожелания: ${guestNotes}`] : [])
+  ];
 }
 
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
@@ -159,16 +175,18 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Харлем</h4>
                   <ul className="space-y-1 text-sm">
                     {harlemItems.map((item, idx) => {
-                      const itemOptions = formatOrderItemOptions(item.options);
+                      const itemOptionLines = formatOrderItemOptions(item.options);
 
                       return (
                         <li key={idx}>
                           <div className="flex justify-between">
                             <span>{item.quantity}x {item.name}</span>
                           </div>
-                          {itemOptions && (
-                            <div className="text-xs text-gray-500 mt-1 leading-snug">
-                              {itemOptions}
+                          {itemOptionLines.length > 0 && (
+                            <div className="mt-1 space-y-0.5 text-xs text-gray-500 leading-snug">
+                              {itemOptionLines.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
                             </div>
                           )}
                         </li>
@@ -183,16 +201,18 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                   <h4 className="text-xs font-semibold text-orange-600 uppercase mb-1">Craft Beery</h4>
                   <ul className="space-y-1 text-sm text-orange-900 bg-orange-50 p-2 rounded">
                     {craftBeeryItems.map((item, idx) => {
-                      const itemOptions = formatOrderItemOptions(item.options);
+                      const itemOptionLines = formatOrderItemOptions(item.options);
 
                       return (
                         <li key={idx}>
                           <div className="flex justify-between">
                             <span>{item.quantity}x {item.name}</span>
                           </div>
-                          {itemOptions && (
-                            <div className="text-xs text-gray-500 mt-1 leading-snug">
-                              {itemOptions}
+                          {itemOptionLines.length > 0 && (
+                            <div className="mt-1 space-y-0.5 text-xs text-gray-500 leading-snug">
+                              {itemOptionLines.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
                             </div>
                           )}
                         </li>
