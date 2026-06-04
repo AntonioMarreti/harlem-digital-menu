@@ -3,8 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { requireStaffAccess } from '@/lib/staff-auth';
 
 export async function POST(request: NextRequest, { params }: { params: { tableId: string } }) {
+  const unauthorized = requireStaffAccess(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const db = getDb();
 
