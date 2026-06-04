@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, tables } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyTableSessionOwnership } from '@/lib/table-session-ownership';
 
 export async function GET(request: NextRequest, { params }: { params: { tableSessionId: string } }) {
   try {
@@ -20,6 +21,13 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
     if (session.status !== 'active') {
       return NextResponse.json({ error: 'Session is closed', isClosed: true }, { status: 404 });
     }
+
+    const ownershipError = await verifyTableSessionOwnership(
+      db,
+      session,
+      request.nextUrl.searchParams.get('tableIdOrSlug')
+    );
+    if (ownershipError) return ownershipError;
 
     // Fetch the orders using a reliable read approach with joins
     const allOrders = await db.select({
