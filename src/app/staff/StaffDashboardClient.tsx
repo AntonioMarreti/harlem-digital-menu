@@ -444,6 +444,18 @@ export default function StaffDashboard() {
     }
   };
 
+  const handleMoveEmptyTableSession = async (sessionId: string) => {
+    if (!transferTargets[sessionId]) {
+      setError('Выберите новый стол.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    if (!confirm('Перенести пустую сессию на другой стол? Если гость уже набрал корзину, она сохранится.')) return;
+
+    await handleMoveTableSession(sessionId);
+  };
+
   const handleMarkCallHandled = async (id: string) => {
     try {
       const res = await fetch(`/api/staff-calls/${id}`, {
@@ -706,7 +718,7 @@ export default function StaffDashboard() {
                     <section className="space-y-3">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">Пустые активные столы</h2>
-                        <p className="text-sm text-gray-500">Гость открыл меню, но заказов пока нет.</p>
+                        <p className="text-sm text-gray-500">Если гость уже выбирает позиции и пересел, перенесите пустую сессию. Если гость ушёл — освободите стол.</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {emptySessions.map((session) => (
@@ -729,7 +741,38 @@ export default function StaffDashboard() {
                                 Гость открыл меню, но заказов пока нет.
                               </div>
                             </CardContent>
-                            <CardFooter className="pt-2">
+                            <CardFooter className="pt-2 flex flex-col gap-2">
+                              <div className="flex w-full gap-2">
+                                <select
+                                  className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 text-sm"
+                                  value={transferTargets[session.id] || ''}
+                                  onChange={(event) => setTransferTargets((current) => ({
+                                    ...current,
+                                    [session.id]: event.target.value
+                                  }))}
+                                  disabled={movingSessionId === session.id}
+                                >
+                                  <option value="">Новый стол</option>
+                                  {tables.map((table) => {
+                                    const isCurrentTable = table.id === session.tableId;
+                                    const isDisabled = isCurrentTable || (table.isOccupied && table.activeSessionId !== session.id);
+
+                                    return (
+                                      <option key={table.id} value={table.qrSlug} disabled={isDisabled}>
+                                        {formatTableLabel(table.name, table.qrSlug)}
+                                        {isCurrentTable ? ' — текущий' : table.isOccupied ? ' — занят' : ''}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <Button
+                                  variant="outline"
+                                  disabled={!transferTargets[session.id] || movingSessionId === session.id}
+                                  onClick={() => handleMoveEmptyTableSession(session.id)}
+                                >
+                                  Перенести пустую сессию
+                                </Button>
+                              </div>
                               <Button
                                 className="w-full"
                                 variant="outline"
