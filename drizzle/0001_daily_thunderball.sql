@@ -1,0 +1,2 @@
+ALTER TABLE "orders" ADD COLUMN "idempotency_key" varchar(128);--> statement-breakpoint
+CREATE UNIQUE INDEX "orders_table_session_id_idempotency_key_unique" ON "orders" USING btree ("table_session_id","idempotency_key");
