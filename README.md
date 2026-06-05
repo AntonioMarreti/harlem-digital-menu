@@ -47,7 +47,6 @@ We do not run a local database for this MVP, and Docker is not required.
 Implemented API routes include:
 
 - `GET /api/tables/[tableId]/session`
-- `POST /api/tables/[tableId]/session`
 - `POST /api/tables/[tableId]/session/close`
 - `GET /api/tables/[tableId]/bill`
 - `POST /api/orders`

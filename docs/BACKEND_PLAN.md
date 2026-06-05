@@ -45,7 +45,7 @@ The Table Session Model differentiates between permanent physical tables and tim
 Minimal API routes required for the first real sync:
 
 - `GET /api/tables/[tableId]/session`: Fetch the active session for a table (or create one if none exists).
-- `POST /api/tables/[tableId]/session`: Explicitly create or rotate a session.
+- `POST /api/tables/[tableId]/session`: Disabled; public session rotation is not allowed.
 - `POST /api/orders`: Submit a new order (attached to `tableSessionId`).
 - `GET /api/staff/orders`: Fetch active orders (filtered by active table sessions).
 - `PATCH /api/staff/orders/[orderId]`: Update order status (e.g., accepted, ready, delivered).
@@ -116,23 +116,13 @@ Response `200 OK`:
 ```
 
 ### POST /api/tables/[tableId]/session
+Public session rotation is disabled.
+
 Request: `POST /api/tables/demo/session`
-Response `201 Created`:
+Response `405 Method Not Allowed`:
 ```json
 {
-  "session": {
-    "id": "123e4567-e89b-12d3-a456-426614174001",
-    "tableId": "123e4567-e89b-12d3-a456-426614174000",
-    "status": "active",
-    "createdAt": "2023-01-01T01:00:00.000Z",
-    "closedAt": null
-  },
-  "table": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "name": "Demo Table",
-    "qrSlug": "demo",
-    "createdAt": "2023-01-01T00:00:00.000Z"
-  }
+  "error": "Method not allowed"
 }
 ```
 
