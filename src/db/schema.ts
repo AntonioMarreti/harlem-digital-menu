@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, integer, pgEnum, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar, integer, pgEnum, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Enums
 export const itemSourceEnum = pgEnum('item_source', ['harlem', 'craft_beery']);
@@ -33,10 +33,16 @@ export const orders = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
   tableSessionId: uuid('table_session_id').references(() => tableSessions.id).notNull(),
   guestSessionId: uuid('guest_session_id').references(() => guestSessions.id), // Optional: associate order with specific guest
+  idempotencyKey: varchar('idempotency_key', { length: 128 }),
   status: orderStatusEnum('status').default('new').notNull(),
   totalAmount: integer('total_amount').notNull().default(0), // Using integer for cents
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    orderIdempotencyKeyUnique: uniqueIndex('orders_table_session_id_idempotency_key_unique')
+      .on(table.tableSessionId, table.idempotencyKey),
+  };
 });
 
 export const orderItems = pgTable('order_items', {

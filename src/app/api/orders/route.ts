@@ -2,12 +2,16 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, orderItems } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
 
 const MAX_ITEM_QUANTITY = 99;
 const MAX_ITEM_NOTES_LENGTH = 500;
+const MIN_IDEMPOTENCY_KEY_LENGTH = 8;
+const MAX_IDEMPOTENCY_KEY_LENGTH = 128;
+const IDEMPOTENT_ITEMS_RETRY_ATTEMPTS = 5;
+const IDEMPOTENT_ITEMS_RETRY_DELAY_MS = 100;
 
 const canonicalMenuItemById = new Map(menuItems.map((item) => [item.id, item]));
 
@@ -52,13 +56,63 @@ function getNormalizedItemOptions(options: unknown) {
   return { ok: true as const, value: { notes: trimmedNotes } };
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function getExistingIdempotentOrder(
+  db: ReturnType<typeof getDb>,
+  tableSessionId: string,
+  idempotencyKey: string
+) {
+  const existingOrder = await db.select().from(orders).where(
+    and(
+      eq(orders.tableSessionId, tableSessionId),
+      eq(orders.idempotencyKey, idempotencyKey)
+    )
+  ).limit(1).then(res => res[0]);
+
+  if (!existingOrder) {
+    return null;
+  }
+
+  for (let attempt = 0; attempt < IDEMPOTENT_ITEMS_RETRY_ATTEMPTS; attempt += 1) {
+    const existingItems = await db.select().from(orderItems).where(eq(orderItems.orderId, existingOrder.id));
+    if (existingItems.length > 0) {
+      return { order: existingOrder, items: existingItems };
+    }
+
+    if (attempt < IDEMPOTENT_ITEMS_RETRY_ATTEMPTS - 1) {
+      await wait(IDEMPOTENT_ITEMS_RETRY_DELAY_MS);
+    }
+  }
+
+  return { order: existingOrder, items: [] };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableSessionId, tableIdOrSlug, items, guestSessionId } = body;
+    const { tableSessionId, tableIdOrSlug, items, guestSessionId, idempotencyKey } = body;
 
     if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
+      return NextResponse.json({
+        error: 'idempotencyKey is required',
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+      }, { status: 400 });
+    }
+
+    const normalizedIdempotencyKey = idempotencyKey.trim();
+    if (
+      normalizedIdempotencyKey.length < MIN_IDEMPOTENCY_KEY_LENGTH ||
+      normalizedIdempotencyKey.length > MAX_IDEMPOTENCY_KEY_LENGTH
+    ) {
+      return NextResponse.json({
+        error: 'Invalid idempotencyKey',
+        code: 'INVALID_IDEMPOTENCY_KEY',
+      }, { status: 400 });
     }
 
     const db = getDb();
@@ -121,9 +175,24 @@ export async function POST(request: NextRequest) {
     const [newOrder] = await db.insert(orders).values({
       tableSessionId,
       guestSessionId: guestSessionId || null,
+      idempotencyKey: normalizedIdempotencyKey,
       status: 'new',
       totalAmount: serverTotalAmount,
+    }).onConflictDoNothing({
+      target: [orders.tableSessionId, orders.idempotencyKey],
     }).returning();
+
+    if (!newOrder) {
+      const existingOrderResponse = await getExistingIdempotentOrder(db, tableSessionId, normalizedIdempotencyKey);
+      if (!existingOrderResponse || existingOrderResponse.items.length === 0) {
+        return NextResponse.json({ error: 'Idempotent order is still being created' }, { status: 503 });
+      }
+
+      return NextResponse.json({
+        ...existingOrderResponse,
+        idempotent: true,
+      }, { status: 200 });
+    }
 
     // Insert order items
     const orderItemsToInsert = itemsToInsert.map((item) => ({

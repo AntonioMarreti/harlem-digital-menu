@@ -112,6 +112,7 @@ export default function GuestPageClient({
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
   const tableSessionIdRef = useRef<string | null>(null);
   const orderSubmittingRef = useRef(false);
+  const pendingOrderIdempotencyKeyRef = useRef<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const cartRef = useRef<CartItem[]>([]);
   const [cartStorageReadyForSessionId, setCartStorageReadyForSessionId] = useState<string | null>(null);
@@ -212,6 +213,10 @@ export default function GuestPageClient({
 
   useEffect(() => {
     cartRef.current = cart;
+  }, [cart]);
+
+  useEffect(() => {
+    pendingOrderIdempotencyKeyRef.current = null;
   }, [cart]);
 
   useEffect(() => {
@@ -411,9 +416,14 @@ export default function GuestPageClient({
     setOrderSubmitting(true);
     setOrderSubmitError(null);
 
+    if (!pendingOrderIdempotencyKeyRef.current) {
+      pendingOrderIdempotencyKeyRef.current = crypto.randomUUID();
+    }
+
     const orderPayload = {
       tableSessionId,
       tableIdOrSlug,
+      idempotencyKey: pendingOrderIdempotencyKeyRef.current,
       totalAmount: cartTotal,
       items: cart.map(item => ({
         id: item.item.id,
@@ -479,6 +489,7 @@ export default function GuestPageClient({
       setIsCartOpen(false);
       saveCartToSessionStorage(tableSessionId, []);
       setCart([]);
+      pendingOrderIdempotencyKeyRef.current = null;
     } catch (err) {
       console.error(err);
       setOrderSubmitError('Ошибка при отправке заказа. Пожалуйста, попробуйте еще раз.');
