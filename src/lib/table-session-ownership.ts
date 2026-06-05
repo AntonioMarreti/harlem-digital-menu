@@ -36,7 +36,16 @@ export async function verifyTableSessionOwnership(
     return null;
   }
 
-  const requestTable = await findTableByIdOrSlug(db, tableIdOrSlug.trim());
+  const trimmedTableIdOrSlug = tableIdOrSlug.trim();
+
+  if (trimmedTableIdOrSlug.length > 255) {
+    return NextResponse.json({
+      error: 'Invalid tableIdOrSlug',
+      code: 'INVALID_TABLE_CONTEXT',
+    }, { status: 400 });
+  }
+
+  const requestTable = await findTableByIdOrSlug(db, trimmedTableIdOrSlug);
 
   if (!requestTable) {
     return NextResponse.json({ error: 'Table not found' }, { status: 404 });

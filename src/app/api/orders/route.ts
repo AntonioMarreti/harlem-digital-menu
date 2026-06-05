@@ -115,6 +115,24 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    let finalGuestSessionId = null;
+    if (guestSessionId !== undefined && guestSessionId !== null) {
+      if (typeof guestSessionId !== 'string') {
+        return NextResponse.json({
+          error: 'Invalid guestSessionId',
+          code: 'INVALID_GUEST_SESSION_ID'
+        }, { status: 400 });
+      }
+      const trimmedGuestSessionId = guestSessionId.trim();
+      if (trimmedGuestSessionId.length > 128) {
+        return NextResponse.json({
+          error: 'Invalid guestSessionId',
+          code: 'INVALID_GUEST_SESSION_ID'
+        }, { status: 400 });
+      }
+      finalGuestSessionId = trimmedGuestSessionId || null;
+    }
+
     const db = getDb();
 
     // Verify session is active
@@ -174,7 +192,7 @@ export async function POST(request: NextRequest) {
     // Insert order
     const [newOrder] = await db.insert(orders).values({
       tableSessionId,
-      guestSessionId: guestSessionId || null,
+      guestSessionId: finalGuestSessionId,
       idempotencyKey: normalizedIdempotencyKey,
       status: 'new',
       totalAmount: serverTotalAmount,
