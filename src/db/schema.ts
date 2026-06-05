@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, varchar, integer, pgEnum, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Enums
@@ -20,6 +21,12 @@ export const tableSessions = pgTable('table_sessions', {
   status: tableSessionStatusEnum('status').default('active').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   closedAt: timestamp('closed_at'),
+}, (table) => {
+  return {
+    oneActivePerTable: uniqueIndex('table_sessions_one_active_per_table_unique')
+      .on(table.tableId)
+      .where(sql`${table.status} = 'active'`),
+  };
 });
 
 export const guestSessions = pgTable('guest_sessions', {

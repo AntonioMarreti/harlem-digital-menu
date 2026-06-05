@@ -8,6 +8,27 @@ import { and, eq } from 'drizzle-orm';
 import { requireStaffAccess } from '@/lib/staff-auth';
 
 const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+const ACTIVE_SESSION_UNIQUE_INDEX = 'table_sessions_one_active_per_table_unique';
+
+function isActiveSessionUniqueViolation(error: unknown) {
+  const candidates = [error];
+
+  if (error && typeof error === 'object' && 'cause' in error) {
+    candidates.push((error as { cause?: unknown }).cause);
+  }
+
+  return candidates.some((candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      return false;
+    }
+
+    const pgError = candidate as { code?: unknown; constraint?: unknown; message?: unknown };
+    return pgError.code === '23505' && (
+      pgError.constraint === ACTIVE_SESSION_UNIQUE_INDEX ||
+      (typeof pgError.message === 'string' && pgError.message.includes(ACTIVE_SESSION_UNIQUE_INDEX))
+    );
+  });
+}
 
 async function findTableByIdOrSlug(db: ReturnType<typeof getDb>, tableIdOrSlug: string) {
   if (uuidRegex.test(tableIdOrSlug)) {
@@ -73,13 +94,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { sessio
       return NextResponse.json({ error: 'Target table is occupied' }, { status: 409 });
     }
 
-    const [updatedSession] = await db.update(tableSessions)
-      .set({ tableId: targetTable.id })
-      .where(and(
-        eq(tableSessions.id, sourceSession.id),
-        eq(tableSessions.status, 'active')
-      ))
-      .returning();
+    let updatedSession: typeof tableSessions.$inferSelect | undefined;
+    try {
+      [updatedSession] = await db.update(tableSessions)
+        .set({ tableId: targetTable.id })
+        .where(and(
+          eq(tableSessions.id, sourceSession.id),
+          eq(tableSessions.status, 'active')
+        ))
+        .returning();
+    } catch (error: unknown) {
+      if (isActiveSessionUniqueViolation(error)) {
+        return NextResponse.json({ error: 'Target table is occupied' }, { status: 409 });
+      }
+
+      throw error;
+    }
 
     if (!updatedSession) {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 409 });

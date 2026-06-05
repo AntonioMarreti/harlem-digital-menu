@@ -15,6 +15,13 @@
       "when": 1780664583224,
       "tag": "0001_daily_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780667114522,
+      "tag": "0002_robust_tyrannus",
+      "breakpoints": true
     }
   ]
 }
