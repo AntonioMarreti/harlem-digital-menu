@@ -48,7 +48,6 @@ Implemented API routes include:
 
 - `GET /api/tables/[tableId]/session`
 - `POST /api/tables/[tableId]/session/close`
-- `GET /api/tables/[tableId]/bill`
 - `POST /api/orders`
 - `GET /api/table-sessions/[tableSessionId]/orders`
 - `GET /api/table-sessions/[tableSessionId]/bill`
