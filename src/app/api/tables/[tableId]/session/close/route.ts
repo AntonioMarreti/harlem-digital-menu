@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { requireStaffAccess } from '@/lib/staff-auth';
+import { logError, logInfo } from '@/lib/server-logging';
 
 export async function POST(request: NextRequest, { params }: { params: { tableId: string } }) {
   const unauthorized = requireStaffAccess(request);
@@ -29,14 +30,21 @@ export async function POST(request: NextRequest, { params }: { params: { tableId
     }
 
     // Close any existing active sessions for this table
-    await db.update(tableSessions)
+    const closedSessions = await db.update(tableSessions)
       .set({ status: 'closed', closedAt: new Date() })
-      .where(and(eq(tableSessions.tableId, table.id), eq(tableSessions.status, 'active')));
+      .where(and(eq(tableSessions.tableId, table.id), eq(tableSessions.status, 'active')))
+      .returning({ id: tableSessions.id });
+
+    logInfo('table_session.closed', {
+      tableId: table.id,
+      tableIdOrSlug: params.tableId,
+      closedCount: closedSessions.length,
+    });
 
     return NextResponse.json({ success: true, message: 'Table session closed successfully' }, { status: 200 });
 
   } catch (error: unknown) {
-    console.error('Error closing table session:', error);
+    logError('table_session.close_error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

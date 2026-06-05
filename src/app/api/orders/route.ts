@@ -5,6 +5,7 @@ import { tableSessions, orders, orderItems } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
+import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
 const MAX_ITEM_NOTES_LENGTH = 500;
@@ -92,12 +93,25 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { tableSessionId, tableIdOrSlug, items, guestSessionId, idempotencyKey } = body;
+    const safeTableIdOrSlug = typeof tableIdOrSlug === 'string' && tableIdOrSlug.length <= 255
+      ? tableIdOrSlug
+      : undefined;
 
     if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0) {
+      logWarn('order.rejected', {
+        code: 'MISSING_REQUIRED_FIELDS',
+        tableSessionId: typeof tableSessionId === 'string' ? tableSessionId : undefined,
+        tableIdOrSlug: safeTableIdOrSlug,
+      });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
+      logWarn('order.rejected', {
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+        tableSessionId,
+        tableIdOrSlug: safeTableIdOrSlug,
+      });
       return NextResponse.json({
         error: 'idempotencyKey is required',
         code: 'IDEMPOTENCY_KEY_REQUIRED',
@@ -109,6 +123,11 @@ export async function POST(request: NextRequest) {
       normalizedIdempotencyKey.length < MIN_IDEMPOTENCY_KEY_LENGTH ||
       normalizedIdempotencyKey.length > MAX_IDEMPOTENCY_KEY_LENGTH
     ) {
+      logWarn('order.rejected', {
+        code: 'INVALID_IDEMPOTENCY_KEY',
+        tableSessionId,
+        tableIdOrSlug: safeTableIdOrSlug,
+      });
       return NextResponse.json({
         error: 'Invalid idempotencyKey',
         code: 'INVALID_IDEMPOTENCY_KEY',
@@ -118,6 +137,11 @@ export async function POST(request: NextRequest) {
     let finalGuestSessionId = null;
     if (guestSessionId !== undefined && guestSessionId !== null) {
       if (typeof guestSessionId !== 'string') {
+        logWarn('order.rejected', {
+          code: 'INVALID_GUEST_SESSION_ID',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+        });
         return NextResponse.json({
           error: 'Invalid guestSessionId',
           code: 'INVALID_GUEST_SESSION_ID'
@@ -125,6 +149,11 @@ export async function POST(request: NextRequest) {
       }
       const trimmedGuestSessionId = guestSessionId.trim();
       if (trimmedGuestSessionId.length > 128) {
+        logWarn('order.rejected', {
+          code: 'INVALID_GUEST_SESSION_ID',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+        });
         return NextResponse.json({
           error: 'Invalid guestSessionId',
           code: 'INVALID_GUEST_SESSION_ID'
@@ -138,6 +167,11 @@ export async function POST(request: NextRequest) {
     // Verify session is active
     const session = await db.select().from(tableSessions).where(eq(tableSessions.id, tableSessionId)).limit(1).then(res => res[0]);
     if (!session || session.status !== 'active') {
+      logWarn('order.rejected', {
+        code: 'TABLE_SESSION_NOT_ACTIVE',
+        tableSessionId,
+        tableIdOrSlug: safeTableIdOrSlug,
+      });
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
 
@@ -155,11 +189,23 @@ export async function POST(request: NextRequest) {
           : null;
 
       if (!menuItemId) {
+        logWarn('order.rejected', {
+          code: 'ITEM_ID_REQUIRED',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+          itemCount: items.length,
+        });
         return NextResponse.json({ error: 'Item missing menuItemId or id' }, { status: 400 });
       }
 
       const canonicalItem = canonicalMenuItemById.get(menuItemId);
       if (!canonicalItem) {
+        logWarn('order.rejected', {
+          code: 'UNKNOWN_MENU_ITEM',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+          itemCount: items.length,
+        });
         return NextResponse.json({ error: 'Unknown menu item' }, { status: 400 });
       }
 
@@ -169,11 +215,23 @@ export async function POST(request: NextRequest) {
         item.quantity <= 0 ||
         item.quantity > MAX_ITEM_QUANTITY
       ) {
+        logWarn('order.rejected', {
+          code: 'INVALID_ITEM_QUANTITY',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+          itemCount: items.length,
+        });
         return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 });
       }
 
       const normalizedOptions = getNormalizedItemOptions(item.options);
       if (!normalizedOptions.ok) {
+        logWarn('order.rejected', {
+          code: 'INVALID_ITEM_OPTIONS',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+          itemCount: items.length,
+        });
         return NextResponse.json({ error: normalizedOptions.error }, { status: 400 });
       }
 
@@ -206,6 +264,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Idempotent order is still being created' }, { status: 503 });
       }
 
+      logInfo('order.idempotent_hit', {
+        orderId: existingOrderResponse.order.id,
+        tableSessionId,
+        tableIdOrSlug: safeTableIdOrSlug,
+      });
+
       return NextResponse.json({
         ...existingOrderResponse,
         idempotent: true,
@@ -221,13 +285,21 @@ export async function POST(request: NextRequest) {
 
     const insertedItems = await db.insert(orderItems).values(orderItemsToInsert).returning();
 
+    logInfo('order.created', {
+      orderId: newOrder.id,
+      tableSessionId,
+      tableIdOrSlug: safeTableIdOrSlug,
+      itemCount: insertedItems.length,
+      totalAmount: newOrder.totalAmount,
+    });
+
     return NextResponse.json({
       order: newOrder,
       items: insertedItems,
     }, { status: 201 });
 
   } catch (error: unknown) {
-    console.error('Error creating order:', error);
+    logError('order.error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

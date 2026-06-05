@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const ACTIVE_SESSION_UNIQUE_INDEX = 'table_sessions_one_active_per_table_unique';
 
@@ -63,6 +64,11 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
           status: 'active'
         }).returning();
         session = newSession;
+        logInfo('table_session.created', {
+          tableSessionId: session.id,
+          tableId: table.id,
+          qrSlug: table.qrSlug,
+        });
       } catch (error: unknown) {
         if (!isActiveSessionUniqueViolation(error)) {
           throw error;
@@ -76,11 +82,22 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
         ).orderBy(desc(tableSessions.createdAt)).limit(1).then(res => res[0]);
 
         if (!session) {
+          logWarn('table_session.bootstrap_conflict', {
+            code: 'TABLE_SESSION_CONFLICT',
+            tableId: table.id,
+            qrSlug: table.qrSlug,
+          });
           return NextResponse.json({
             error: 'Active table session conflict; please retry',
             code: 'TABLE_SESSION_CONFLICT',
           }, { status: 409 });
         }
+
+        logWarn('table_session.bootstrap_conflict', {
+          tableSessionId: session.id,
+          tableId: table.id,
+          qrSlug: table.qrSlug,
+        });
       }
     }
 
@@ -90,7 +107,7 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
     });
 
   } catch (error: unknown) {
-    console.error('Error fetching/creating table session:', error);
+    logError('table_session.bootstrap_error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

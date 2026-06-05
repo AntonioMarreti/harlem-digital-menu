@@ -6,6 +6,7 @@ import {
   isStaffAccessConfigured,
   verifyStaffAccessCode,
 } from '@/lib/staff-auth';
+import { logInfo, logWarn } from '@/lib/server-logging';
 
 // Note: This is a best-effort in-memory rate limit for serverless runtime, 
 // not a global distributed limit. It applies per lambda container.
@@ -42,6 +43,10 @@ export async function POST(request: NextRequest) {
 
   if (record.lockedUntil > now) {
     const retryAfterSeconds = Math.ceil((record.lockedUntil - now) / 1000);
+    logWarn('staff_login.rate_limited', {
+      attemptCount: record.count,
+      retryAfterSeconds,
+    });
     return NextResponse.json(
       { error: 'Too many login attempts', code: 'STAFF_LOGIN_RATE_LIMITED' },
       { 
@@ -64,6 +69,11 @@ export async function POST(request: NextRequest) {
     
     rateLimitMap.set(ip, record);
 
+    logWarn('staff_login.failed', {
+      attemptCount: record.count,
+      lockoutSeconds,
+    });
+
     if (record.count < 5) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -81,6 +91,10 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set(STAFF_ACCESS_COOKIE_NAME, cookieValue, getStaffAccessCookieOptions());
+
+  logInfo('staff_login.success', {
+    clearedAttemptCount: record.count,
+  });
 
   return response;
 }
