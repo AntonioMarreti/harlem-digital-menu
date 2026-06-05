@@ -504,10 +504,16 @@ export default function GuestPageClient({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ tableSessionId, reason })
+        body: JSON.stringify({ tableSessionId, tableIdOrSlug, reason })
       });
 
       if (!res.ok) {
+        const movedNotice = await getMovedTableSessionNotice(res);
+        if (movedNotice) {
+          handleMovedTableSession(movedNotice);
+          return;
+        }
+
         throw new Error('Failed to call staff');
       }
 

@@ -4,6 +4,9 @@ import { getDb } from '@/db';
 import { staffCalls, tableSessions, tables } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { requireStaffAccess } from '@/lib/staff-auth';
+import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
+
+const validStaffCallReasons = new Set(['waiter', 'coals', 'bill', 'help']);
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireStaffAccess(request);
@@ -50,10 +53,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableSessionId, reason, guestSessionId } = body;
+    const { tableSessionId, tableIdOrSlug, reason, guestSessionId } = body;
 
     if (!tableSessionId || !reason) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (typeof reason !== 'string' || !validStaffCallReasons.has(reason)) {
+      return NextResponse.json({ error: 'Invalid staff call reason' }, { status: 400 });
     }
 
     const db = getDb();
@@ -63,6 +70,9 @@ export async function POST(request: NextRequest) {
     if (!session || session.status !== 'active') {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
+
+    const ownershipError = await verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug);
+    if (ownershipError) return ownershipError;
 
     if (reason === 'bill') {
       const existingBillCall = await db.select().from(staffCalls).where(
