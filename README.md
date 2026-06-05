@@ -37,6 +37,7 @@ The project already uses a real backend for the guest and staff MVP flows:
 - Drizzle ORM for schema, migrations, and database access.
 - `DATABASE_URL` for runtime database connections.
 - Vercel deployment with `DATABASE_URL` configured in the Vercel environment.
+- Staff access for `/staff` is controlled by the server-side `STAFF_ACCESS_CODE` environment variable.
 
 Local `npm run build` and `npx tsc --noEmit` should not require a database connection. The database is required when runtime API endpoints are called, for example from `/t/demo` or `/staff`.
 
@@ -117,13 +118,14 @@ Notes:
 - Docker is not needed.
 - A local database is not required for `tsc` or `build`.
 - Runtime API calls need `DATABASE_URL`.
+- `/staff` login needs `STAFF_ACCESS_CODE`.
 - Do not commit `.env`, `.env.local`, `.codex.env`, tokens, or secrets.
 - Do not print `.codex.env` or other local secret files in logs.
 - Do not run `npm audit fix --force` or major Next/React upgrades without a separate migration task.
 
 ## Environment
 
-For local runtime API testing against Neon, create a local `.env.local` with `DATABASE_URL`.
+For local runtime API testing against Neon and staff access, create a local `.env.local` from the example file.
 
 ```bash
 cp .env.example .env.local
@@ -131,7 +133,18 @@ cp .env.example .env.local
 
 Then edit `.env.local` locally. Never commit local env files.
 
-Vercel runtime uses `DATABASE_URL` configured in the Vercel project environment.
+Required runtime variables:
+
+- `DATABASE_URL` - required for DB-backed API routes.
+- `STAFF_ACCESS_CODE` - required for `/staff` login. This is a server environment variable, not a client-side value. Use a strong non-obvious code, not `1234`, and do not expose the real value in client code, README, screenshots, logs, or commits.
+
+If `STAFF_ACCESS_CODE` is missing, staff access fails closed and `/staff` shows that staff access is not configured. Guest pages can still load, but staff cannot log in until the variable is configured.
+
+Vercel environment checklist:
+
+1. Add `DATABASE_URL` in the Vercel project environment for Production and any Preview environment that should call the database.
+2. Add `STAFF_ACCESS_CODE` in the Vercel project environment for `/staff`.
+3. Redeploy the affected Production or Preview deployment after changing Vercel environment variables.
 
 ## Database And Seed
 
