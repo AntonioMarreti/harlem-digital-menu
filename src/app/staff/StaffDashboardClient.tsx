@@ -380,7 +380,7 @@ export default function StaffDashboard() {
   };
 
   const handleReleaseEmptyTableSession = async (sessionId: string) => {
-    if (!confirm('На этом столе пока нет заказов, но гость мог открыть QR и выбирать позиции. Освободить пустой стол?')) return;
+    if (!confirm('На этом столе пока нет заказов, но гость мог выбирать позиции. Освободить стол без заказа?')) return;
 
     try {
       const res = await fetch(`/api/staff/table-sessions/${sessionId}/release-empty`, {
@@ -390,6 +390,7 @@ export default function StaffDashboard() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
+          fetchData();
           throw new Error('На этом столе уже появился заказ. Обновите список.');
         }
         throw new Error('Не удалось освободить пустой стол');
@@ -425,6 +426,10 @@ export default function StaffDashboard() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         const errorMessage = typeof body?.error === 'string' ? body.error : 'Не удалось перенести стол';
+        if (res.status === 409 && errorMessage === 'Target table is occupied') {
+          fetchData();
+          throw new Error('Стол уже занят. Обновите список.');
+        }
         throw new Error(errorMessage);
       }
 
@@ -451,7 +456,7 @@ export default function StaffDashboard() {
       return;
     }
 
-    if (!confirm('Перенести пустую сессию на другой стол? Если гость уже набрал корзину, она сохранится.')) return;
+    if (!confirm('Перенести открытый QR на другой стол? Корзина гостя сохранится.')) return;
 
     await handleMoveTableSession(sessionId);
   };
@@ -539,7 +544,7 @@ export default function StaffDashboard() {
                   <span className="ml-2 w-2 h-2 rounded-full bg-red-500 inline-block"></span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="tables">Счета ({tableSessions.length})</TabsTrigger>
+              <TabsTrigger value="tables">Открытые столы ({tableSessions.length})</TabsTrigger>
             </TabsList>
           </div>
 
@@ -634,7 +639,7 @@ export default function StaffDashboard() {
                 <div className="space-y-8">
                   <section className="space-y-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">Активные счета</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">Счета с заказами</h2>
                       <p className="text-sm text-gray-500">Столы с заказами и текущим счётом.</p>
                     </div>
                     {billSessions.length === 0 ? (
@@ -653,7 +658,7 @@ export default function StaffDashboard() {
                               <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
                                 <div className="flex items-center">
                                   <Clock className="w-3 h-3 mr-1" />
-                                  {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                  Открыт: {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                                 <div className="font-semibold text-gray-800">{session.totalAmount} ₽</div>
                               </div>
@@ -717,8 +722,8 @@ export default function StaffDashboard() {
                   {emptySessions.length > 0 && (
                     <section className="space-y-3">
                       <div>
-                        <h2 className="text-lg font-semibold text-gray-900">Пустые активные столы</h2>
-                        <p className="text-sm text-gray-500">Если гость уже выбирает позиции и пересел, перенесите пустую сессию. Если гость ушёл — освободите стол.</p>
+                        <h2 className="text-lg font-semibold text-gray-900">Открытые QR без заказов</h2>
+                        <p className="text-sm text-gray-500">Гость мог открыть QR и выбирать позиции. Если гость пересел — перенесите стол. Если ушёл — освободите без заказа.</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {emptySessions.map((session) => (
@@ -726,19 +731,19 @@ export default function StaffDashboard() {
                             <CardHeader className="pb-2">
                               <div className="flex justify-between items-start">
                                 <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
-                                <Badge variant="outline">Пустая сессия</Badge>
+                                <Badge variant="outline">QR открыт, заказов нет</Badge>
                               </div>
                               <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
                                 <div className="flex items-center">
                                   <Clock className="w-3 h-3 mr-1" />
-                                  {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                  Открыт: {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                                 <div className="font-semibold text-gray-800">0 ₽</div>
                               </div>
                             </CardHeader>
                             <CardContent className="py-2 border-y my-2 space-y-1">
                               <div className="text-sm text-gray-600 bg-white border border-gray-200 rounded-md p-2">
-                                Гость открыл меню, но заказов пока нет.
+                                Гость мог открыть QR и выбирать позиции. Если гость пересел — перенесите стол. Если ушёл — освободите без заказа.
                               </div>
                             </CardContent>
                             <CardFooter className="pt-2 flex flex-col gap-2">
@@ -770,7 +775,7 @@ export default function StaffDashboard() {
                                   disabled={!transferTargets[session.id] || movingSessionId === session.id}
                                   onClick={() => handleMoveEmptyTableSession(session.id)}
                                 >
-                                  Перенести пустую сессию
+                                  Перенести на другой стол
                                 </Button>
                               </div>
                               <Button
@@ -778,7 +783,7 @@ export default function StaffDashboard() {
                                 variant="outline"
                                 onClick={() => handleReleaseEmptyTableSession(session.id)}
                               >
-                                Освободить пустой стол
+                                Освободить без заказа
                               </Button>
                             </CardFooter>
                           </Card>
