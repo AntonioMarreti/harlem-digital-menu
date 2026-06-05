@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         activeOrdersCount,
         totalAmount,
       };
-    }).filter(session => session.ordersCount > 0);
+    });
 
     return NextResponse.json({ tableSessions: formattedSessions }, {
       status: 200,

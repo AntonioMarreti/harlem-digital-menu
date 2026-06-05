@@ -379,6 +379,32 @@ export default function StaffDashboard() {
     }
   };
 
+  const handleReleaseEmptyTableSession = async (sessionId: string) => {
+    if (!confirm('На этом столе пока нет заказов, но гость мог открыть QR и выбирать позиции. Освободить пустой стол?')) return;
+
+    try {
+      const res = await fetch(`/api/staff/table-sessions/${sessionId}/release-empty`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
+          throw new Error('На этом столе уже появился заказ. Обновите список.');
+        }
+        throw new Error('Не удалось освободить пустой стол');
+      }
+
+      setFeedback('Пустой стол освобожден.');
+      setTimeout(() => setFeedback(null), 3000);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Ошибка при освобождении пустого стола');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const handleMoveTableSession = async (sessionId: string) => {
     const targetTableIdOrSlug = transferTargets[sessionId];
     if (!targetTableIdOrSlug) {
@@ -451,6 +477,8 @@ export default function StaffDashboard() {
   const harlemOrders = orders.filter(o => o.items.some(i => i.source === 'harlem'));
   const craftBeeryOrders = orders.filter(o => o.items.some(i => i.source === 'craft_beery'));
   const activeCalls = calls.filter(c => c.status === 'new');
+  const billSessions = tableSessions.filter(session => session.ordersCount > 0);
+  const emptySessions = tableSessions.filter(session => session.ordersCount === 0);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -591,76 +619,130 @@ export default function StaffDashboard() {
              ) : tableSessions.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет занятых столов</div>
              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tableSessions.map((session) => (
-                    <Card key={session.id} className="border-t-4 border-t-purple-500">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
-                          <Badge variant={session.activeOrdersCount > 0 ? "default" : "outline"}>
-                            {session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-                          <div className="flex items-center">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div className="font-semibold text-gray-800">{session.totalAmount} ₽</div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="py-2 border-y my-2 space-y-1">
-                        <div className="text-sm text-gray-700 flex justify-between">
-                          <span>Всего заказов:</span>
-                          <span className="font-medium">{session.ordersCount}</span>
-                        </div>
-                        <div className="text-sm text-gray-700 flex justify-between">
-                          <span>Активных заказов:</span>
-                          <span className="font-medium">{session.activeOrdersCount}</span>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2 flex flex-col gap-2">
-                        <div className="flex w-full gap-2">
-                          <select
-                            className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 text-sm"
-                            value={transferTargets[session.id] || ''}
-                            onChange={(event) => setTransferTargets((current) => ({
-                              ...current,
-                              [session.id]: event.target.value
-                            }))}
-                            disabled={movingSessionId === session.id}
-                          >
-                            <option value="">Новый стол</option>
-                            {tables.map((table) => {
-                              const isCurrentTable = table.id === session.tableId;
-                              const isDisabled = isCurrentTable || (table.isOccupied && table.activeSessionId !== session.id);
+                <div className="space-y-8">
+                  <section className="space-y-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">Активные счета</h2>
+                      <p className="text-sm text-gray-500">Столы с заказами и текущим счётом.</p>
+                    </div>
+                    {billSessions.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500 font-medium bg-white border border-gray-200 rounded-md">Нет активных счетов</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {billSessions.map((session) => (
+                          <Card key={session.id} className="border-t-4 border-t-purple-500">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
+                                <Badge variant={session.activeOrdersCount > 0 ? "default" : "outline"}>
+                                  {session.activeOrdersCount > 0 ? 'Есть активные заказы' : 'Все заказы закрыты'}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+                                <div className="flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <div className="font-semibold text-gray-800">{session.totalAmount} ₽</div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="py-2 border-y my-2 space-y-1">
+                              <div className="text-sm text-gray-700 flex justify-between">
+                                <span>Всего заказов:</span>
+                                <span className="font-medium">{session.ordersCount}</span>
+                              </div>
+                              <div className="text-sm text-gray-700 flex justify-between">
+                                <span>Активных заказов:</span>
+                                <span className="font-medium">{session.activeOrdersCount}</span>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="pt-2 flex flex-col gap-2">
+                              <div className="flex w-full gap-2">
+                                <select
+                                  className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 text-sm"
+                                  value={transferTargets[session.id] || ''}
+                                  onChange={(event) => setTransferTargets((current) => ({
+                                    ...current,
+                                    [session.id]: event.target.value
+                                  }))}
+                                  disabled={movingSessionId === session.id}
+                                >
+                                  <option value="">Новый стол</option>
+                                  {tables.map((table) => {
+                                    const isCurrentTable = table.id === session.tableId;
+                                    const isDisabled = isCurrentTable || (table.isOccupied && table.activeSessionId !== session.id);
 
-                              return (
-                                <option key={table.id} value={table.qrSlug} disabled={isDisabled}>
-                                  {formatTableLabel(table.name, table.qrSlug)}
-                                  {isCurrentTable ? ' — текущий' : table.isOccupied ? ' — занят' : ''}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <Button
-                            variant="outline"
-                            disabled={!transferTargets[session.id] || movingSessionId === session.id}
-                            onClick={() => handleMoveTableSession(session.id)}
-                          >
-                            Перенести стол
-                          </Button>
-                        </div>
-                        <Button
-                          className="w-full"
-                          variant="outline"
-                          onClick={() => handleCloseTableSession(session.tableId)}
-                        >
-                          Освободить стол / Закрыть счёт
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                                    return (
+                                      <option key={table.id} value={table.qrSlug} disabled={isDisabled}>
+                                        {formatTableLabel(table.name, table.qrSlug)}
+                                        {isCurrentTable ? ' — текущий' : table.isOccupied ? ' — занят' : ''}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <Button
+                                  variant="outline"
+                                  disabled={!transferTargets[session.id] || movingSessionId === session.id}
+                                  onClick={() => handleMoveTableSession(session.id)}
+                                >
+                                  Перенести стол
+                                </Button>
+                              </div>
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => handleCloseTableSession(session.tableId)}
+                              >
+                                Освободить стол / Закрыть счёт
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  {emptySessions.length > 0 && (
+                    <section className="space-y-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">Пустые активные столы</h2>
+                        <p className="text-sm text-gray-500">Гость открыл меню, но заказов пока нет.</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {emptySessions.map((session) => (
+                          <Card key={session.id} className="border-t-4 border-t-gray-400 bg-gray-50">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <CardTitle>{formatTableLabel(session.tableName, session.tableQrSlug)}</CardTitle>
+                                <Badge variant="outline">Пустая сессия</Badge>
+                              </div>
+                              <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+                                <div className="flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {new Date(session.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <div className="font-semibold text-gray-800">0 ₽</div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="py-2 border-y my-2 space-y-1">
+                              <div className="text-sm text-gray-600 bg-white border border-gray-200 rounded-md p-2">
+                                Гость открыл меню, но заказов пока нет.
+                              </div>
+                            </CardContent>
+                            <CardFooter className="pt-2">
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => handleReleaseEmptyTableSession(session.id)}
+                              >
+                                Освободить пустой стол
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+                    </section>
+                  )}
                 </div>
              )}
           </TabsContent>
