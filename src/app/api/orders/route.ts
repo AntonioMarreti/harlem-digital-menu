@@ -4,13 +4,60 @@ import { getDb } from '@/db';
 import { tableSessions, orders, orderItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifyTableSessionOwnership } from '@/lib/table-session-ownership';
+import { menuItems } from '@/lib/mock-data';
+
+const MAX_ITEM_QUANTITY = 99;
+const MAX_ITEM_NOTES_LENGTH = 500;
+
+const canonicalMenuItemById = new Map(menuItems.map((item) => [item.id, item]));
+
+type IncomingOrderItem = {
+  id?: unknown;
+  menuItemId?: unknown;
+  quantity?: unknown;
+  options?: unknown;
+};
+
+function getNormalizedItemOptions(options: unknown) {
+  if (options === undefined || options === null) {
+    return { ok: true as const, value: null };
+  }
+
+  if (typeof options !== 'object' || Array.isArray(options)) {
+    return { ok: false as const, error: 'Invalid item options' };
+  }
+
+  if (!('notes' in options)) {
+    return { ok: true as const, value: null };
+  }
+
+  const notes = (options as { notes?: unknown }).notes;
+  if (notes === undefined || notes === null) {
+    return { ok: true as const, value: null };
+  }
+
+  if (typeof notes !== 'string') {
+    return { ok: false as const, error: 'Invalid item notes' };
+  }
+
+  const trimmedNotes = notes.trim();
+  if (!trimmedNotes) {
+    return { ok: true as const, value: null };
+  }
+
+  if (trimmedNotes.length > MAX_ITEM_NOTES_LENGTH) {
+    return { ok: false as const, error: 'Item notes are too long' };
+  }
+
+  return { ok: true as const, value: { notes: trimmedNotes } };
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableSessionId, tableIdOrSlug, items, totalAmount, guestSessionId } = body;
+    const { tableSessionId, tableIdOrSlug, items, guestSessionId } = body;
 
-    if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0 || totalAmount === undefined) {
+    if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -25,23 +72,49 @@ export async function POST(request: NextRequest) {
     const ownershipError = await verifyTableSessionOwnership(db, session, tableIdOrSlug);
     if (ownershipError) return ownershipError;
 
-    // Validate items
-    for (const item of items) {
-      if (!item.menuItemId && !item.id) {
+    const itemsToInsert = [];
+    let serverTotalAmount = 0;
+
+    for (const item of items as IncomingOrderItem[]) {
+      const menuItemId = typeof item.menuItemId === 'string'
+        ? item.menuItemId
+        : typeof item.id === 'string'
+          ? item.id
+          : null;
+
+      if (!menuItemId) {
         return NextResponse.json({ error: 'Item missing menuItemId or id' }, { status: 400 });
       }
-      if (!item.name) {
-        return NextResponse.json({ error: 'Item missing name' }, { status: 400 });
+
+      const canonicalItem = canonicalMenuItemById.get(menuItemId);
+      if (!canonicalItem) {
+        return NextResponse.json({ error: 'Unknown menu item' }, { status: 400 });
       }
-      if (item.source && !['harlem', 'craft_beery'].includes(item.source)) {
-        return NextResponse.json({ error: 'Invalid item source' }, { status: 400 });
-      }
-      if (item.quantity !== undefined && (typeof item.quantity !== 'number' || item.quantity <= 0)) {
+
+      if (
+        typeof item.quantity !== 'number' ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0 ||
+        item.quantity > MAX_ITEM_QUANTITY
+      ) {
         return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 });
       }
-      if (item.price !== undefined && (typeof item.price !== 'number' || item.price < 0)) {
-        return NextResponse.json({ error: 'Invalid item price' }, { status: 400 });
+
+      const normalizedOptions = getNormalizedItemOptions(item.options);
+      if (!normalizedOptions.ok) {
+        return NextResponse.json({ error: normalizedOptions.error }, { status: 400 });
       }
+
+      serverTotalAmount += canonicalItem.price * item.quantity;
+
+      itemsToInsert.push({
+        menuItemId,
+        name: canonicalItem.name,
+        source: canonicalItem.source || 'harlem',
+        quantity: item.quantity,
+        price: canonicalItem.price,
+        options: normalizedOptions.value ? JSON.stringify(normalizedOptions.value) : null,
+      });
     }
 
     // Insert order
@@ -49,22 +122,17 @@ export async function POST(request: NextRequest) {
       tableSessionId,
       guestSessionId: guestSessionId || null,
       status: 'new',
-      totalAmount,
+      totalAmount: serverTotalAmount,
     }).returning();
 
     // Insert order items
-    const itemsToInsert = items.map((item: { menuItemId?: string, id?: string, name?: string, source?: string, quantity?: number, price?: number, options?: unknown }) => ({
+    const orderItemsToInsert = itemsToInsert.map((item) => ({
       orderId: newOrder.id,
-      menuItemId: (item.menuItemId || item.id) as string,
-      name: item.name as string,
-      source: (item.source || 'harlem') as 'harlem' | 'craft_beery',
-      quantity: (item.quantity || 1) as number,
-      price: (item.price || 0) as number,
-      options: item.options ? JSON.stringify(item.options) : null,
+      ...item,
     }));
 
 
-    const insertedItems = await db.insert(orderItems).values(itemsToInsert).returning();
+    const insertedItems = await db.insert(orderItems).values(orderItemsToInsert).returning();
 
     return NextResponse.json({
       order: newOrder,
