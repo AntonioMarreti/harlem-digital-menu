@@ -48,3 +48,18 @@ export async function verifyTableSessionOwnership(
 
   return null;
 }
+
+export async function verifyRequiredTableSessionOwnership(
+  db: ReturnType<typeof getDb>,
+  session: typeof tableSessions.$inferSelect,
+  tableIdOrSlug: unknown
+) {
+  if (typeof tableIdOrSlug !== 'string' || !tableIdOrSlug.trim()) {
+    return NextResponse.json({
+      error: 'tableIdOrSlug is required',
+      code: 'TABLE_CONTEXT_REQUIRED',
+    }, { status: 400 });
+  }
+
+  return verifyTableSessionOwnership(db, session, tableIdOrSlug);
+}

@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, tables } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { verifyTableSessionOwnership } from '@/lib/table-session-ownership';
+import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 
 export async function GET(request: NextRequest, { params }: { params: { tableSessionId: string } }) {
   try {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
       return NextResponse.json({ error: 'Session is closed', isClosed: true }, { status: 404 });
     }
 
-    const ownershipError = await verifyTableSessionOwnership(
+    const ownershipError = await verifyRequiredTableSessionOwnership(
       db,
       session,
       request.nextUrl.searchParams.get('tableIdOrSlug')

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { tableSessions, orders, orderItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { verifyTableSessionOwnership } from '@/lib/table-session-ownership';
+import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
 
 const MAX_ITEM_QUANTITY = 99;
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
 
-    const ownershipError = await verifyTableSessionOwnership(db, session, tableIdOrSlug);
+    const ownershipError = await verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug);
     if (ownershipError) return ownershipError;
 
     const itemsToInsert = [];
