@@ -4,6 +4,28 @@ import { getDb } from '@/db';
 import { tables, tableSessions } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
+const ACTIVE_SESSION_UNIQUE_INDEX = 'table_sessions_one_active_per_table_unique';
+
+function isActiveSessionUniqueViolation(error: unknown) {
+  const candidates = [error];
+
+  if (error && typeof error === 'object' && 'cause' in error) {
+    candidates.push((error as { cause?: unknown }).cause);
+  }
+
+  return candidates.some((candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      return false;
+    }
+
+    const pgError = candidate as { code?: unknown; constraint?: unknown; message?: unknown };
+    return pgError.code === '23505' && (
+      pgError.constraint === ACTIVE_SESSION_UNIQUE_INDEX ||
+      (typeof pgError.message === 'string' && pgError.message.includes(ACTIVE_SESSION_UNIQUE_INDEX))
+    );
+  });
+}
+
 export async function GET(request: NextRequest, { params }: { params: { tableId: string } }) {
   try {
     const db = getDb();
@@ -35,11 +57,31 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
 
     // Create a new active session if none exists
     if (!session) {
-      const [newSession] = await db.insert(tableSessions).values({
-        tableId: table.id,
-        status: 'active'
-      }).returning();
-      session = newSession;
+      try {
+        const [newSession] = await db.insert(tableSessions).values({
+          tableId: table.id,
+          status: 'active'
+        }).returning();
+        session = newSession;
+      } catch (error: unknown) {
+        if (!isActiveSessionUniqueViolation(error)) {
+          throw error;
+        }
+
+        session = await db.select().from(tableSessions).where(
+          and(
+            eq(tableSessions.tableId, table.id),
+            eq(tableSessions.status, 'active')
+          )
+        ).orderBy(desc(tableSessions.createdAt)).limit(1).then(res => res[0]);
+
+        if (!session) {
+          return NextResponse.json({
+            error: 'Active table session conflict; please retry',
+            code: 'TABLE_SESSION_CONFLICT',
+          }, { status: 409 });
+        }
+      }
     }
 
     return NextResponse.json({ session, table }, {
