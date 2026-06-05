@@ -23,6 +23,10 @@ type MovedTableSessionNotice = {
 
 type CartItem = { item: MenuItem, quantity: number, notes?: string };
 
+const CLOSED_SESSION_NOTICE = 'Этот счёт уже закрыт. Если хотите сделать новый заказ, мы подготовили новый счёт для этого стола. Корзина в этой вкладке сохранена.';
+const CLOSED_SESSION_SUBMIT_MESSAGE = 'Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз, чтобы отправить её в новый счёт.';
+const CLOSED_SESSION_STAFF_CALL_MESSAGE = 'Счёт уже закрыт. Мы обновили стол — попробуйте вызвать персонал ещё раз.';
+
 const getCartStorageKey = (tableSessionId: string) => `harlem_cart:${tableSessionId}`;
 
 const isStoredCartItem = (value: unknown): value is CartItem => {
@@ -108,6 +112,7 @@ export default function GuestPageClient({
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [movedTableSessionNotice, setMovedTableSessionNotice] = useState<MovedTableSessionNotice | null>(null);
+  const [staleTableSessionNotice, setStaleTableSessionNotice] = useState<string | null>(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
   const tableSessionIdRef = useRef<string | null>(null);
@@ -137,7 +142,7 @@ export default function GuestPageClient({
       return null;
     }
 
-    const body = await res.json().catch(() => null);
+    const body = await res.clone().json().catch(() => null);
     if (!body || typeof body !== 'object' || !('code' in body) || body.code !== 'TABLE_SESSION_MOVED') {
       return null;
     }
@@ -151,15 +156,52 @@ export default function GuestPageClient({
 
     return {
       message: targetTableName
-        ? `Вас пересадили за ${targetTableName}. Откройте новый стол, корзина сохранена.`
-        : 'Вас пересадили за другой стол. Откройте QR нового стола, корзина сохранена.',
+        ? `Вас пересадили за ${targetTableName}. Старый QR больше не принимает заказы. Откройте новый стол — корзина сохранена.`
+        : 'Вас пересадили за другой стол. Старый QR больше не принимает заказы. Откройте QR нового стола — корзина сохранена.',
       targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
       targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
     };
   }, []);
 
+  const isClosedTableSessionResponse = useCallback(async (res: Response) => {
+    if (res.status !== 404) {
+      return false;
+    }
+
+    const body = await res.clone().json().catch(() => null);
+    return Boolean(body && typeof body === 'object' && 'isClosed' in body && body.isClosed === true);
+  }, []);
+
+  const isInactiveTableSessionResponse = useCallback(async (res: Response) => {
+    if (res.status !== 400 && res.status !== 404) {
+      return false;
+    }
+
+    const body = await res.clone().json().catch(() => null);
+    const errorMessage = body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+      ? body.error.toLowerCase()
+      : '';
+
+    return Boolean(
+      body &&
+      typeof body === 'object' &&
+      (
+        ('isClosed' in body && body.isClosed === true) ||
+        errorMessage.includes('table session is not active') ||
+        errorMessage.includes('session is closed')
+      )
+    );
+  }, []);
+
+  const handleStaleTableSession = useCallback((message = CLOSED_SESSION_NOTICE) => {
+    setStaleTableSessionNotice(message);
+    setBillData(null);
+    setActiveOrder(null);
+  }, []);
+
   const handleMovedTableSession = useCallback((notice: MovedTableSessionNotice) => {
     setMovedTableSessionNotice(notice);
+    setStaleTableSessionNotice(null);
     setBillData(null);
     setActiveOrder(null);
     setOrderSubmitError(notice.message);
@@ -264,6 +306,11 @@ export default function GuestPageClient({
           return;
         }
 
+        if (await isClosedTableSessionResponse(billRes)) {
+          handleStaleTableSession();
+          return;
+        }
+
         setBillData(null);
       }
 
@@ -328,12 +375,25 @@ export default function GuestPageClient({
           return;
         }
 
+        if (await isClosedTableSessionResponse(ordersRes)) {
+          handleStaleTableSession();
+          return;
+        }
+
         setActiveOrder(null);
       }
     } catch (err) {
       console.error('Failed to fetch session state', err);
     }
-  }, [tableSessionId, menuItems, tableIdOrSlug, getMovedTableSessionNotice, handleMovedTableSession]);
+  }, [
+    tableSessionId,
+    menuItems,
+    tableIdOrSlug,
+    getMovedTableSessionNotice,
+    handleMovedTableSession,
+    isClosedTableSessionResponse,
+    handleStaleTableSession,
+  ]);
 
   useEffect(() => {
     fetchSessionState();
@@ -457,8 +517,8 @@ export default function GuestPageClient({
           const targetTableQrSlug = typeof errorBody.targetTableQrSlug === 'string' ? errorBody.targetTableQrSlug : '';
           handleMovedTableSession({
             message: targetTableName
-              ? `Вас пересадили за ${targetTableName}. Откройте новый стол, корзина сохранена.`
-              : 'Вас пересадили за другой стол. Откройте QR нового стола, корзина сохранена.',
+              ? `Вас пересадили за ${targetTableName}. Старый QR больше не принимает заказы. Откройте новый стол — корзина сохранена.`
+              : 'Вас пересадили за другой стол. Старый QR больше не принимает заказы. Откройте QR нового стола — корзина сохранена.',
             targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
             targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
           });
@@ -477,7 +537,8 @@ export default function GuestPageClient({
 
         if (isStaleSessionError) {
           await refreshTableSession();
-          setOrderSubmitError('Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз.');
+          handleStaleTableSession();
+          setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
           return;
         }
 
@@ -489,6 +550,7 @@ export default function GuestPageClient({
       setIsCartOpen(false);
       saveCartToSessionStorage(tableSessionId, []);
       setCart([]);
+      setStaleTableSessionNotice(null);
       pendingOrderIdempotencyKeyRef.current = null;
     } catch (err) {
       console.error(err);
@@ -525,9 +587,17 @@ export default function GuestPageClient({
           return;
         }
 
+        if (await isInactiveTableSessionResponse(res)) {
+          await refreshTableSession();
+          handleStaleTableSession(CLOSED_SESSION_STAFF_CALL_MESSAGE);
+          setStaffCallStatus(CLOSED_SESSION_STAFF_CALL_MESSAGE);
+          return;
+        }
+
         throw new Error('Failed to call staff');
       }
 
+      setStaleTableSessionNotice(null);
       setStaffCallStatus(`Сотрудник вызван: ${reasonLabels[reason] || reason}`);
     } catch (err) {
       console.error(err);
@@ -593,6 +663,29 @@ export default function GuestPageClient({
                 {movedTableSessionNotice.targetLabel || 'Открыть новый стол'}
               </a>
             )}
+          </div>
+        </div>
+      )}
+
+      {!movedTableSessionNotice && staleTableSessionNotice && (
+        <div className="fixed top-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 p-4 animate-in slide-in-from-top-4">
+          <div className="bg-card text-card-foreground border border-primary/30 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex flex-col gap-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+              <span>{staleTableSessionNotice}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="self-start rounded-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+              onClick={() => {
+                refreshTableSession()
+                  .then(() => setStaleTableSessionNotice(null))
+                  .catch(() => {});
+              }}
+            >
+              Обновить стол
+            </Button>
           </div>
         </div>
       )}
