@@ -6,6 +6,7 @@ import { getDb } from '@/db';
 import { tableSessions, tables } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { requireStaffAccess } from '@/lib/staff-auth';
+import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 const ACTIVE_SESSION_UNIQUE_INDEX = 'table_sessions_one_active_per_table_unique';
@@ -91,6 +92,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { sessio
       .then(res => res[0]);
 
     if (targetActiveSession && targetActiveSession.id !== sourceSession.id) {
+      logWarn('table_session.move_conflict', {
+        tableSessionId: sourceSession.id,
+        fromTableId: sourceSession.tableId,
+        toTableId: targetTable.id,
+        code: 'TARGET_TABLE_OCCUPIED',
+      });
       return NextResponse.json({ error: 'Target table is occupied' }, { status: 409 });
     }
 
@@ -105,6 +112,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { sessio
         .returning();
     } catch (error: unknown) {
       if (isActiveSessionUniqueViolation(error)) {
+        logWarn('table_session.move_conflict', {
+          tableSessionId: sourceSession.id,
+          fromTableId: sourceSession.tableId,
+          toTableId: targetTable.id,
+          code: 'TARGET_TABLE_OCCUPIED',
+        });
         return NextResponse.json({ error: 'Target table is occupied' }, { status: 409 });
       }
 
@@ -115,12 +128,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { sessio
       return NextResponse.json({ error: 'Table session is not active' }, { status: 409 });
     }
 
+    logInfo('table_session.moved', {
+      tableSessionId: updatedSession.id,
+      fromTableId: sourceSession.tableId,
+      toTableId: targetTable.id,
+    });
+
     return NextResponse.json({ session: updatedSession, table: targetTable }, {
       status: 200,
       headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
     });
   } catch (error: unknown) {
-    console.error('Error moving table session:', error);
+    logError('table_session.move_error', error);
     return NextResponse.json({ error: 'Internal server error' }, {
       status: 500,
       headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
