@@ -21,6 +21,79 @@ type MovedTableSessionNotice = {
   targetLabel?: string;
 };
 
+type CartItem = { item: MenuItem, quantity: number, notes?: string };
+
+const getCartStorageKey = (tableSessionId: string) => `harlem_cart:${tableSessionId}`;
+
+const isStoredCartItem = (value: unknown): value is CartItem => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as {
+    item?: { id?: unknown; name?: unknown; price?: unknown };
+    quantity?: unknown;
+    notes?: unknown;
+  };
+
+  return Boolean(
+    candidate.item &&
+    typeof candidate.item.id === 'string' &&
+    typeof candidate.item.name === 'string' &&
+    typeof candidate.item.price === 'number' &&
+    Number.isFinite(candidate.item.price) &&
+    typeof candidate.quantity === 'number' &&
+    Number.isFinite(candidate.quantity) &&
+    candidate.quantity > 0 &&
+    (candidate.notes === undefined || typeof candidate.notes === 'string')
+  );
+};
+
+const loadCartFromSessionStorage = (tableSessionId: string): CartItem[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const storageKey = getCartStorageKey(tableSessionId);
+
+  try {
+    const storedCart = window.sessionStorage.getItem(storageKey);
+    if (!storedCart) {
+      return [];
+    }
+
+    const parsedCart = JSON.parse(storedCart);
+    if (!Array.isArray(parsedCart) || !parsedCart.every(isStoredCartItem)) {
+      window.sessionStorage.removeItem(storageKey);
+      return [];
+    }
+
+    return parsedCart;
+  } catch {
+    window.sessionStorage.removeItem(storageKey);
+    return [];
+  }
+};
+
+const saveCartToSessionStorage = (tableSessionId: string, cart: CartItem[]) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const storageKey = getCartStorageKey(tableSessionId);
+
+  try {
+    if (cart.length === 0) {
+      window.sessionStorage.removeItem(storageKey);
+      return;
+    }
+
+    window.sessionStorage.setItem(storageKey, JSON.stringify(cart));
+  } catch {
+    // Ignore storage write errors: the in-memory cart is still the source of truth for this render.
+  }
+};
+
 export default function GuestPageClient({
   table,
   categories,
@@ -39,7 +112,9 @@ export default function GuestPageClient({
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
   const tableSessionIdRef = useRef<string | null>(null);
   const orderSubmittingRef = useRef(false);
-  const [cart, setCart] = useState<{item: MenuItem, quantity: number, notes?: string}[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const cartRef = useRef<CartItem[]>([]);
+  const [cartStorageReadyForSessionId, setCartStorageReadyForSessionId] = useState<string | null>(null);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isStaffOpen, setIsStaffOpen] = useState(false);
@@ -75,8 +150,8 @@ export default function GuestPageClient({
 
     return {
       message: targetTableName
-        ? `Вас пересадили за ${targetTableName}. Откройте QR нового стола. Корзина на этой странице не отправлена.`
-        : 'Вас пересадили за другой стол. Откройте QR нового стола. Корзина на этой странице не отправлена.',
+        ? `Вас пересадили за ${targetTableName}. Откройте новый стол, корзина сохранена.`
+        : 'Вас пересадили за другой стол. Откройте QR нового стола, корзина сохранена.',
       targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
       targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
     };
@@ -134,6 +209,31 @@ export default function GuestPageClient({
   useEffect(() => {
     refreshTableSession(true).catch(() => {});
   }, [refreshTableSession]);
+
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
+  useEffect(() => {
+    if (!tableSessionId) {
+      setCartStorageReadyForSessionId(null);
+      return;
+    }
+
+    if (cartRef.current.length === 0) {
+      setCart(loadCartFromSessionStorage(tableSessionId));
+    }
+
+    setCartStorageReadyForSessionId(tableSessionId);
+  }, [tableSessionId]);
+
+  useEffect(() => {
+    if (!tableSessionId || cartStorageReadyForSessionId !== tableSessionId) {
+      return;
+    }
+
+    saveCartToSessionStorage(tableSessionId, cart);
+  }, [cart, tableSessionId, cartStorageReadyForSessionId]);
 
   const fetchSessionState = useCallback(async () => {
     if (!tableSessionId) return;
@@ -347,8 +447,8 @@ export default function GuestPageClient({
           const targetTableQrSlug = typeof errorBody.targetTableQrSlug === 'string' ? errorBody.targetTableQrSlug : '';
           handleMovedTableSession({
             message: targetTableName
-              ? `Вас пересадили за ${targetTableName}. Откройте QR нового стола. Корзина на этой странице не отправлена.`
-              : 'Вас пересадили за другой стол. Откройте QR нового стола. Корзина на этой странице не отправлена.',
+              ? `Вас пересадили за ${targetTableName}. Откройте новый стол, корзина сохранена.`
+              : 'Вас пересадили за другой стол. Откройте QR нового стола, корзина сохранена.',
             targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
             targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
           });
@@ -377,6 +477,7 @@ export default function GuestPageClient({
       await res.json();
       await fetchSessionState();
       setIsCartOpen(false);
+      saveCartToSessionStorage(tableSessionId, []);
       setCart([]);
     } catch (err) {
       console.error(err);
