@@ -24,14 +24,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { orderI
 
     const db = getDb();
 
+    const existingOrder = await db.select().from(orders).where(eq(orders.id, params.orderId)).limit(1).then(res => res[0]);
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    const allowedTransitions = {
+      new: ['accepted', 'cancelled'],
+      accepted: ['preparing', 'cancelled'],
+      preparing: ['delivered'],
+      delivered: ['closed'],
+      closed: [],
+      cancelled: [],
+    } as const;
+
+    const currentStatus = existingOrder.status as keyof typeof allowedTransitions;
+    if (!(allowedTransitions[currentStatus] as readonly string[])?.includes(status)) {
+      return NextResponse.json({
+        error: 'Invalid status transition',
+        code: 'INVALID_ORDER_STATUS_TRANSITION'
+      }, { status: 409 });
+    }
+
     const [updatedOrder] = await db.update(orders)
       .set({ status, updatedAt: new Date() })
       .where(eq(orders.id, params.orderId))
       .returning();
-
-    if (!updatedOrder) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
 
     return NextResponse.json({ order: updatedOrder }, { status: 200 });
 
