@@ -1,10 +1,14 @@
 # Product Specification: Harlem Digital Menu
 
+> Status: product vision/backlog.
+> Some backend, table-session, ordering, staff-call, and staff-dashboard features are already implemented in the current MVP.
+> See `README.md` for current pilot status.
+
 ## 1. Overview
 
 Harlem Digital Menu is a QR-based digital system for a hookah lounge.
 
-The current real-world starting point is simple: each table has a QR code that opens a one-page website with buttons linking to PDF menu files.
+The original real-world starting point was simple: each table had a QR code that opened a one-page website with buttons linking to PDF menu files.
 
 The product opportunity is to replace this static PDF experience with an interactive guest system that helps guests order faster, helps staff process requests, and helps the venue build loyalty and repeat visits.
 
@@ -393,9 +397,11 @@ Recommended statuses:
 - new;
 - accepted;
 - preparing;
-- ready;
 - delivered;
+- closed;
 - cancelled.
+
+Current MVP note: backend status transitions are validated for `new`, `accepted`, `preparing`, `delivered`, `closed`, and `cancelled`.
 
 Hookah-specific optional statuses:
 
@@ -476,9 +482,9 @@ Admin can:
 
 This can be simple at first.
 
-## 9. Table Session Model (Future Architecture)
+## 9. Table Session Model
 
-A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They must belong to an active table session / visit.
+This model is implemented in the current MVP. A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They belong to an active table session / visit.
 
 ### 9.1 Physical table
 - A real table in the venue.
@@ -523,8 +529,8 @@ A physical table is permanent, but many different companies can use the same tab
 - Closing a table session should prevent new orders from being added to the old visit.
 - New guests at the same physical table should create/use a new active session.
 
-### 9.6 Future backend implications
-When real backend is implemented, the core model should look like:
+### 9.6 Backend model
+The current backend follows this core model:
 - Table
 - TableSession
 - GuestSession / User
@@ -540,12 +546,12 @@ Relationships:
 - GuestSession/User can create draft carts and submit orders into the active TableSession.
 
 ### 9.7 MVP behavior
-For the current mock MVP, this does not need to be implemented yet. But future real order sync must use table sessions, not just table IDs.
-*(See `BACKEND_PLAN.md` for the full backend plan for the first real order sync).*
+The current MVP uses table sessions, not just table IDs. Guest draft carts remain personal to the browser until submitted, while submitted orders and staff calls belong to the shared active table session.
+*(See `README.md` for the current pilot status and `BACKEND_PLAN.md` for historical backend planning context).*
 
 ## 10. Data model draft
 
-This is a conceptual draft, not the final schema.
+This is a conceptual product draft, not the final schema. The current implementation source of truth is `src/db/schema.ts`.
 
 ### users
 
@@ -686,6 +692,8 @@ This is a conceptual draft, not the final schema.
 - reviewed_at
 
 ## 11. MVP milestones
+
+This milestone list is historical/vision context. Several core milestones are already implemented; current pilot status lives in `README.md`.
 
 ### Milestone 0: Planning
 

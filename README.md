@@ -22,6 +22,19 @@ Guests open the table menu, add menu items to a cart, configure hookah options, 
 
 Staff open the dashboard, see active orders, staff calls, and table sessions, update order and call statuses, and close the bill by freeing the table session.
 
+### Pilot hardening status
+
+The current pilot branch includes:
+
+- server-side order totals and idempotent order submit;
+- mandatory table/session ownership checks for guest write and session endpoints;
+- protected staff routes with shared `STAFF_ACCESS_CODE` login;
+- safe session move, release, and close flows;
+- DB-level one active session per table;
+- stale, closed, and moved guest session UX handling;
+- staff empty-session UX polish;
+- safe structured server logs for write, security, and race events.
+
 Main screens:
 
 - `/t/demo` - guest demo table.
@@ -52,12 +65,19 @@ Implemented API routes include:
 - `POST /api/orders`
 - `GET /api/table-sessions/[tableSessionId]/orders`
 - `GET /api/table-sessions/[tableSessionId]/bill`
+- `POST /api/staff/auth/login`
+- `POST /api/staff/auth/logout`
 - `GET /api/staff/orders`
 - `PATCH /api/staff/orders/[orderId]`
 - `GET /api/staff/table-sessions`
+- `GET /api/staff/tables`
+- `PATCH /api/staff/table-sessions/[sessionId]/move`
+- `POST /api/staff/table-sessions/[sessionId]/release-empty`
 - `GET /api/staff-calls`
 - `POST /api/staff-calls`
 - `PATCH /api/staff-calls/[callId]`
+
+Public table-level bill lookup is disabled. Public table session rotation with `POST /api/tables/[tableId]/session` is disabled; guest flow uses the safe `GET` session bootstrap and staff uses protected move/release/close endpoints.
 
 This README intentionally keeps the route contract high level. See the route files under `src/app/api` for implementation details.
 
@@ -163,22 +183,32 @@ Available scripts:
 npm run db:generate
 npm run db:migrate
 npm run db:seed
+npm run db:seed:tables
 ```
 
-`db:migrate` and `db:seed` require `DATABASE_URL`. Use them only when intentionally applying changes to the configured Neon database.
+`db:migrate`, `db:seed`, and `db:seed:tables` require `DATABASE_URL`. Use them only when intentionally applying changes to the configured Neon database.
+
+GitHub Actions:
+
+- `Database setup` runs migrations and can optionally run seed data.
+- For production migration PRs, run `Database setup` with `run_seed=false` unless seed data is intentionally required.
+- `Seed pilot tables` seeds the real pilot table records such as `h01`-`h10`.
+
+Do not run seed workflows against production without an explicit operational reason.
 
 ## Demo Checklist
 
 Before showing the MVP:
 
 1. Open `/staff`.
-2. If there are old orders or an old bill, close the active table session from `Счета` using the free/close table action.
+2. If there are old orders or an old bill, close the active table session from `/staff -> Открытые столы -> Счета с заказами` using the close/free table action.
 3. Open `/t/demo`.
 4. Add a regular menu item to the cart.
 5. Configure a hookah item with strength, taste, and optional notes.
 6. Submit the order.
 7. On `/staff`, show the order, hookah option lines, status changes, staff calls, and bill/session information.
-8. At the end, close the bill/free the table session.
+8. Show `/staff -> Открытые столы -> Открытые QR без заказов` if an empty active QR session exists.
+9. At the end, close the bill/free the table session.
 
 ## Product Scope
 
@@ -193,6 +223,14 @@ The MVP focuses on:
 
 Postponed features:
 
+- QR/order abuse protection, such as public menu mode plus QR unlock, seating code, or staff confirmation.
+- Pilot rehearsal with owner, waiter, and hookah worker.
+- Staging/preview DB workflow.
+- Distributed staff login rate limit via Redis/KV.
+- Dedicated monitoring provider if Vercel logs are not enough.
+- Per-user staff roles and audit trail.
+- Menu availability/admin toggle.
+- Sound or push notifications for staff.
 - Real online payments.
 - POS/cash register integration.
 - Complex analytics.

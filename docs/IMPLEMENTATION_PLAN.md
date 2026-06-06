@@ -1,6 +1,12 @@
 # Implementation Plan: Harlem Digital Menu
 
+> Status: historical implementation plan.
+> This document is not the current implementation source of truth.
+> See `README.md` for current pilot status and backlog.
+
 This document outlines the implementation plan for the Harlem Digital Menu MVP. It covers the MVP scope, tech stack, database schema, user roles, main screens, development milestones, parallelization opportunities, and postponed features.
+
+Current MVP note: the implemented pilot intentionally differs from parts of this early plan. It uses a shared `STAFF_ACCESS_CODE` staff login, static menu data, real table sessions, real staff dashboard flows, and Neon/Drizzle-backed order/session APIs.
 
 ## 1. MVP Scope
 
@@ -33,11 +39,11 @@ To prioritize easy local development, simple deployment, and maintainable archit
 - **Database:** Vercel Postgres (Neon) for persistent storage compatible with serverless environments (see `BACKEND_PLAN.md`).
 - **ORM:** [Drizzle ORM](https://orm.drizzle.team/) for lightweight, edge-compatible type-safe database access.
 - **State Management:** React Context or Zustand for client-side state (cart, session).
-- **Auth:** Simple session-based auth using `next-auth` or `lucia` for staff/admin, with guests remaining mostly anonymous (session cookie) for the MVP.
+- **Auth:** Historical proposal was `next-auth` or `lucia`. The current MVP uses a shared server-side `STAFF_ACCESS_CODE` for staff access; per-user staff roles are future work.
 
-## 3. Future Architecture: Table Session Model
+## 3. Table Session Model
 
-While the MVP may start with basic ordering, the long-term architecture envisions a structured **Table Session Model** to handle multiple guests at the same table. A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They must belong to an active table session / visit.
+This early plan described the **Table Session Model** as future architecture. It is now implemented in the current MVP. A physical table is permanent, but many different companies can use the same table during one day. Therefore, submitted orders and staff calls must not belong only to the table itself (`tableId`). They belong to an active table session / visit.
 
 - **Stable QR Codes**: Physical table QR codes point to stable URLs (e.g., `/t/[tableId]`) and stay the same across days and visits.
 - **Table Sessions**: Each time-bounded visit generates or attaches to an active session for that table. One physical table can have many sessions during one day. A session can be active, closed, cancelled, or expired.
@@ -48,7 +54,7 @@ While the MVP may start with basic ordering, the long-term architecture envision
 
 ## 4. Database Schema Proposal
 
-A simplified schema to support the MVP:
+A simplified early schema proposal. The current production schema is in `src/db/schema.ts`; this section is historical and should not be treated as an exact migration plan.
 
 - **`users`**: `id`, `role`, `username`, `password_hash`, `created_at` (for staff/admin).
 - **`tables`**: `id`, `name`, `number`, `qr_slug`, `is_active`.

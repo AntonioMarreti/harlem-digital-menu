@@ -1,5 +1,8 @@
 # Backend & Storage Plan: First Real Order Sync
 
+> Status: historical first backend plan. Partially implemented.
+> Current source of truth for pilot status is `README.md` and the route files under `src/app/api`.
+
 This document outlines the backend and storage implementation plan for the first real order synchronization milestone: allowing a guest to submit an order from `/t/[tableId]` and staff to see/update it in `/staff`.
 
 ## 1. Recommended Storage for Vercel MVP
@@ -39,6 +42,7 @@ The Table Session Model differentiates between permanent physical tables and tim
 - **Closing**: When guests leave or pay the bill, staff clicks "Close Session" in the `/staff` dashboard. The `TableSession` is marked as closed.
 - **Re-opening (New Guests)**: When new guests sit at the same physical table later and scan the QR code, the system sees there is no active session and creates a new one.
 - **Preventing Stale Orders**: A guest's browser keeps the `TableSession` ID when they start ordering. If they try to submit an order but the session has been closed by staff, the API will reject the order with a "session expired" error, prompting the guest to refresh and join the new session.
+- **Current hardening**: the database enforces at most one active session per table, and guest write/session endpoints require table context so moved or stale tabs cannot write into a session from the wrong table.
 
 ## 4. API Routes
 
@@ -46,45 +50,69 @@ Minimal API routes required for the first real sync:
 
 - `GET /api/tables/[tableId]/session`: Fetch the active session for a table (or create one if none exists).
 - `POST /api/tables/[tableId]/session`: Disabled; public session rotation is not allowed.
-- `POST /api/orders`: Submit a new order (attached to `tableSessionId`).
+- `POST /api/orders`: Submit a new order (attached to `tableSessionId`; requires `tableIdOrSlug` and `idempotencyKey`; prices are calculated on the server).
+- `GET /api/table-sessions/[tableSessionId]/orders`: Fetch guest-visible session orders with table ownership context.
+- `GET /api/table-sessions/[tableSessionId]/bill`: Fetch guest-visible session bill with table ownership context.
 - `GET /api/staff/orders`: Fetch active orders (filtered by active table sessions).
-- `PATCH /api/staff/orders/[orderId]`: Update order status (e.g., accepted, ready, delivered).
-- `POST /api/staff-calls`: Submit a new staff call (e.g., waiter, coals).
+- `PATCH /api/staff/orders/[orderId]`: Update order status using the validated transition matrix (`new`, `accepted`, `preparing`, `delivered`, `closed`, `cancelled`).
+- `POST /api/staff-calls`: Submit a new staff call (e.g., waiter, coals); requires table ownership context.
 - `GET /api/staff-calls`: Fetch active staff calls for the dashboard.
 - `PATCH /api/staff-calls/[callId]`: Mark a staff call as handled.
+- `GET /api/staff/table-sessions`: Fetch active table sessions and empty active QR sessions for the staff dashboard.
+- `GET /api/staff/tables`: Fetch staff-visible table state.
+- `PATCH /api/staff/table-sessions/[sessionId]/move`: Move an active session to another free table.
+- `POST /api/staff/table-sessions/[sessionId]/release-empty`: Release an active session that has no orders.
+- `POST /api/tables/[tableId]/session/close`: Protected staff close/free table flow.
+
+Public table-level bill lookup is disabled. Staff routes are protected by staff access.
 
 ## 5. Guest Flow
 
 1. **Guest opens `/t/[tableId]`**: They scan the QR code.
 2. **System resolves active table session**: The frontend calls `GET /api/tables/[tableId]/session`.
 3. **Guest keeps personal draft cart locally**: Items are added to a local state cart (GuestSession level) so they don't overwrite other guests at the same table.
-4. **Guest submits order**: The cart payload is sent to `POST /api/orders` along with the active `tableSessionId`.
-5. **Order is stored**: The backend saves the `Order` and `OrderItems` under the `TableSession`.
+4. **Guest submits order**: The cart payload is sent to `POST /api/orders` along with the active `tableSessionId`, `tableIdOrSlug`, and an idempotency key.
+5. **Order is stored**: The backend verifies the table/session context, recalculates item names/prices/totals from canonical menu data, and saves the `Order` and `OrderItems` under the `TableSession`.
 6. **Guest sees active order status**: The guest UI polls or refreshes to show their submitted order status changing over time.
 
 ## 6. Staff Flow
 
 1. **Staff opens `/staff`**: They load the staff dashboard.
-2. **Staff sees active table sessions/orders**: The frontend calls `GET /api/staff/orders` and `GET /api/staff-calls`.
+2. **Staff sees active table sessions/orders**: The frontend calls `GET /api/staff/orders`, `GET /api/staff/table-sessions`, and `GET /api/staff-calls`.
 3. **Staff updates statuses**: Staff clicks to accept or complete an order, sending a request to `PATCH /api/staff/orders/[orderId]`.
 4. **Staff handles calls**: Staff marks a call for coals as completed via `PATCH /api/staff-calls/[callId]`.
-5. **Staff closes table session**: Once the guests leave, staff clicks "Close Table", which closes the `TableSession` and clears the table for the next guests.
+5. **Staff moves or releases sessions**: Staff can move an active session to another free table, release an empty active QR session, or close a bill/session once guests leave.
 
-## 7. Implementation Milestones
+## 7. Implementation Status
 
-Backend implementation will be split into small, reviewable PRs without breaking the current UI mock state until everything is ready.
+Implemented for the current pilot:
 
-- **PR 1: Database Setup (Done)** - Add Drizzle ORM, Vercel Postgres config, and define the database schema.
-- **PR 2: Seed Data** - Add seed scripts for tables, menu items (with sources), and a mock table session.
-- **PR 3: Order API Routes** - Implement the API routes for table sessions, orders, and staff calls.
-- **PR 4: Connect Guest UI** - Connect the `/t/demo` submit order flow and staff calls to the real API.
-- **PR 5: Connect Staff UI** - Connect the `/staff` dashboard to real API endpoints (fetching orders and updating statuses).
-- **PR 6: Staff Close-Session Flow** - Add the UI and API connection for staff to close a table session.
+- Drizzle schema, migrations, and Neon-backed runtime API.
+- Real seeded tables, including pilot table slugs such as `h01`-`h10`.
+- Guest table session bootstrap, cart submit, hookah options, and staff calls.
+- Staff dashboard for orders, calls, active bills, empty QR sessions, status changes, move, release, and close flows.
+- Server-side order total calculation from canonical menu data.
+- Idempotent order submit.
+- Mandatory table/session ownership checks for guest endpoints.
+- DB-level one active session per table.
+- Staff access gate using `STAFF_ACCESS_CODE`.
+- Progressive in-memory staff login brute-force protection.
+- Safe structured server logs for write, security, and race events.
+
+Remaining / future:
+
+- QR/order abuse protection for physical-presence proof, such as public menu mode plus QR unlock, seating code, or staff confirmation.
+- Staging/preview DB workflow.
+- Distributed staff login rate limit via Redis/KV.
+- Dedicated monitoring provider if Vercel logs are not enough.
+- Per-user staff roles and audit trail.
+- Staff/admin menu availability controls.
+- POS/iiko/payment integration after pilot.
 
 ## 8. Risks and Postponed Items
 
 To keep the MVP focused strictly on order synchronization, the following items are **postponed**:
-- **Auth**: No real user login or staff authentication yet (anyone with the URL can access).
+- **Per-user auth and roles**: Current staff access uses a shared `STAFF_ACCESS_CODE`. Per-user accounts, roles, and audit trail are future work.
 - **Payments**: No online payments.
 - **Real POS integration**: No sync with tools like iiko or r_keeper.
 - **Real-time updates/WebSockets**: Polling (SWR or React Query) will be used initially instead of WebSockets.
@@ -127,19 +155,22 @@ Response `405 Method Not Allowed`:
 ```
 
 ### POST /api/orders
+The current endpoint ignores client-provided item name, item price, item source, and total amount. It uses `item.id` and `quantity`, looks up canonical menu data on the server, and calculates the total on the server. It also requires `tableIdOrSlug` for ownership checks and `idempotencyKey` for duplicate-submit protection.
+
 Request:
 ```json
 {
   "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+  "tableIdOrSlug": "demo",
   "guestSessionId": null,
-  "totalAmount": 1570,
+  "idempotencyKey": "guest-generated-submit-key",
   "items": [
     {
       "id": "item_2",
-      "name": "Кальян премиум",
-      "source": "harlem",
       "quantity": 1,
-      "price": 1290
+      "options": {
+        "notes": "Без мяты"
+      }
     }
   ]
 }
@@ -205,6 +236,8 @@ Response `200 OK`:
 ```
 
 ### PATCH /api/staff/orders/[orderId]
+Valid transitions are enforced by the backend. Current statuses are `new`, `accepted`, `preparing`, `delivered`, `closed`, and `cancelled`.
+
 Request:
 ```json
 {
@@ -225,10 +258,13 @@ Response `200 OK`:
 ```
 
 ### POST /api/staff-calls
+The current endpoint requires table ownership context and accepts only whitelisted reasons such as `waiter`, `coals`, `bill`, and `help`.
+
 Request:
 ```json
 {
   "tableSessionId": "123e4567-e89b-12d3-a456-426614174000",
+  "tableIdOrSlug": "demo",
   "reason": "waiter"
 }
 ```
