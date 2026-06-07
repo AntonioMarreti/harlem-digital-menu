@@ -2,6 +2,8 @@
 
 This repository is for a pet project: a QR-based digital system for a hookah lounge.
 
+For AI workflow rules specific to this repository, see `docs/ai-workflow.md`.
+
 ## General rules
 
 - Do not build the whole product in one task.
