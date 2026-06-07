@@ -132,24 +132,22 @@ export async function POST(request: NextRequest) {
       return ownershipError;
     }
 
-    if (reason === 'bill') {
-      const existingBillCall = await db.select().from(staffCalls).where(
-        and(
-          eq(staffCalls.tableSessionId, tableSessionId),
-          eq(staffCalls.reason, 'bill'),
-          eq(staffCalls.status, 'new')
-        )
-      ).limit(1).then(res => res[0]);
+    const existingActiveCall = await db.select().from(staffCalls).where(
+      and(
+        eq(staffCalls.tableSessionId, tableSessionId),
+        eq(staffCalls.reason, reason),
+        eq(staffCalls.status, 'new')
+      )
+    ).limit(1).then(res => res[0]);
 
-      if (existingBillCall) {
-        logInfo('staff_call.reused', {
-          callId: existingBillCall.id,
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          reason,
-        });
-        return NextResponse.json({ call: existingBillCall }, { status: 200 });
-      }
+    if (existingActiveCall) {
+      logInfo('staff_call.reused', {
+        callId: existingActiveCall.id,
+        tableSessionId,
+        tableIdOrSlug: safeTableIdOrSlug,
+        reason,
+      });
+      return NextResponse.json({ call: existingActiveCall }, { status: 200 });
     }
 
     // Insert staff call
