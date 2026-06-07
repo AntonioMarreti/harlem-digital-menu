@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 
 
@@ -281,6 +281,18 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
 }
 
 
+
+function EmptyState({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+      <div className="bg-white p-4 rounded-full shadow-sm mb-4 ring-1 ring-gray-100">
+        <Icon className="w-8 h-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      {description && <p className="text-sm text-gray-500 mt-1 max-w-sm">{description}</p>}
+    </div>
+  );
+}
 
 export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -597,7 +609,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
              ) : orders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
+                <EmptyState icon={Inbox} title="Нет активных заказов" description="Новые заказы появятся здесь" />
              ) : (
                 <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
@@ -609,7 +621,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
              ) : newOrders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет новых заказов</div>
+                <EmptyState icon={CheckCircle2} title="Нет новых заказов" description="Все поступившие заказы уже в работе" />
              ) : (
                 <OrderGrid orders={newOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
@@ -621,7 +633,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
              ) : harlemOrders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Harlem</div>
+                <EmptyState icon={Inbox} title="Нет активных заказов Harlem" description="Заказы для этого зала появятся здесь" />
              ) : (
                 <OrderGrid orders={harlemOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
@@ -633,7 +645,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-500 font-medium my-auto">Загрузка заказов...</span>
                 </div>
              ) : craftBeeryOrders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Craft Beery</div>
+                <EmptyState icon={Inbox} title="Нет активных заказов Craft Beery" description="Заказы для этого зала появятся здесь" />
              ) : (
                 <OrderGrid orders={craftBeeryOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
@@ -641,7 +653,7 @@ export default function StaffDashboard() {
 
           <TabsContent value="calls" className="space-y-4">
             {activeCalls.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 font-medium">Нет активных вызовов</div>
+              <EmptyState icon={Bell} title="Нет активных вызовов" description="Все вызовы обработаны" />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                {activeCalls.map((call) => (
@@ -675,7 +687,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-500 font-medium my-auto">Загрузка столов...</span>
                 </div>
              ) : tableSessions.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 font-medium">Нет занятых столов</div>
+                <EmptyState icon={LayoutGrid} title="Нет занятых столов" description="Все столы свободны" />
              ) : (
                 <div className="space-y-8">
                   <section className="space-y-3">
@@ -684,7 +696,7 @@ export default function StaffDashboard() {
                       <p className="text-sm text-gray-500">Столы с заказами и текущим счётом.</p>
                     </div>
                     {billSessions.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500 font-medium bg-white border border-gray-200 rounded-md">Нет активных счетов</div>
+                      <EmptyState icon={CheckCircle2} title="Нет активных счетов" description="Открытые счета появятся здесь" />
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {billSessions.map((session) => (
