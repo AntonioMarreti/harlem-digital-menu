@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
     if (ownershipError) return ownershipError;
 
     // Fetch the latest active orders using a reliable read approach with joins
-    const allOrders = await db.select({
+    const sessionOrders = await db.select({
       order: orders,
       tableSession: tableSessions,
       table: tables,
@@ -38,10 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
     .from(orders)
     .leftJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
     .leftJoin(tables, eq(tableSessions.tableId, tables.id))
+    .where(eq(orders.tableSessionId, tableSessionId))
     .orderBy(desc(orders.createdAt));
-
-    // Filter by the specific tableSessionId in memory
-    const sessionOrders = allOrders.filter(row => row.tableSession?.id === tableSessionId);
 
     if (sessionOrders.length === 0) {
       return NextResponse.json({ orders: [] }, {
