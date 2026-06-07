@@ -30,17 +30,15 @@ export async function GET(request: NextRequest, { params }: { params: { tableSes
     if (ownershipError) return ownershipError;
 
     // Fetch the orders using a reliable read approach with joins
-    const allOrders = await db.select({
+    const sessionOrders = await db.select({
       order: orders,
       tableSession: tableSessions,
       table: tables,
     })
     .from(orders)
     .leftJoin(tableSessions, eq(orders.tableSessionId, tableSessions.id))
-    .leftJoin(tables, eq(tableSessions.tableId, tables.id));
-
-    // Filter by the specific tableSessionId in memory
-    const sessionOrders = allOrders.filter(row => row.tableSession?.id === tableSessionId);
+    .leftJoin(tables, eq(tableSessions.tableId, tables.id))
+    .where(eq(orders.tableSessionId, tableSessionId));
 
     let totalAmount = 0;
     let ordersCount = 0;
