@@ -291,6 +291,7 @@ export default function StaffDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   const fetchData = async () => {
     try {
@@ -531,7 +532,45 @@ export default function StaffDashboard() {
       </header>
 
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
-        <Tabs defaultValue="all" className="w-full flex flex-col">
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <button
+            type="button"
+            aria-label="Показать новые заказы"
+            className="flex flex-col overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
+            onClick={() => setActiveTab('new')}
+          >
+            <div className="p-3 w-full flex flex-col items-center justify-center text-center h-full">
+              <span className="text-xs md:text-sm text-gray-500 mb-1 leading-tight">Новые заказы</span>
+              <span className="text-xl md:text-2xl font-bold">{newOrders.length}</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            aria-label="Показать вызовы"
+            className={`flex flex-col overflow-hidden rounded-xl cursor-pointer transition-colors shadow-sm ${activeCalls.length > 0 ? 'bg-red-50 ring-1 ring-red-500 hover:bg-red-100' : 'bg-card ring-1 ring-foreground/10 hover:bg-gray-50'}`}
+            onClick={() => setActiveTab('calls')}
+          >
+            <div className="p-3 w-full flex flex-col items-center justify-center text-center h-full">
+              <span className={`text-xs md:text-sm mb-1 leading-tight ${activeCalls.length > 0 ? 'text-red-700' : 'text-gray-500'}`}>Вызовы</span>
+              <span className={`text-xl md:text-2xl font-bold ${activeCalls.length > 0 ? 'text-red-700' : 'text-gray-900'}`}>{activeCalls.length}</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            aria-label="Показать открытые столы"
+            className="flex flex-col overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
+            onClick={() => setActiveTab('tables')}
+          >
+            <div className="p-3 w-full flex flex-col items-center justify-center text-center h-full">
+              <span className="text-xs md:text-sm text-gray-500 mb-1 leading-tight">Столы</span>
+              <span className="text-xl md:text-2xl font-bold">{tableSessions.length}</span>
+            </div>
+          </button>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
           <div className="w-full overflow-x-auto pb-2 mb-4">
             <TabsList className="flex w-max min-w-full sm:w-full space-x-2">
               <TabsTrigger value="all">Все ({orders.length})</TabsTrigger>
