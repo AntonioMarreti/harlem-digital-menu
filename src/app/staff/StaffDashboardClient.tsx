@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
@@ -145,7 +146,7 @@ function formatOrderItemOptions(options: unknown): string[] {
   ];
 }
 
-function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void }) {
+function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void, onCancelClick: (id: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
@@ -269,7 +270,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession }: { orders: Or
                   <Button size="sm" variant="outline" onClick={() => onUpdateStatus(order.id, 'closed')}>Закрыть</Button>
               )}
               {(order.status === 'new' || order.status === 'accepted') && (
-                  <Button size="sm" variant="destructive" onClick={() => onUpdateStatus(order.id, 'cancelled')}>Отменить</Button>
+                  <Button size="sm" variant="destructive" onClick={() => onCancelClick(order.id)}>Отменить</Button>
               )}
             </CardFooter>
           </Card>
@@ -292,6 +293,7 @@ export default function StaffDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -597,7 +599,7 @@ export default function StaffDashboard() {
              ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов</div>
              ) : (
-                <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={orders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
           </TabsContent>
           <TabsContent value="new" className="space-y-4">
@@ -609,7 +611,7 @@ export default function StaffDashboard() {
              ) : newOrders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет новых заказов</div>
              ) : (
-                <OrderGrid orders={newOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={newOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
           </TabsContent>
           <TabsContent value="harlem" className="space-y-4">
@@ -621,7 +623,7 @@ export default function StaffDashboard() {
              ) : harlemOrders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Harlem</div>
              ) : (
-                <OrderGrid orders={harlemOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={harlemOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
           </TabsContent>
           <TabsContent value="craft_beery" className="space-y-4">
@@ -633,7 +635,7 @@ export default function StaffDashboard() {
              ) : craftBeeryOrders.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 font-medium">Нет активных заказов Craft Beery</div>
              ) : (
-                <OrderGrid orders={craftBeeryOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} />
+                <OrderGrid orders={craftBeeryOrders} onUpdateStatus={handleUpdateOrderStatus} onCloseTableSession={handleCloseTableSession} onCancelClick={setCancellingOrderId} />
              )}
           </TabsContent>
 
@@ -835,6 +837,26 @@ export default function StaffDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={!!cancellingOrderId} onOpenChange={(open) => !open && setCancellingOrderId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Отменить заказ?</DialogTitle>
+            <DialogDescription>
+              Заказ будет помечен как отменённый. Это действие нельзя быстро отменить.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCancellingOrderId(null)}>Вернуться</Button>
+            <Button variant="destructive" onClick={() => {
+              if (cancellingOrderId) {
+                handleUpdateOrderStatus(cancellingOrderId, 'cancelled');
+                setCancellingOrderId(null);
+              }
+            }}>Да, отменить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
