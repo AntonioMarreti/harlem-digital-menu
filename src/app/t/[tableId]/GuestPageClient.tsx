@@ -844,13 +844,13 @@ export default function GuestPageClient({
 
                     return (
                       <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5' : ''}`}>
-                        <div className="p-4 flex gap-4 items-center">
+                        <div className="px-3.5 py-3 flex gap-3.5 items-center">
                           {/* Left Column: Info */}
-                          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                             <div>
                               <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
                               {item.sourceLabel && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1.5 mb-0.5">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-0.5">
                                   {item.sourceLabel}
                                 </Badge>
                               )}
@@ -861,7 +861,7 @@ export default function GuestPageClient({
                               </p>
                             )}
                             {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-0.5">
+                              <div className="flex flex-wrap gap-1 mt-0.5">
                                 {item.tags.map(tag => (
                                   <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
                                     {tag}
@@ -871,14 +871,14 @@ export default function GuestPageClient({
                             )}
                             {/* Fallback cart text if complex quantities differ from plain buttons */}
                             {isInCart && cartQuantity > plainCartQuantity && (
-                              <div className="mt-1">
-                                <span className="text-xs text-primary font-medium">В корзине: {cartQuantity}</span>
+                              <div className="mt-0.5">
+                                <span className="text-[11px] text-primary font-medium">В корзине: {cartQuantity}</span>
                               </div>
                             )}
                           </div>
 
                           {/* Right Column: Coherent Action */}
-                          <div className="flex flex-col items-end gap-2.5 shrink-0">
+                          <div className="flex flex-col items-end gap-2 shrink-0">
                             <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
 
                             <div>
