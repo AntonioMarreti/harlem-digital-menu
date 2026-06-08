@@ -635,7 +635,7 @@ export default function GuestPageClient({
   }
 
   return (
-    <div className="guest-theme min-h-screen w-full bg-background overflow-x-hidden">
+    <div className="guest-theme min-h-screen w-full bg-background overflow-x-clip">
       <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background relative flex flex-col text-foreground font-sans shadow-2xl selection:bg-primary/30">
 
       {/* Top Banner / Notification Area */}
@@ -766,7 +766,7 @@ export default function GuestPageClient({
 
         {/* Menu Tabs */}
         <Tabs defaultValue="cat_hookah" className="w-full flex-col">
-          <div className="px-5 sticky top-[77px] z-10 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/20">
+          <div className="px-5 sticky top-[85px] z-10 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/20 shadow-sm">
             <TabsList className="w-full min-h-11 flex-nowrap justify-start overflow-x-auto h-auto py-1.5 px-1.5 bg-secondary/50 rounded-full gap-1.5 no-scrollbar border border-border/20 scroll-px-5">
               {categories.map((cat) => (
                 <TabsTrigger
