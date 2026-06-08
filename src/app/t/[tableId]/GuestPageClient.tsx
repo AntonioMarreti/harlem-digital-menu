@@ -843,7 +843,7 @@ export default function GuestPageClient({
                     }
 
                     return (
-                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5' : ''}`}>
+                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''}`}>
                         <div className="px-3.5 py-3 flex gap-3.5 items-center">
                           {/* Left Column: Info */}
                           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
