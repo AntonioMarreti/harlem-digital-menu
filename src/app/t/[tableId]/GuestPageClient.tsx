@@ -635,7 +635,7 @@ export default function GuestPageClient({
   }
 
   return (
-    <div className="guest-theme min-h-screen w-full bg-background overflow-x-hidden">
+    <div className="guest-theme min-h-screen w-full bg-background overflow-x-clip">
       <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background relative flex flex-col text-foreground font-sans shadow-2xl selection:bg-primary/30">
 
       {/* Top Banner / Notification Area */}
@@ -766,13 +766,13 @@ export default function GuestPageClient({
 
         {/* Menu Tabs */}
         <Tabs defaultValue="cat_hookah" className="w-full flex-col">
-          <div className="px-5 sticky top-[77px] z-10 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/20">
-            <TabsList className="w-full min-h-11 flex-nowrap justify-start overflow-x-auto h-auto py-1.5 px-1.5 bg-secondary/50 rounded-full gap-1.5 no-scrollbar border border-border/20 scroll-px-5">
+          <div className="px-5 sticky top-[85px] z-10 bg-background/95 backdrop-blur-md py-2 border-b border-border/20 shadow-sm">
+            <TabsList className="w-full min-h-9 flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20 scroll-px-5">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat.id}
                   value={cat.id}
-                  className="rounded-full border border-transparent px-4 py-2 text-sm transition-all flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-sm"
+                  className="rounded-full border border-transparent px-3.5 py-1.5 text-sm transition-all flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-sm"
                 >
                   {cat.name}
                 </TabsTrigger>
@@ -780,9 +780,9 @@ export default function GuestPageClient({
             </TabsList>
           </div>
 
-          <div className="px-5 mt-4">
+          <div className="px-5 mt-3">
             {categories.map((cat) => (
-              <TabsContent key={cat.id} value={cat.id} className="space-y-4 outline-none pb-6">
+              <TabsContent key={cat.id} value={cat.id} className="space-y-2.5 outline-none pb-6">
                 {cat.id === 'cat_food' && (
                   <div className="bg-secondary/40 border border-secondary p-3 rounded-xl mb-4 text-xs text-muted-foreground text-center">
                     Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
@@ -800,7 +800,7 @@ export default function GuestPageClient({
 
                     return (
                       <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : ''}`}>
-                        <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
+                        <CardHeader className="p-3 pb-1.5 flex flex-row items-start justify-between gap-3">
                           <div className="flex-1">
                             <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
                             {item.sourceLabel && (
@@ -825,10 +825,10 @@ export default function GuestPageClient({
                           </div>
                           <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
                         </CardHeader>
-                        <CardContent className="px-4 pb-3 pt-0 text-sm text-muted-foreground leading-relaxed">
+                        <CardContent className="px-3 pb-2 pt-0 text-sm text-muted-foreground leading-snug">
                           {item.description}
                         </CardContent>
-                        <CardFooter className="px-4 pb-4 pt-2 border-t-0 bg-transparent flex justify-end">
+                        <CardFooter className="px-3 pb-3 pt-1.5 border-t-0 bg-transparent flex justify-end">
                           {cat.id === 'cat_hookah' ? (
                             <Button
                               size="sm"
