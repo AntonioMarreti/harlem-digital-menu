@@ -307,6 +307,23 @@ export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    variant: 'default' | 'destructive';
+    onConfirm: () => void;
+  } | null>(null);
+
+  const requestConfirm = (title: string, description: string, confirmLabel: string, variant: 'default' | 'destructive', onConfirm: () => void) => {
+    setConfirmDialog({ isOpen: true, title, description, confirmLabel, variant, onConfirm });
+  };
+
+  const closeConfirm = () => {
+    setConfirmDialog(null);
+  };
+
   const fetchData = async () => {
     try {
       setError(null);
@@ -373,52 +390,65 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleCloseTableSession = async (tableId: string) => {
-    if (!confirm('Вы уверены, что хотите освободить стол? Это закроет текущую сессию и скроет все заказы для этого стола.')) return;
-    try {
-      const res = await fetch(`/api/tables/${tableId}/session/close`, {
-        method: 'POST',
-      });
+  const handleCloseTableSession = (tableId: string) => {
+    requestConfirm(
+      'Закрыть счёт?',
+      'Сессия стола будет закрыта, а стол станет свободным. Активные заказы этой сессии больше не будут отображаться как открытые.',
+      'Закрыть счёт',
+      'destructive',
+      async () => {
+        try {
+          const res = await fetch(`/api/tables/${tableId}/session/close`, {
+            method: 'POST',
+          });
 
-      if (!res.ok) {
-        throw new Error('Не удалось освободить стол');
+          if (!res.ok) {
+            throw new Error('Не удалось освободить стол');
+          }
+
+          setFeedback('Стол освобожден, сессия закрыта.');
+          setTimeout(() => setFeedback(null), 3000);
+          fetchData(); // Refresh data immediately
+        } catch (err) {
+          console.error(err);
+          setError('Ошибка при освобождении стола');
+          setTimeout(() => setError(null), 3000);
+        }
       }
-
-      setFeedback('Стол освобожден, сессия закрыта.');
-      setTimeout(() => setFeedback(null), 3000);
-      fetchData(); // Refresh data immediately
-    } catch (err) {
-      console.error(err);
-      setError('Ошибка при освобождении стола');
-      setTimeout(() => setError(null), 3000);
-    }
+    );
   };
 
-  const handleReleaseEmptyTableSession = async (sessionId: string) => {
-    if (!confirm('На этом столе пока нет заказов, но гость мог выбирать позиции. Освободить стол без заказа?')) return;
+  const handleReleaseEmptyTableSession = (sessionId: string) => {
+    requestConfirm(
+      'Освободить пустой стол?',
+      'Пустая QR-сессия будет закрыта, а стол снова станет доступен для гостей.',
+      'Освободить стол',
+      'destructive',
+      async () => {
+        try {
+          const res = await fetch(`/api/staff/table-sessions/${sessionId}/release-empty`, {
+            method: 'POST',
+          });
 
-    try {
-      const res = await fetch(`/api/staff/table-sessions/${sessionId}/release-empty`, {
-        method: 'POST',
-      });
+          if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
+              fetchData();
+              throw new Error('На этом столе уже появился заказ. Обновите список.');
+            }
+            throw new Error('Не удалось освободить пустой стол');
+          }
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
+          setFeedback('Пустой стол освобожден.');
+          setTimeout(() => setFeedback(null), 3000);
           fetchData();
-          throw new Error('На этом столе уже появился заказ. Обновите список.');
+        } catch (err) {
+          console.error(err);
+          setError(err instanceof Error ? err.message : 'Ошибка при освобождении пустого стола');
+          setTimeout(() => setError(null), 3000);
         }
-        throw new Error('Не удалось освободить пустой стол');
       }
-
-      setFeedback('Пустой стол освобожден.');
-      setTimeout(() => setFeedback(null), 3000);
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'Ошибка при освобождении пустого стола');
-      setTimeout(() => setError(null), 3000);
-    }
+    );
   };
 
   const handleMoveTableSession = async (sessionId: string) => {
@@ -464,16 +494,22 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleMoveEmptyTableSession = async (sessionId: string) => {
+  const handleMoveEmptyTableSession = (sessionId: string) => {
     if (!transferTargets[sessionId]) {
       setError('Выберите новый стол.');
       setTimeout(() => setError(null), 3000);
       return;
     }
 
-    if (!confirm('Перенести открытый QR на другой стол? Корзина гостя сохранится.')) return;
-
-    await handleMoveTableSession(sessionId);
+    requestConfirm(
+      'Перенести QR-сессию?',
+      'Открытая пустая QR-сессия будет перенесена на выбранный стол.',
+      'Перенести',
+      'default',
+      async () => {
+        await handleMoveTableSession(sessionId);
+      }
+    );
   };
 
   const handleMarkCallHandled = async (id: string) => {
@@ -866,6 +902,26 @@ export default function StaffDashboard() {
                 setCancellingOrderId(null);
               }
             }}>Да, отменить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!confirmDialog?.isOpen} onOpenChange={(open) => !open && closeConfirm()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{confirmDialog?.title}</DialogTitle>
+            <DialogDescription>
+              {confirmDialog?.description}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={closeConfirm}>Вернуться</Button>
+            <Button variant={confirmDialog?.variant || 'default'} onClick={() => {
+              if (confirmDialog?.onConfirm) {
+                confirmDialog.onConfirm();
+                closeConfirm();
+              }
+            }}>{confirmDialog?.confirmLabel}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
