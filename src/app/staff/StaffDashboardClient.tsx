@@ -146,6 +146,23 @@ function formatOrderItemOptions(options: unknown): string[] {
   ];
 }
 
+function getWaitMinutes(createdAt: string): number {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+}
+
+function formatNewOrderWaitLabel(createdAt: string): string {
+  const minutes = getWaitMinutes(createdAt);
+  if (minutes < 1) return 'Новый · только что';
+  return `Ждёт ${minutes} мин`;
+}
+
+function getNewOrderUrgency(createdAt: string): 'normal' | 'warning' | 'urgent' {
+  const minutes = getWaitMinutes(createdAt);
+  if (minutes >= 7) return 'urgent';
+  if (minutes >= 3) return 'warning';
+  return 'normal';
+}
+
 function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void, onCancelClick: (id: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
@@ -157,7 +174,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
   };
 
   const statusColors: Record<string, string> = {
-    new: 'destructive',
+    new: 'secondary', // normal new will be secondary by default
     accepted: 'default',
     preparing: 'secondary',
     delivered: 'outline',
@@ -172,6 +189,27 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
         const craftBeeryItems = order.items.filter(i => i.source === 'craft_beery');
         const hasCraftBeery = craftBeeryItems.length > 0;
 
+        const isNew = order.status === 'new';
+        const urgency = isNew ? getNewOrderUrgency(order.createdAt) : 'normal';
+
+        let badgeVariant = statusColors[order.status] as "default" | "destructive" | "outline" | "secondary";
+        let badgeText = statusTranslations[order.status];
+        let badgeClassName = "";
+
+        if (isNew) {
+           badgeText = formatNewOrderWaitLabel(order.createdAt);
+           if (urgency === 'urgent') {
+             badgeVariant = "destructive";
+             badgeClassName = "animate-pulse shadow-sm";
+           } else if (urgency === 'warning') {
+             badgeVariant = "default";
+             badgeClassName = "bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-sm";
+           } else {
+             badgeVariant = "secondary";
+             badgeClassName = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-transparent shadow-sm"; 
+           }
+        }
+
         return (
           <Card key={order.id} className={`border-t-4 ${hasCraftBeery ? 'border-t-orange-500' : 'border-t-blue-500'}`}>
             <CardHeader className="pb-2">
@@ -181,8 +219,8 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
                   <div className="text-xs text-gray-400 mt-1">{order.id}</div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <Badge variant={statusColors[order.status] as "default" | "destructive" | "outline" | "secondary"}>
-                    {statusTranslations[order.status]}
+                  <Badge variant={badgeVariant} className={badgeClassName}>
+                    {badgeText}
                   </Badge>
                   <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => onCloseTableSession(order.tableId)}>
                     Освободить стол
