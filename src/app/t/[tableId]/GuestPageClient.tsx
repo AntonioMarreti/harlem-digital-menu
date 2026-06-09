@@ -943,7 +943,13 @@ export default function GuestPageClient({
             >
               <ShoppingCart className="h-5 w-5" />
               Мой заказ
-              {cartTotal > 0 && <span className="ml-1 font-semibold">{cartTotal} ₽</span>}
+              {cartTotal > 0 ? (
+                <span className="ml-1 font-semibold">{cartTotal} ₽</span>
+              ) : billData && billData.totalAmount > 0 ? (
+                <span className="ml-1 font-semibold">{billData.totalAmount} ₽</span>
+              ) : activeOrder && activeOrder.total > 0 ? (
+                <span className="ml-1 font-semibold">{activeOrder.total} ₽</span>
+              ) : null}
             </Button>
          </div>
       </div>
