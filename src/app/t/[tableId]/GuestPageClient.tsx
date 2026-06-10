@@ -120,6 +120,7 @@ export default function GuestPageClient({
   const pendingOrderIdempotencyKeyRef = useRef<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const cartRef = useRef<CartItem[]>([]);
+  const addingHookahRef = useRef(false);
   const [cartStorageReadyForSessionId, setCartStorageReadyForSessionId] = useState<string | null>(null);
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -437,11 +438,16 @@ export default function GuestPageClient({
 
   const handleBuildHookah = (item: MenuItem) => {
     setSelectedHookahItem(item);
+    setHookahStrength('medium');
+    setHookahTaste('sweet');
+    setHookahNotes('');
+    addingHookahRef.current = false;
     setIsHookahBuilderOpen(true);
   };
 
   const confirmHookahBuild = () => {
-    if (selectedHookahItem) {
+    if (selectedHookahItem && !addingHookahRef.current) {
+      addingHookahRef.current = true;
       const strengthLabels: Record<string, string> = {
         light: 'Лёгкий',
         medium: 'Средний',
@@ -458,7 +464,6 @@ export default function GuestPageClient({
       const notes = `Крепость: ${strengthLabels[hookahStrength] || hookahStrength}; вкус: ${tasteLabels[hookahTaste] || hookahTaste}${hookahNotes ? `; пожелания: ${hookahNotes}` : ''}`;
       addToCart(selectedHookahItem, notes);
       setIsHookahBuilderOpen(false);
-      setHookahNotes('');
     }
   };
 
