@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const db = getDb();
     const records = await db.select().from(menuItemAvailability);
-    
+
     const availabilityMap: Record<string, boolean> = {};
     for (const record of records) {
       availabilityMap[record.itemId] = record.isAvailable;
@@ -23,6 +23,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching menu availability:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Graceful fallback if table doesn't exist yet (before migration) or DB is down
+    return NextResponse.json({}, { status: 200 });
   }
 }

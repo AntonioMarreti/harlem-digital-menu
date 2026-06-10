@@ -586,7 +586,7 @@ export default function StaffDashboard() {
 
   const handleToggleAvailability = async (itemId: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
-    
+
     // Optimistic update
     setAvailabilityMap(prev => ({ ...prev, [itemId]: newStatus }));
 

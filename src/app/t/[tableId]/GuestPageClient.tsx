@@ -557,6 +557,10 @@ export default function GuestPageClient({
           setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
           return;
         }
+        if (errorMessage) {
+          setOrderSubmitError(errorMessage);
+          return;
+        }
 
         throw new Error('Не удалось отправить заказ');
       }

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = getDb();
     const records = await db.select().from(menuItemAvailability);
-    
+
     const availabilityMap: Record<string, boolean> = {};
     for (const record of records) {
       availabilityMap[record.itemId] = record.isAvailable;
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(availabilityMap, { status: 200 });
   } catch (error) {
     console.error('Error fetching staff menu availability:', error);
+    const isMissingTable = error instanceof Error && error.message.includes('relation "menu_item_availability" does not exist');
+    if (isMissingTable) {
+      return NextResponse.json({}, { status: 200 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -63,6 +67,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating staff menu availability:', error);
+    const isMissingTable = error instanceof Error && error.message.includes('relation "menu_item_availability" does not exist');
+    if (isMissingTable) {
+      return NextResponse.json({ error: 'Стоп-лист пока недоступен (ожидается обновление БД)' }, { status: 503 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

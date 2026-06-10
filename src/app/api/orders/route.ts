@@ -178,7 +178,16 @@ export async function POST(request: NextRequest) {
     const ownershipError = await verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug);
     if (ownershipError) return ownershipError;
 
-    const availabilityRecords = await db.select().from(menuItemAvailability);
+    let availabilityRecords: { itemId: string, isAvailable: boolean }[] = [];
+    try {
+      availabilityRecords = await db.select().from(menuItemAvailability);
+    } catch (err) {
+      // Graceful fallback if table doesn't exist yet
+      const isMissingTable = err instanceof Error && err.message.includes('relation "menu_item_availability" does not exist');
+      if (!isMissingTable) {
+        throw err;
+      }
+    }
     const availabilityMap = new Map(availabilityRecords.map(r => [r.itemId, r.isAvailable]));
 
     const itemsToInsert = [];
@@ -220,9 +229,9 @@ export async function POST(request: NextRequest) {
           tableIdOrSlug: safeTableIdOrSlug,
           itemId: menuItemId,
         });
-        return NextResponse.json({ 
-          error: `Товар «${canonicalItem.name}» временно недоступен`, 
-          code: 'ITEM_UNAVAILABLE' 
+        return NextResponse.json({
+          error: `Товар «${canonicalItem.name}» временно недоступен`,
+          code: 'ITEM_UNAVAILABLE'
         }, { status: 400 });
       }
 
