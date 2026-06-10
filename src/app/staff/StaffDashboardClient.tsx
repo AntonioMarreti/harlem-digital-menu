@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, Search } from 'lucide-react';
 import Link from 'next/link';
 import { categories, menuItems } from '@/lib/mock-data';
 
@@ -216,7 +216,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
              badgeClassName = "bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-sm";
            } else {
              badgeVariant = "secondary";
-             badgeClassName = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-transparent shadow-sm"; 
+             badgeClassName = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-transparent shadow-sm";
            }
         }
 
@@ -356,6 +356,7 @@ export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [stopListSearchQuery, setStopListSearchQuery] = useState('');
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -803,39 +804,74 @@ export default function StaffDashboard() {
               <h2 className="text-xl font-bold">Стоп-лист</h2>
               <p className="text-sm text-gray-500">Управление доступностью товаров для гостей.</p>
             </div>
-            {categories.map(cat => (
-              <div key={cat.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 font-semibold text-gray-800">
-                  {cat.name}
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {menuItems.filter(item => item.categoryId === cat.id).map(item => {
-                    const isAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
-                    return (
-                      <div key={item.id} className={`flex items-center justify-between p-4 transition-colors ${!isAvailable ? 'bg-red-50/50' : ''}`}>
-                        <div>
-                          <div className="font-medium text-gray-900 flex items-center gap-2">
-                            {item.name}
-                            {!isAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
-                          </div>
-                          {item.sourceLabel && <div className="text-xs text-gray-400 mt-1">{item.sourceLabel}</div>}
-                        </div>
-                        <div>
-                          <Button
-                            variant={isAvailable ? "outline" : "destructive"}
-                            size="sm"
-                            className={isAvailable ? "text-gray-600" : ""}
-                            onClick={() => handleToggleAvailability(item.id, isAvailable)}
-                          >
-                            {isAvailable ? "Снять с продажи" : "Вернуть в продажу"}
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+
+            <div className="relative mb-6">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
-            ))}
+              <input
+                type="text"
+                placeholder="Найти товар..."
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-black focus:border-black text-base md:text-lg h-12 shadow-sm"
+                value={stopListSearchQuery}
+                onChange={(e) => setStopListSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {(() => {
+              const query = stopListSearchQuery.toLowerCase().trim();
+              let hasAnyMatches = false;
+
+              const result = categories.map(cat => {
+                const catItems = menuItems.filter(item => item.categoryId === cat.id);
+                const filteredItems = query
+                  ? catItems.filter(item => item.name.toLowerCase().includes(query) || cat.name.toLowerCase().includes(query) || (item.sourceLabel && item.sourceLabel.toLowerCase().includes(query)))
+                  : catItems;
+
+                if (filteredItems.length === 0) return null;
+                hasAnyMatches = true;
+
+                return (
+                  <div key={cat.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 font-semibold text-gray-800">
+                      {cat.name}
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {filteredItems.map(item => {
+                        const isAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+                        return (
+                          <div key={item.id} className={`flex items-center justify-between p-4 transition-colors ${!isAvailable ? 'bg-red-50/50' : ''}`}>
+                            <div>
+                              <div className="font-medium text-gray-900 flex items-center gap-2">
+                                {item.name}
+                                {!isAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
+                              </div>
+                              {item.sourceLabel && <div className="text-xs text-gray-400 mt-1">{item.sourceLabel}</div>}
+                            </div>
+                            <div>
+                              <Button
+                                variant={isAvailable ? "outline" : "destructive"}
+                                size="sm"
+                                className={isAvailable ? "text-gray-600" : ""}
+                                onClick={() => handleToggleAvailability(item.id, isAvailable)}
+                              >
+                                {isAvailable ? "Снять с продажи" : "Вернуть в продажу"}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+
+              if (query && !hasAnyMatches) {
+                return <EmptyState icon={Search} title="Ничего не найдено" description="По вашему запросу товаров нет" />;
+              }
+
+              return <div className="space-y-6">{result}</div>;
+            })()}
           </TabsContent>
 
           <TabsContent value="tables" className="space-y-4">
