@@ -232,7 +232,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
                   <Badge variant={badgeVariant} className={badgeClassName}>
                     {badgeText}
                   </Badge>
-                  <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => onCloseTableSession(order.tableId)}>
+                  <Button variant="outline" onClick={() => onCloseTableSession(order.tableId)}>
                     Освободить стол
                   </Button>
                 </div>
@@ -304,21 +304,21 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
             </CardContent>
             <CardFooter className="pt-2 flex flex-wrap gap-2">
               {order.status === 'new' && (
-                  <Button size="sm" onClick={() => onUpdateStatus(order.id, 'accepted')}>Принять</Button>
+                  <Button onClick={() => onUpdateStatus(order.id, 'accepted')}>Принять</Button>
               )}
               {order.status === 'accepted' && (
-                  <Button size="sm" onClick={() => onUpdateStatus(order.id, 'preparing')}>Готовить</Button>
+                  <Button onClick={() => onUpdateStatus(order.id, 'preparing')}>Готовить</Button>
               )}
               {order.status === 'preparing' && (
-                  <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => onUpdateStatus(order.id, 'delivered')}>
+                  <Button variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => onUpdateStatus(order.id, 'delivered')}>
                     <CheckCircle2 className="w-4 h-4 mr-1" /> Вынесен
                   </Button>
               )}
               {order.status === 'delivered' && (
-                  <Button size="sm" variant="outline" onClick={() => onUpdateStatus(order.id, 'closed')}>Закрыть</Button>
+                  <Button variant="outline" onClick={() => onUpdateStatus(order.id, 'closed')}>Закрыть</Button>
               )}
               {(order.status === 'new' || order.status === 'accepted') && (
-                  <Button size="sm" variant="destructive" onClick={() => onCancelClick(order.id)}>Отменить</Button>
+                  <Button variant="destructive" className="ml-auto" onClick={() => onCancelClick(order.id)}>Отменить</Button>
               )}
             </CardFooter>
           </Card>
