@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
+import { categories, menuItems } from '@/lib/mock-data';
 
 
 type OrderItem = {
@@ -344,6 +345,7 @@ export default function StaffDashboard() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -366,11 +368,12 @@ export default function StaffDashboard() {
     try {
       setError(null);
 
-      const [ordersRes, callsRes, tableSessionsRes, tablesRes] = await Promise.all([
+      const [ordersRes, callsRes, tableSessionsRes, tablesRes, availabilityRes] = await Promise.all([
         fetch('/api/staff/orders'),
         fetch('/api/staff-calls'),
         fetch('/api/staff/table-sessions'),
-        fetch('/api/staff/tables')
+        fetch('/api/staff/tables'),
+        fetch('/api/staff/menu-availability')
       ]);
 
       if (!ordersRes.ok || !callsRes.ok || !tableSessionsRes.ok || !tablesRes.ok) {
@@ -381,11 +384,13 @@ export default function StaffDashboard() {
       const callsData = await callsRes.json();
       const tableSessionsData = await tableSessionsRes.json();
       const tablesData = await tablesRes.json();
+      const availabilityData = await availabilityRes.json();
 
       setOrders(ordersData.orders || []);
       setCalls(callsData.calls || []);
       setTableSessions(tableSessionsData.tableSessions || []);
       setTables(tablesData.tables || []);
+      setAvailabilityMap(availabilityData || {});
     } catch (err) {
       console.error(err);
       setError('Не удалось загрузить данные. Проверьте подключение к базе данных.');
@@ -579,6 +584,31 @@ export default function StaffDashboard() {
     window.location.reload();
   };
 
+  const handleToggleAvailability = async (itemId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+
+    // Optimistic update
+    setAvailabilityMap(prev => ({ ...prev, [itemId]: newStatus }));
+
+    try {
+      const res = await fetch('/api/staff/menu-availability', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, isAvailable: newStatus })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update availability');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка при обновлении статуса товара');
+      setTimeout(() => setError(null), 3000);
+      // Revert on error
+      setAvailabilityMap(prev => ({ ...prev, [itemId]: currentStatus }));
+    }
+  };
+
   const newOrders = orders.filter(o => o.status === 'new');
   const harlemOrders = orders.filter(o => o.items.some(i => i.source === 'harlem'));
   const craftBeeryOrders = orders.filter(o => o.items.some(i => i.source === 'craft_beery'));
@@ -672,6 +702,7 @@ export default function StaffDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="tables">Открытые столы ({tableSessions.length})</TabsTrigger>
+              <TabsTrigger value="stoplist">Стоп-лист</TabsTrigger>
             </TabsList>
           </div>
 
@@ -752,6 +783,46 @@ export default function StaffDashboard() {
                ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="stoplist" className="space-y-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Стоп-лист</h2>
+              <p className="text-sm text-gray-500">Управление доступностью товаров для гостей.</p>
+            </div>
+            {categories.map(cat => (
+              <div key={cat.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 font-semibold text-gray-800">
+                  {cat.name}
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {menuItems.filter(item => item.categoryId === cat.id).map(item => {
+                    const isAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+                    return (
+                      <div key={item.id} className={`flex items-center justify-between p-4 transition-colors ${!isAvailable ? 'bg-red-50/50' : ''}`}>
+                        <div>
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
+                            {item.name}
+                            {!isAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
+                          </div>
+                          {item.sourceLabel && <div className="text-xs text-gray-400 mt-1">{item.sourceLabel}</div>}
+                        </div>
+                        <div>
+                          <Button
+                            variant={isAvailable ? "outline" : "destructive"}
+                            size="sm"
+                            className={isAvailable ? "text-gray-600" : ""}
+                            onClick={() => handleToggleAvailability(item.id, isAvailable)}
+                          >
+                            {isAvailable ? "Снять с продажи" : "Вернуть в продажу"}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
           <TabsContent value="tables" className="space-y-4">

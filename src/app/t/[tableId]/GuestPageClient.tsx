@@ -108,6 +108,17 @@ export default function GuestPageClient({
   menuItems: MenuItem[];
 }) {
   const [tableSessionId, setTableSessionId] = useState<string | null>(null);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetch('/api/menu-availability')
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) setAvailabilityMap(data);
+      })
+      .catch(err => console.error('Error fetching availability:', err));
+  }, []);
+
   const [displayTableName, setDisplayTableName] = useState(table.name || `Стол ${table.number}`);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -546,6 +557,10 @@ export default function GuestPageClient({
           setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
           return;
         }
+        if (errorMessage) {
+          setOrderSubmitError(errorMessage);
+          return;
+        }
 
         throw new Error('Не удалось отправить заказ');
       }
@@ -792,6 +807,7 @@ export default function GuestPageClient({
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
                   .map((item) => {
+                    const isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
                     const cartQuantity = cart
                       .filter((cartItem) => cartItem.item.id === item.id)
                       .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
@@ -800,10 +816,15 @@ export default function GuestPageClient({
 
                     if (cat.id === 'cat_hookah') {
                       return (
-                        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm hover:border-primary/30 transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : ''}`}>
+                        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : 'hover:border-primary/30'} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
                           <CardHeader className="p-3 pb-1.5 flex flex-row items-start justify-between gap-3">
                             <div className="flex-1">
-                              <CardTitle className="text-base font-medium leading-tight text-foreground">{item.name}</CardTitle>
+                              <CardTitle className="text-base font-medium leading-tight text-foreground flex items-center flex-wrap gap-2">
+                                {item.name}
+                                {!isItemAvailable && (
+                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
+                                )}
+                              </CardTitle>
                               {item.sourceLabel && (
                                 <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-1">
                                   {item.sourceLabel}
@@ -832,10 +853,11 @@ export default function GuestPageClient({
                           <CardFooter className="px-3 pb-3 pt-1.5 border-t-0 bg-transparent flex justify-end">
                             <Button
                               size="sm"
-                              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5"
-                              onClick={() => handleBuildHookah(item)}
+                              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5 disabled:opacity-50"
+                              onClick={() => isItemAvailable && handleBuildHookah(item)}
+                              disabled={!isItemAvailable}
                             >
-                              {isInCart ? 'Настроить ещё' : 'Настроить кальян'}
+                              {!isItemAvailable ? 'Недоступно' : isInCart ? 'Настроить ещё' : 'Настроить кальян'}
                             </Button>
                           </CardFooter>
                         </Card>
@@ -843,12 +865,17 @@ export default function GuestPageClient({
                     }
 
                     return (
-                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''}`}>
+                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
                         <div className="px-3.5 py-3 flex gap-3.5 items-center">
                           {/* Left Column: Info */}
                           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                             <div>
-                              <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
+                              <div className="flex items-center flex-wrap gap-2">
+                                <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
+                                {!isItemAvailable && (
+                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
+                                )}
+                              </div>
                               {item.sourceLabel && (
                                 <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-0.5">
                                   {item.sourceLabel}
@@ -882,7 +909,16 @@ export default function GuestPageClient({
                             <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
 
                             <div>
-                              {plainCartQuantity > 0 ? (
+                              {!isItemAvailable ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  disabled
+                                  className="h-9 rounded-full px-4 text-muted-foreground font-medium text-xs opacity-70 disabled:opacity-70"
+                                >
+                                  Недоступно
+                                </Button>
+                              ) : plainCartQuantity > 0 ? (
                                 <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1">
                                   <Button
                                     variant="ghost"
