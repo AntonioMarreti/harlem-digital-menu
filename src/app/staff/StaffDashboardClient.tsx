@@ -55,6 +55,15 @@ type TableSessionInfo = {
   totalAmount: number;
 };
 
+type RecentlyClosedSession = {
+  id: string;
+  tableId: string;
+  tableName: string;
+  tableQrSlug: string;
+  closedAt: string | null;
+  totalAmount: number;
+};
+
 type StaffTable = {
   id: string;
   name: string;
@@ -337,6 +346,7 @@ export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [calls, setCalls] = useState<StaffCall[]>([]);
   const [tableSessions, setTableSessions] = useState<TableSessionInfo[]>([]);
+  const [recentlyClosedSessions, setRecentlyClosedSessions] = useState<RecentlyClosedSession[]>([]);
   const [tables, setTables] = useState<StaffTable[]>([]);
   const [transferTargets, setTransferTargets] = useState<Record<string, string>>({});
   const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
@@ -368,12 +378,13 @@ export default function StaffDashboard() {
     try {
       setError(null);
 
-      const [ordersRes, callsRes, tableSessionsRes, tablesRes, availabilityRes] = await Promise.all([
+      const [ordersRes, callsRes, tableSessionsRes, tablesRes, availabilityRes, recentlyClosedRes] = await Promise.all([
         fetch('/api/staff/orders'),
         fetch('/api/staff-calls'),
         fetch('/api/staff/table-sessions'),
         fetch('/api/staff/tables'),
-        fetch('/api/staff/menu-availability')
+        fetch('/api/staff/menu-availability'),
+        fetch('/api/staff/recently-closed')
       ]);
 
       if (!ordersRes.ok || !callsRes.ok || !tableSessionsRes.ok || !tablesRes.ok) {
@@ -385,12 +396,14 @@ export default function StaffDashboard() {
       const tableSessionsData = await tableSessionsRes.json();
       const tablesData = await tablesRes.json();
       const availabilityData = await availabilityRes.json();
+      const recentlyClosedData = await recentlyClosedRes.json().catch(() => ({ recentlyClosed: [] }));
 
       setOrders(ordersData.orders || []);
       setCalls(callsData.calls || []);
       setTableSessions(tableSessionsData.tableSessions || []);
       setTables(tablesData.tables || []);
       setAvailabilityMap(availabilityData || {});
+      setRecentlyClosedSessions(recentlyClosedData.recentlyClosed || []);
     } catch (err) {
       console.error(err);
       setError('Не удалось загрузить данные. Проверьте подключение к базе данных.');
@@ -985,6 +998,28 @@ export default function StaffDashboard() {
                               </Button>
                             </CardFooter>
                           </Card>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {recentlyClosedSessions.length > 0 && (
+                    <section className="space-y-3 mt-12 pt-6 border-t border-gray-100">
+                      <div>
+                        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Недавно закрытые</h2>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {recentlyClosedSessions.map((session) => (
+                          <div key={session.id} className="flex justify-between items-center bg-gray-50/50 rounded-lg p-3 text-sm border border-gray-100/50">
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium text-gray-700">{formatTableLabel(session.tableName, session.tableQrSlug)}</span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-gray-500">
+                                {session.closedAt ? `закрыт ${new Date(session.closedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : 'закрыт'}
+                              </span>
+                            </div>
+                            <span className="font-medium text-gray-600">{session.totalAmount} ₽</span>
+                          </div>
                         ))}
                       </div>
                     </section>
