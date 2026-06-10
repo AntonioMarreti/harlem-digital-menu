@@ -729,12 +729,7 @@ export default function GuestPageClient({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pb-28">
-        {/* Welcome Section */}
-        <div className="px-5 py-6">
-          <h2 className="text-2xl font-serif mb-2">Добро пожаловать в «Харлем»</h2>
-          <p className="text-muted-foreground text-sm">QR-меню · заказ со столика</p>
-        </div>
+      <main className="flex-1 pb-28 pt-6">
 
         {/* Bill block */}
         {billData && billData.totalAmount > 0 && (
