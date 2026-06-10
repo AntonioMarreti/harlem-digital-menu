@@ -729,7 +729,7 @@ export default function GuestPageClient({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pb-28 pt-6">
+      <main className={`flex-1 pb-28 ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
 
         {/* Bill block */}
         {billData && billData.totalAmount > 0 && (
