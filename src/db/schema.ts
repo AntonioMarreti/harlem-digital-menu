@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, varchar, integer, pgEnum, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar, integer, pgEnum, uuid, uniqueIndex, boolean } from 'drizzle-orm/pg-core';
 
 // Enums
 export const itemSourceEnum = pgEnum('item_source', ['harlem', 'craft_beery']);
@@ -72,4 +72,10 @@ export const staffCalls = pgTable('staff_calls', {
   status: staffCallStatusEnum('status').default('new').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   handledAt: timestamp('handled_at'),
+});
+
+export const menuItemAvailability = pgTable('menu_item_availability', {
+  itemId: varchar('item_id', { length: 255 }).primaryKey(),
+  isAvailable: boolean('is_available').notNull().default(true),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

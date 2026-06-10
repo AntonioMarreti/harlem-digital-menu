@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { tableSessions, orders, orderItems } from '@/db/schema';
+import { tableSessions, orders, orderItems, menuItemAvailability } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
@@ -178,6 +178,9 @@ export async function POST(request: NextRequest) {
     const ownershipError = await verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug);
     if (ownershipError) return ownershipError;
 
+    const availabilityRecords = await db.select().from(menuItemAvailability);
+    const availabilityMap = new Map(availabilityRecords.map(r => [r.itemId, r.isAvailable]));
+
     const itemsToInsert = [];
     let serverTotalAmount = 0;
 
@@ -207,6 +210,20 @@ export async function POST(request: NextRequest) {
           itemCount: items.length,
         });
         return NextResponse.json({ error: 'Unknown menu item' }, { status: 400 });
+      }
+
+      const isAvailable = availabilityMap.get(menuItemId) ?? canonicalItem.isAvailable ?? true;
+      if (!isAvailable) {
+        logWarn('order.rejected', {
+          code: 'ITEM_UNAVAILABLE',
+          tableSessionId,
+          tableIdOrSlug: safeTableIdOrSlug,
+          itemId: menuItemId,
+        });
+        return NextResponse.json({ 
+          error: `Товар «${canonicalItem.name}» временно недоступен`, 
+          code: 'ITEM_UNAVAILABLE' 
+        }, { status: 400 });
       }
 
       if (

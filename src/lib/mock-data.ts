@@ -50,7 +50,7 @@ export const menuItems: MenuItem[] = [
     name: 'Кальян премиум',
     description: 'На табаках Trofimoff\'s и Tangiers.',
     price: 1290,
-    isAvailable: false,
+    isAvailable: true,
     tags: ['премиум', 'Trofimoff\'s', 'Tangiers'],
     source: 'harlem',
     sourceLabel: 'Харлем',
@@ -58,7 +58,7 @@ export const menuItems: MenuItem[] = [
 
   // Harlem / Напитки
   { id: 'dr_1', categoryId: 'cat_drinks', name: 'Кола Добрый 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_2', categoryId: 'cat_drinks', name: 'Кола Добрый 0,33', description: '', price: 130, isAvailable: false, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_2', categoryId: 'cat_drinks', name: 'Кола Добрый 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_3', categoryId: 'cat_drinks', name: 'Кола оригинальная 0,33', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_4', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_5', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },

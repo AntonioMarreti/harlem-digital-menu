@@ -108,6 +108,17 @@ export default function GuestPageClient({
   menuItems: MenuItem[];
 }) {
   const [tableSessionId, setTableSessionId] = useState<string | null>(null);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetch('/api/menu-availability')
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) setAvailabilityMap(data);
+      })
+      .catch(err => console.error('Error fetching availability:', err));
+  }, []);
+
   const [displayTableName, setDisplayTableName] = useState(table.name || `Стол ${table.number}`);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -792,6 +803,7 @@ export default function GuestPageClient({
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
                   .map((item) => {
+                    const isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
                     const cartQuantity = cart
                       .filter((cartItem) => cartItem.item.id === item.id)
                       .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
@@ -800,12 +812,12 @@ export default function GuestPageClient({
 
                     if (cat.id === 'cat_hookah') {
                       return (
-                        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : 'hover:border-primary/30'} ${!item.isAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+                        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : 'hover:border-primary/30'} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
                           <CardHeader className="p-3 pb-1.5 flex flex-row items-start justify-between gap-3">
                             <div className="flex-1">
                               <CardTitle className="text-base font-medium leading-tight text-foreground flex items-center flex-wrap gap-2">
                                 {item.name}
-                                {!item.isAvailable && (
+                                {!isItemAvailable && (
                                   <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
                                 )}
                               </CardTitle>
@@ -838,10 +850,10 @@ export default function GuestPageClient({
                             <Button
                               size="sm"
                               className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5 disabled:opacity-50"
-                              onClick={() => item.isAvailable && handleBuildHookah(item)}
-                              disabled={!item.isAvailable}
+                              onClick={() => isItemAvailable && handleBuildHookah(item)}
+                              disabled={!isItemAvailable}
                             >
-                              {!item.isAvailable ? 'Недоступно' : isInCart ? 'Настроить ещё' : 'Настроить кальян'}
+                              {!isItemAvailable ? 'Недоступно' : isInCart ? 'Настроить ещё' : 'Настроить кальян'}
                             </Button>
                           </CardFooter>
                         </Card>
@@ -849,14 +861,14 @@ export default function GuestPageClient({
                     }
 
                     return (
-                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''} ${!item.isAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
                         <div className="px-3.5 py-3 flex gap-3.5 items-center">
                           {/* Left Column: Info */}
                           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                             <div>
                               <div className="flex items-center flex-wrap gap-2">
                                 <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
-                                {!item.isAvailable && (
+                                {!isItemAvailable && (
                                   <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
                                 )}
                               </div>
@@ -893,7 +905,7 @@ export default function GuestPageClient({
                             <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
 
                             <div>
-                              {!item.isAvailable ? (
+                              {!isItemAvailable ? (
                                 <Button
                                   variant="secondary"
                                   size="sm"
