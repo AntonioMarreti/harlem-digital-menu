@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, Search } from 'lucide-react';
 import Link from 'next/link';
 import { categories, menuItems } from '@/lib/mock-data';
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 
 type OrderItem = {
@@ -345,6 +347,9 @@ function EmptyState({ icon: Icon, title, description }: { icon: React.ElementTyp
 export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [calls, setCalls] = useState<StaffCall[]>([]);
+  const initialLoadDone = useRef(false);
+  const knownOrderIds = useRef<Set<string>>(new Set());
+  const knownCallIds = useRef<Set<string>>(new Set());
   const [tableSessions, setTableSessions] = useState<TableSessionInfo[]>([]);
   const [recentlyClosedSessions, setRecentlyClosedSessions] = useState<RecentlyClosedSession[]>([]);
   const [tables, setTables] = useState<StaffTable[]>([]);
@@ -399,8 +404,29 @@ export default function StaffDashboard() {
       const availabilityData = await availabilityRes.json();
       const recentlyClosedData = await recentlyClosedRes.json().catch(() => ({ recentlyClosed: [] }));
 
-      setOrders(ordersData.orders || []);
-      setCalls(callsData.calls || []);
+      const newOrders = ordersData.orders || [];
+      const newCalls = callsData.calls || [];
+
+      if (initialLoadDone.current) {
+        newOrders.forEach((o: Order) => {
+          if (!knownOrderIds.current.has(o.id) && o.status === 'new') {
+            toast('Новый заказ', { description: formatTableLabel(o.tableName, o.tableQrSlug) });
+          }
+        });
+        newCalls.forEach((c: StaffCall) => {
+          if (!knownCallIds.current.has(c.id) && c.status === 'new') {
+            toast('Вызов персонала', { description: formatTableLabel(c.tableName, c.tableQrSlug) });
+          }
+        });
+      }
+
+      newOrders.forEach((o: Order) => knownOrderIds.current.add(o.id));
+      newCalls.forEach((c: StaffCall) => knownCallIds.current.add(c.id));
+
+      initialLoadDone.current = true;
+
+      setOrders(newOrders);
+      setCalls(newCalls);
       setTableSessions(tableSessionsData.tableSessions || []);
       setTables(tablesData.tables || []);
       setAvailabilityMap(availabilityData || {});
@@ -632,6 +658,7 @@ export default function StaffDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      <Toaster position="top-center" />
       {feedback && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg flex items-center">
           <CheckCircle2 className="w-4 h-4 mr-2" />
