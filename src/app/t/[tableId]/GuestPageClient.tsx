@@ -53,7 +53,7 @@ const isStoredCartItem = (value: unknown): value is CartItem => {
   );
 };
 
-const loadCartFromSessionStorage = (tableSessionId: string): CartItem[] => {
+const loadCartFromLocalStorage = (tableSessionId: string): CartItem[] => {
   if (typeof window === 'undefined') {
     return [];
   }
@@ -61,25 +61,25 @@ const loadCartFromSessionStorage = (tableSessionId: string): CartItem[] => {
   const storageKey = getCartStorageKey(tableSessionId);
 
   try {
-    const storedCart = window.sessionStorage.getItem(storageKey);
+    const storedCart = window.localStorage.getItem(storageKey);
     if (!storedCart) {
       return [];
     }
 
     const parsedCart = JSON.parse(storedCart);
     if (!Array.isArray(parsedCart) || !parsedCart.every(isStoredCartItem)) {
-      window.sessionStorage.removeItem(storageKey);
+      window.localStorage.removeItem(storageKey);
       return [];
     }
 
     return parsedCart;
   } catch {
-    window.sessionStorage.removeItem(storageKey);
+    window.localStorage.removeItem(storageKey);
     return [];
   }
 };
 
-const saveCartToSessionStorage = (tableSessionId: string, cart: CartItem[]) => {
+const saveCartToLocalStorage = (tableSessionId: string, cart: CartItem[]) => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -88,13 +88,30 @@ const saveCartToSessionStorage = (tableSessionId: string, cart: CartItem[]) => {
 
   try {
     if (cart.length === 0) {
-      window.sessionStorage.removeItem(storageKey);
+      window.localStorage.removeItem(storageKey);
       return;
     }
 
-    window.sessionStorage.setItem(storageKey, JSON.stringify(cart));
+    window.localStorage.setItem(storageKey, JSON.stringify(cart));
   } catch {
     // Ignore storage write errors: the in-memory cart is still the source of truth for this render.
+  }
+};
+
+const cleanupOldCartStorage = (currentTableSessionId: string) => {
+  if (typeof window === 'undefined') return;
+  const currentKey = getCartStorageKey(currentTableSessionId);
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('harlem_cart:') && key !== currentKey) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => window.localStorage.removeItem(key));
+  } catch {
+    // Ignore errors
   }
 };
 
@@ -279,8 +296,9 @@ export default function GuestPageClient({
       return;
     }
 
+    cleanupOldCartStorage(tableSessionId);
     if (cartRef.current.length === 0) {
-      setCart(loadCartFromSessionStorage(tableSessionId));
+      setCart(loadCartFromLocalStorage(tableSessionId));
     }
 
     setCartStorageReadyForSessionId(tableSessionId);
@@ -291,7 +309,7 @@ export default function GuestPageClient({
       return;
     }
 
-    saveCartToSessionStorage(tableSessionId, cart);
+    saveCartToLocalStorage(tableSessionId, cart);
   }, [cart, tableSessionId, cartStorageReadyForSessionId]);
 
   const fetchSessionState = useCallback(async () => {
@@ -568,7 +586,7 @@ export default function GuestPageClient({
       await res.json();
       await fetchSessionState();
       setIsCartOpen(false);
-      saveCartToSessionStorage(tableSessionId, []);
+      saveCartToLocalStorage(tableSessionId, []);
       setCart([]);
       setStaleTableSessionNotice(null);
       pendingOrderIdempotencyKeyRef.current = null;
