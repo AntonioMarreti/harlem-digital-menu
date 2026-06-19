@@ -146,6 +146,7 @@ export default function GuestPageClient({
   const tableSessionIdRef = useRef<string | null>(null);
   const orderSubmittingRef = useRef(false);
   const pendingOrderIdempotencyKeyRef = useRef<string | null>(null);
+  const [cartPulseKeys, setCartPulseKeys] = useState<Record<string, number>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
   const cartRef = useRef<CartItem[]>([]);
   const addingHookahRef = useRef(false);
@@ -441,6 +442,7 @@ export default function GuestPageClient({
   const cartCount = cart.reduce((count, cartItem) => count + cartItem.quantity, 0);
 
   const addToCart = (item: MenuItem, notes?: string) => {
+    setCartPulseKeys(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
     setCart(prev => {
       const existing = prev.find(i => i.item.id === item.id && i.notes === notes);
       if (existing) {
@@ -451,6 +453,7 @@ export default function GuestPageClient({
   };
 
   const removeFromCart = (item: MenuItem, notes?: string) => {
+    setCartPulseKeys(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
     setCart(prev => {
       const newCart = [...prev];
       const index = newCart.findIndex(i => i.item.id === item.id && i.notes === notes);
@@ -937,7 +940,7 @@ export default function GuestPageClient({
                                   Недоступно
                                 </Button>
                               ) : plainCartQuantity > 0 ? (
-                                <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1">
+                                <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1 animate-cart-pop">
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -946,7 +949,7 @@ export default function GuestPageClient({
                                   >
                                     <Minus className="h-3.5 w-3.5" />
                                   </Button>
-                                  <span className="min-w-5 text-center text-sm font-semibold text-primary">{plainCartQuantity}</span>
+                                  <span key={cartPulseKeys[item.id] || 'default'} className="min-w-5 text-center text-sm font-semibold text-primary animate-cart-pop inline-block">{plainCartQuantity}</span>
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -1198,7 +1201,7 @@ export default function GuestPageClient({
                                     >
                                       <Minus className="h-3 w-3" />
                                     </Button>
-                                    <span className="text-sm font-medium w-4 text-center">{cartItem.quantity}</span>
+                                    <span key={cartPulseKeys[cartItem.item.id] || 'default'} className="text-sm font-medium w-4 text-center animate-cart-pop inline-block">{cartItem.quantity}</span>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -1248,7 +1251,7 @@ export default function GuestPageClient({
                                     >
                                       <Minus className="h-3 w-3" />
                                     </Button>
-                                    <span className="text-sm font-medium w-4 text-center">{cartItem.quantity}</span>
+                                    <span key={cartPulseKeys[cartItem.item.id] || 'default'} className="text-sm font-medium w-4 text-center animate-cart-pop inline-block">{cartItem.quantity}</span>
                                     <Button
                                       variant="ghost"
                                       size="icon"
