@@ -941,7 +941,7 @@ export default function GuestPageClient({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full text-primary hover:bg-background"
+                                    className="h-7 w-7 rounded-full text-primary hover:bg-background active:scale-95 transition-transform duration-100"
                                     onClick={() => removeFromCart(item)}
                                   >
                                     <Minus className="h-3.5 w-3.5" />
@@ -950,7 +950,7 @@ export default function GuestPageClient({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full text-primary hover:bg-background"
+                                    className="h-7 w-7 rounded-full text-primary hover:bg-background active:scale-95 transition-transform duration-100"
                                     onClick={() => addToCart(item)}
                                   >
                                     <Plus className="h-3.5 w-3.5" />
@@ -959,7 +959,7 @@ export default function GuestPageClient({
                               ) : (
                                 <Button
                                   variant="outline"
-                                  className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-4 h-9 text-sm"
+                                  className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
                                   onClick={() => addToCart(item)}
                                 >
                                   Добавить
@@ -1193,7 +1193,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1202,7 +1202,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => addToCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -1243,7 +1243,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1252,7 +1252,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background"
+                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => addToCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Plus className="h-3 w-3" />
