@@ -43,7 +43,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const itemExists = menuItems.some(m => m.id === itemId);
+    const baseItemId = itemId.split('::')[0];
+    const itemExists = baseItemId === 'tea' || menuItems.some(m => m.id === baseItemId);
     if (!itemExists) {
       return NextResponse.json({ error: 'Item not found in menu' }, { status: 404 });
     }
