@@ -11,7 +11,8 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle, Search } from 'lucide-react';
 
 type OrderStatus = 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled';
 
@@ -154,6 +155,10 @@ export default function GuestPageClient({
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isStaffOpen, setIsStaffOpen] = useState(false);
+  const [isChoiceDrawerOpen, setIsChoiceDrawerOpen] = useState(false);
+  const [selectedChoiceItem, setSelectedChoiceItem] = useState<MenuItem | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<string>('');
+  const [choiceSearchQuery, setChoiceSearchQuery] = useState('');
   type SubmittedOrder = {
     id: string;
     items: { item: MenuItem; quantity: number; notes?: string }[];
@@ -824,6 +829,16 @@ export default function GuestPageClient({
                     Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
                   </div>
                 )}
+                {cat.id === 'cat_hookah' && (
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <Clock className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="text-sm font-medium text-foreground">
+                      До 17:00: Стандарт — 700 ₽, Премиум — 999 ₽
+                    </div>
+                  </div>
+                )}
 
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
@@ -954,7 +969,16 @@ export default function GuestPageClient({
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7 rounded-full text-primary hover:bg-background active:scale-95 transition-transform duration-100"
-                                    onClick={() => addToCart(item)}
+                                    onClick={() => {
+                                    if (item.choices && item.choices.length > 0) {
+                                      setSelectedChoiceItem(item);
+                                      setSelectedChoice('');
+                                      setChoiceSearchQuery('');
+                                      setIsChoiceDrawerOpen(true);
+                                    } else {
+                                      addToCart(item);
+                                    }
+                                  }}
                                   >
                                     <Plus className="h-3.5 w-3.5" />
                                   </Button>
@@ -963,7 +987,16 @@ export default function GuestPageClient({
                                 <Button
                                   variant="outline"
                                   className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
-                                  onClick={() => addToCart(item)}
+                                  onClick={() => {
+                                    if (item.choices && item.choices.length > 0) {
+                                      setSelectedChoiceItem(item);
+                                      setSelectedChoice('');
+                                      setChoiceSearchQuery('');
+                                      setIsChoiceDrawerOpen(true);
+                                    } else {
+                                      addToCart(item);
+                                    }
+                                  }}
                                 >
                                   Добавить
                                 </Button>
@@ -1010,6 +1043,108 @@ export default function GuestPageClient({
             </Button>
          </div>
       </div>
+
+      {/* Choice Drawer for Cider/Tea */}
+      <Drawer open={isChoiceDrawerOpen} onOpenChange={setIsChoiceDrawerOpen}>
+        <DrawerContent className="guest-theme max-w-[430px] mx-auto bg-background/95 text-foreground backdrop-blur-xl border-border/50 max-h-[90vh] flex flex-col">
+          <DrawerHeader className="text-left pb-2 flex-shrink-0">
+            <DrawerTitle className="text-xl font-semibold flex justify-between items-start">
+              {selectedChoiceItem?.name}
+            </DrawerTitle>
+            <DrawerDescription className="text-muted-foreground">
+              Выберите вариант
+            </DrawerDescription>
+            {selectedChoiceItem?.categoryId === 'cat_tea' && (
+              <div className="mt-4 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Поиск по сортам..."
+                  className="w-full h-10 pl-9 pr-4 rounded-full border border-border/50 bg-secondary/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                  value={choiceSearchQuery}
+                  onChange={(e) => setChoiceSearchQuery(e.target.value)}
+                />
+              </div>
+            )}
+          </DrawerHeader>
+          <div className="p-5 pb-8 overflow-y-auto flex-1">
+            <RadioGroup value={selectedChoice} onValueChange={setSelectedChoice} className="space-y-4">
+              {(() => {
+                let filteredChoices = selectedChoiceItem?.choices || [];
+                if (choiceSearchQuery.trim()) {
+                  const q = choiceSearchQuery.toLowerCase();
+                  filteredChoices = filteredChoices.filter(c =>
+                    c.label.toLowerCase().includes(q) ||
+                    (c.description && c.description.toLowerCase().includes(q))
+                  );
+                }
+
+                if (filteredChoices.length === 0) {
+                  return (
+                    <div className="text-center text-muted-foreground py-8 text-sm">
+                      Ничего не найдено по вашему запросу.
+                    </div>
+                  );
+                }
+
+                const grouped = filteredChoices.reduce((acc, curr) => {
+                  const g = curr.group || 'default';
+                  if (!acc[g]) acc[g] = [];
+                  acc[g].push(curr);
+                  return acc;
+                }, {} as Record<string, typeof filteredChoices>);
+
+                return Object.entries(grouped).map(([group, items]) => (
+                  <div key={group} className="space-y-3">
+                    {group !== 'default' && selectedChoiceItem?.categoryId === 'cat_tea' && (
+                      <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
+                    )}
+                    {items.map((choice) => (
+                      <label
+                        key={choice.label}
+                        className={`flex items-start justify-between p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                          selectedChoice === choice.label
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-border/40 hover:border-primary/40'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
+                          <RadioGroupItem value={choice.label} id={choice.label} className="mt-1 shrink-0" />
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className={`font-semibold text-base leading-tight ${selectedChoice === choice.label ? 'text-primary' : 'text-foreground'}`}>
+                              {choice.label}
+                            </div>
+                            {choice.description && (
+                              <div className="text-sm text-foreground/70 line-clamp-2 leading-snug">
+                                {choice.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ));
+              })()}
+            </RadioGroup>
+          </div>
+          <div className="p-5 pt-2 flex-shrink-0 bg-background/95 backdrop-blur-xl border-t border-border/10">
+            <Button
+              disabled={!selectedChoice}
+              className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
+              onClick={() => {
+                if (selectedChoiceItem && selectedChoice) {
+                  const prefix = selectedChoiceItem.categoryId === 'cat_cider' ? 'Вкус: ' : 'Сорт: ';
+                  addToCart(selectedChoiceItem, `${prefix}${selectedChoice}`);
+                  setIsChoiceDrawerOpen(false);
+                }
+              }}
+            >
+              Добавить • {selectedChoiceItem?.price} ₽
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Hookah Builder Drawer */}
       <Drawer open={isHookahBuilderOpen} onOpenChange={setIsHookahBuilderOpen}>

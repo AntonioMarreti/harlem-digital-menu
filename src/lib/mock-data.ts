@@ -3,6 +3,12 @@ export type Category = {
   name: string;
 };
 
+export type MenuChoice = {
+  label: string;
+  description?: string;
+  group?: string;
+};
+
 export type MenuItem = {
   id: string;
   categoryId: string;
@@ -13,6 +19,7 @@ export type MenuItem = {
   tags?: string[];
   source?: 'harlem' | 'craft_beery';
   sourceLabel?: string;
+  choices?: MenuChoice[];
 };
 
 export type Table = {
@@ -29,6 +36,7 @@ export const categories: Category[] = [
   { id: 'cat_snacks', name: 'Закуски' },
   { id: 'cat_desserts', name: 'Десерты' },
   { id: 'cat_food', name: 'Еда Craft Beery' },
+  { id: 'cat_cider', name: 'Сидр' },
 ];
 
 export const menuItems: MenuItem[] = [
@@ -38,7 +46,7 @@ export const menuItems: MenuItem[] = [
     categoryId: 'cat_hookah',
     name: 'Кальян',
     description: 'Классический кальян.',
-    price: 990,
+    price: 999,
     isAvailable: true,
     tags: ['классика'],
     source: 'harlem',
@@ -49,7 +57,7 @@ export const menuItems: MenuItem[] = [
     categoryId: 'cat_hookah',
     name: 'Кальян премиум',
     description: 'На табаках Trofimoff\'s и Tangiers.',
-    price: 1290,
+    price: 1299,
     isAvailable: true,
     tags: ['премиум', 'Trofimoff\'s', 'Tangiers'],
     source: 'harlem',
@@ -80,9 +88,56 @@ export const menuItems: MenuItem[] = [
   { id: 'dr_19', categoryId: 'cat_drinks', name: 'Лаймон Фреш 0,33', description: 'вкусы: лимон-лайм, клубника-огурец, лайм-лимон-мята.', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_20', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,33', description: 'вкусы: клубника-арбуз, черничный донат, фейхоа.', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
+  // Harlem / Сидр
+  { id: 'cid_1', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 5,0%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+    { label: 'вишня' }, { label: 'груша' }, { label: 'лесные ягоды' }, { label: 'яблоко' }, { label: 'грейпфрут' }
+  ] },
+  { id: 'cid_2', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 7,0%', description: '', price: 270, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+    { label: 'малина-крыжовник' }, { label: 'ежевика-мята' }, { label: 'персик-абрикос' }, { label: 'кокос-клубника' }
+  ] },
+  { id: 'cid_3', categoryId: 'cat_cider', name: 'White Phoenix 0,45 · 5,6%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+    { label: 'виноград-мандарин' }, { label: 'гранат-малина' }, { label: 'кокос-цитрус' }, { label: 'манго-цитрус' }, { label: 'маракуя-вишня' }
+  ] },
+
   // Harlem / Чай / кофе
-  { id: 'tea_1', categoryId: 'cat_tea', name: 'Чай 500 мл', description: 'чёрный или зелёный в ассортименте.', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_2', categoryId: 'cat_tea', name: 'Чай 900 мл', description: 'чёрный или зелёный в ассортименте.', price: 280, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_1', categoryId: 'cat_tea', name: 'Чай 500 мл', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+    { label: 'Эрл Грей', description: 'смесь китайских, цейлонских и индийских чаёв, ароматизированная натуральными маслами бергамота.', group: 'Чёрный чай' },
+    { label: 'Горный Чабрец', description: 'чёрный цейлонский чай, чабрец.', group: 'Чёрный чай' },
+    { label: 'Дикая вишня', description: 'смесь цейлонских и индийских чаёв с клюквой и листьями грецкого ореха; густой сладкий аромат спелой вишни.', group: 'Чёрный чай' },
+    { label: 'Черное золото', description: 'сладко-сдобный кондитерский аромат с шоколадными и медовыми оттенками; мягкий вкус с нотками жжёной карамели, печёных фруктов и кофе.', group: 'Чёрный чай' },
+    { label: 'Таёжный сбор', description: 'чёрный чай с брусникой, черноплодкой, ежевикой, календулой, васильком и брусничным листом.', group: 'Чёрный чай' },
+    { label: 'Барбарисовый', description: 'цейлонский чёрный чай, ягоды годжи и клубники, розовый перец, гомфрена и сафлор.', group: 'Чёрный чай' },
+    { label: 'Леди земляника', description: 'чёрный цейлонский чай с ягодами и листьями земляники; насыщенный ягодный вкус с лёгким сливочным оттенком.', group: 'Чёрный чай' },
+    { label: 'Ройбуш Калахари', description: 'ройбуш, лимонная трава, лепестки василька и цитрусовый аромат.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Пу Эр дворцовый', description: 'мягкий цветочно-фруктовый аромат с сухофруктами; древесный пуэрный вкус.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Да хун пао', description: 'китайский тёмный чай с нотами цветов и мёда.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Малиновый улун', description: 'улун с ягодами малины; яркий аромат и мягкий освежающий вкус с лёгкой ягодной кислинкой.', group: 'Зелёный чай и улун' },
+    { label: 'Меч самурая', description: 'Ганпаудер, вишня, лимонная трава, цедра апельсина, миндаль; яркий лимонный вкус с цветочными и ягодными нотками.', group: 'Зелёный чай и улун' },
+    { label: 'Те Гуань Инь', description: 'китайский полуферментированный чай с цветочным ароматом и лёгким медовым послевкусием.', group: 'Зелёный чай и улун' },
+    { label: 'Сян Люй Ча', description: 'зелёный чай с нежным ароматом и мягким насыщенным вкусом с цветочными нотами.', group: 'Зелёный чай и улун' },
+    { label: 'Молочный Улун', description: 'китайский улун с ароматом молока.', group: 'Зелёный чай и улун' },
+    { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
+    { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
+  ] },
+  { id: 'tea_2', categoryId: 'cat_tea', name: 'Чай 900 мл', description: '', price: 280, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+    { label: 'Эрл Грей', description: 'смесь китайских, цейлонских и индийских чаёв, ароматизированная натуральными маслами бергамота.', group: 'Чёрный чай' },
+    { label: 'Горный Чабрец', description: 'чёрный цейлонский чай, чабрец.', group: 'Чёрный чай' },
+    { label: 'Дикая вишня', description: 'смесь цейлонских и индийских чаёв с клюквой и листьями грецкого ореха; густой сладкий аромат спелой вишни.', group: 'Чёрный чай' },
+    { label: 'Черное золото', description: 'сладко-сдобный кондитерский аромат с шоколадными и медовыми оттенками; мягкий вкус с нотками жжёной карамели, печёных фруктов и кофе.', group: 'Чёрный чай' },
+    { label: 'Таёжный сбор', description: 'чёрный чай с брусникой, черноплодкой, ежевикой, календулой, васильком и брусничным листом.', group: 'Чёрный чай' },
+    { label: 'Барбарисовый', description: 'цейлонский чёрный чай, ягоды годжи и клубники, розовый перец, гомфрена и сафлор.', group: 'Чёрный чай' },
+    { label: 'Леди земляника', description: 'чёрный цейлонский чай с ягодами и листьями земляники; насыщенный ягодный вкус с лёгким сливочным оттенком.', group: 'Чёрный чай' },
+    { label: 'Ройбуш Калахари', description: 'ройбуш, лимонная трава, лепестки василька и цитрусовый аромат.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Пу Эр дворцовый', description: 'мягкий цветочно-фруктовый аромат с сухофруктами; древесный пуэрный вкус.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Да хун пао', description: 'китайский тёмный чай с нотами цветов и мёда.', group: 'Тёмный чай и ройбуш' },
+    { label: 'Малиновый улун', description: 'улун с ягодами малины; яркий аромат и мягкий освежающий вкус с лёгкой ягодной кислинкой.', group: 'Зелёный чай и улун' },
+    { label: 'Меч самурая', description: 'Ганпаудер, вишня, лимонная трава, цедра апельсина, миндаль; яркий лимонный вкус с цветочными и ягодными нотками.', group: 'Зелёный чай и улун' },
+    { label: 'Те Гуань Инь', description: 'китайский полуферментированный чай с цветочным ароматом и лёгким медовым послевкусием.', group: 'Зелёный чай и улун' },
+    { label: 'Сян Люй Ча', description: 'зелёный чай с нежным ароматом и мягким насыщенным вкусом с цветочными нотами.', group: 'Зелёный чай и улун' },
+    { label: 'Молочный Улун', description: 'китайский улун с ароматом молока.', group: 'Зелёный чай и улун' },
+    { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
+    { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
+  ] },
   { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: 'добавка к чаю.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', description: 'мята горная, чабрец, мята свежая, лимон, мёд или сироп.', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', description: '50 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
@@ -119,7 +174,7 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_13', categoryId: 'cat_food', name: 'Домашние чесночные гренки', description: 'с сырным соусом. 150 г / 40 г.', price: 250, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_14', categoryId: 'cat_food', name: 'Креветки в темпуре', description: 'тигровые креветки с соусом сладкий чили манго. 140 г / 40 г.', price: 640, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_15', categoryId: 'cat_food', name: 'Креветки на гриле', description: 'тигровые креветки на гриле с соусом сладкий чили. 160 г / 40 г.', price: 690, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_16', categoryId: 'cat_food', name: 'Шаурма с цыплёнком', description: 'филе курицы, салат, помидор, огурец, лук фри, пряно-томатный соус. 320 г.', price: 440, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_16', categoryId: 'cat_food', name: 'Шаурма с цыплёнком', description: 'филе бедра куры, салат, помидор, огурец, лук фри, пряно-томатный соус. 320 г.', price: 440, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_17', categoryId: 'cat_food', name: 'Шаурма со свининой', description: 'свинина, салат, помидор, огурец, лук фри, пряно-томатный соус. 320 г.', price: 440, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_18', categoryId: 'cat_food', name: 'Фиш энд чипс', description: 'филе трески в пивном кляре, картофель айдахо, соус тар-тар. 270 г / 40 г.', price: 640, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_19', categoryId: 'cat_food', name: 'Картофель по-деревенски спайси', description: 'в остром сырном соусе с халапеньо и пармезаном. 200 г.', price: 390, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
@@ -138,7 +193,7 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_32', categoryId: 'cat_food', name: 'Строганов с курицей', description: 'филе цыплёнка в сметанном соусе с грибами и картофелем фри. 300 г / 40 г.', price: 620, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_33', categoryId: 'cat_food', name: 'Соба с цыплёнком в устричном соусе', description: 'гречневая лапша с филе цыплёнка, овощами и шампиньонами. 330 г.', price: 520, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_34', categoryId: 'cat_food', name: 'Удон с морепродуктами в соусе терияки', description: 'лапша с кальмарами, тигровыми креветками, осьминогами и овощами. 330 г.', price: 650, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_35', categoryId: 'cat_food', name: 'Курица сычуань на сковороде', description: 'филе курицы в тайском соусе с овощами и рисом. 160 г / 100 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_35', categoryId: 'cat_food', name: 'Курица сычуань', description: 'филе курицы в тайском соусе с овощами и рисом. 160 г / 100 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_36', categoryId: 'cat_food', name: 'Жарёха со свининой', description: 'свинина с морковью, сладким перцем и картофелем айдахо в томатном соусе. 360 г.', price: 640, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_37', categoryId: 'cat_food', name: 'Фрайд райс', description: 'тайский жареный рис с овощами и морепродуктами. 320 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_38', categoryId: 'cat_food', name: 'Айдахо в специях', description: '150 г.', price: 260, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
