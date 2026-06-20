@@ -877,7 +877,7 @@ export default function StaffDashboard() {
                   : [...catItems];
 
                 if (cat.id === 'cat_tea') {
-                  const allTeaChoices = catItems.find(i => i.id === 'tea_500')?.choices || [];
+                  const allTeaChoices = catItems.find(i => i.id === 'tea_1')?.choices || [];
                   const matchesTeaChoices = query ? allTeaChoices.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query))) : true;
 
                   filteredItems = filteredItems.map(item => ({ ...item, choices: undefined }));
