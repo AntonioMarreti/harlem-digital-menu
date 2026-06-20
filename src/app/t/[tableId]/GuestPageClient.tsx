@@ -998,20 +998,22 @@ export default function GuestPageClient({
                     );
                   })}
                 {cat.id === 'cat_hookah' && (
-                  <Card className="p-5 bg-primary/5 border-primary/20 rounded-2xl flex flex-col items-center text-center mt-2 shadow-sm">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3 shrink-0">
-                      <Clock className="h-5 w-5 text-primary" />
+                  <Card className="p-3.5 bg-primary/5 border-primary/20 rounded-xl flex items-start gap-3 mt-2 shadow-sm">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Clock className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="font-semibold text-foreground text-base mb-1">
-                      Дневной кальян до 17:00
-                    </div>
-                    <div className="text-sm font-medium text-primary mb-2 flex flex-wrap justify-center gap-1.5">
-                      <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
-                      <span className="text-primary/50">·</span>
-                      <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Успейте заказать до 17:00
+                    <div className="flex-1 flex flex-col min-w-0">
+                      <div className="font-semibold text-foreground text-sm leading-tight mb-0.5">
+                        Дневной кальян до 17:00
+                      </div>
+                      <div className="text-xs font-medium text-primary flex flex-wrap gap-x-1 mb-1">
+                        <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
+                        <span className="text-primary/50">·</span>
+                        <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground leading-tight">
+                        Успейте заказать до 17:00
+                      </div>
                     </div>
                   </Card>
                 )}
