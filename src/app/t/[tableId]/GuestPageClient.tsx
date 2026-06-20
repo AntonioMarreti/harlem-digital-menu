@@ -829,16 +829,6 @@ export default function GuestPageClient({
                     Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
                   </div>
                 )}
-                {cat.id === 'cat_hookah' && (
-                  <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                      <Clock className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="text-sm font-medium text-foreground">
-                      До 17:00: Стандарт — 700 ₽, Премиум — 999 ₽
-                    </div>
-                  </div>
-                )}
 
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
@@ -1007,6 +997,24 @@ export default function GuestPageClient({
                       </Card>
                     );
                   })}
+                {cat.id === 'cat_hookah' && (
+                  <Card className="p-5 bg-primary/5 border-primary/20 rounded-2xl flex flex-col items-center text-center mt-2 shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3 shrink-0">
+                      <Clock className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="font-semibold text-foreground text-base mb-1">
+                      Дневной кальян до 17:00
+                    </div>
+                    <div className="text-sm font-medium text-primary mb-2 flex flex-wrap justify-center gap-1.5">
+                      <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
+                      <span className="text-primary/50">·</span>
+                      <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Успейте заказать до 17:00
+                    </div>
+                  </Card>
+                )}
               </TabsContent>
             ))}
           </div>
@@ -1134,7 +1142,7 @@ export default function GuestPageClient({
               className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
               onClick={() => {
                 if (selectedChoiceItem && selectedChoice) {
-                  const prefix = selectedChoiceItem.categoryId === 'cat_cider' ? 'Вкус: ' : 'Сорт: ';
+                  const prefix = selectedChoiceItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ';
                   addToCart(selectedChoiceItem, `${prefix}${selectedChoice}`);
                   setIsChoiceDrawerOpen(false);
                 }
