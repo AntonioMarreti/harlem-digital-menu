@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, Search } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { categories, menuItems } from '@/lib/mock-data';
 import { Toaster } from "@/components/ui/sonner";
@@ -364,6 +364,8 @@ export default function StaffDashboard() {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [stopListSearchQuery, setStopListSearchQuery] = useState('');
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const toggleExpand = (itemId: string) => setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -864,7 +866,11 @@ export default function StaffDashboard() {
               const result = categories.map(cat => {
                 const catItems = menuItems.filter(item => item.categoryId === cat.id);
                 const filteredItems = query
-                  ? catItems.filter(item => item.name.toLowerCase().includes(query) || cat.name.toLowerCase().includes(query) || (item.sourceLabel && item.sourceLabel.toLowerCase().includes(query)))
+                  ? catItems.filter(item => {
+                      const matchesMain = item.name.toLowerCase().includes(query) || cat.name.toLowerCase().includes(query) || (item.sourceLabel && item.sourceLabel.toLowerCase().includes(query));
+                      const matchesChoice = item.choices?.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query)));
+                      return matchesMain || matchesChoice;
+                    })
                   : catItems;
 
                 if (filteredItems.length === 0) return null;
@@ -878,25 +884,70 @@ export default function StaffDashboard() {
                     <div className="divide-y divide-gray-100">
                       {filteredItems.map(item => {
                         const isAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+                        const hasChoices = item.choices && item.choices.length > 0;
+                        const hasMatchingChoice = query && item.choices?.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query)));
+                        const isExpanded = expandedItems[item.id] || hasMatchingChoice;
+
                         return (
-                          <div key={item.id} className={`flex items-center justify-between p-4 transition-colors ${!isAvailable ? 'bg-red-50/50' : ''}`}>
-                            <div>
-                              <div className="font-medium text-gray-900 flex items-center gap-2">
-                                {item.name}
-                                {!isAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
+                          <div key={item.id} className="flex flex-col">
+                            <div className={`flex items-center justify-between p-4 transition-colors ${!isAvailable ? 'bg-red-50/50' : ''}`}>
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900 flex items-center gap-2">
+                                  {item.name}
+                                  {!isAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
+                                </div>
+                                {item.sourceLabel && <div className="text-xs text-gray-400 mt-1">{item.sourceLabel}</div>}
+                                {hasChoices && (
+                                  <button
+                                    onClick={() => toggleExpand(item.id)}
+                                    className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-md"
+                                  >
+                                    {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                    {isExpanded ? 'Скрыть варианты' : `Показать варианты (${item.choices?.length})`}
+                                  </button>
+                                )}
                               </div>
-                              {item.sourceLabel && <div className="text-xs text-gray-400 mt-1">{item.sourceLabel}</div>}
+                              <div>
+                                <Button
+                                  variant={isAvailable ? "outline" : "destructive"}
+                                  size="sm"
+                                  className={isAvailable ? "text-gray-600" : ""}
+                                  onClick={() => handleToggleAvailability(item.id, isAvailable)}
+                                >
+                                  {isAvailable ? "Снять с продажи" : "Вернуть в продажу"}
+                                </Button>
+                              </div>
                             </div>
-                            <div>
-                              <Button
-                                variant={isAvailable ? "outline" : "destructive"}
-                                size="sm"
-                                className={isAvailable ? "text-gray-600" : ""}
-                                onClick={() => handleToggleAvailability(item.id, isAvailable)}
-                              >
-                                {isAvailable ? "Снять с продажи" : "Вернуть в продажу"}
-                              </Button>
-                            </div>
+                            {hasChoices && isExpanded && (
+                              <div className="bg-gray-50 border-t border-gray-100 divide-y divide-gray-100 pl-4">
+                                {item.choices?.map(choice => {
+                                  const variantId = `${item.id}::${choice.label}`;
+                                  const isChoiceAvailable = availabilityMap[variantId] ?? true;
+                                  const isHighlighted = query && (choice.label.toLowerCase().includes(query) || (choice.description && choice.description.toLowerCase().includes(query)));
+                                  return (
+                                    <div key={choice.label} className={`flex items-center justify-between p-3 pl-8 transition-colors ${!isChoiceAvailable ? 'bg-red-50/50' : ''} ${isHighlighted ? 'bg-yellow-50/50' : ''}`}>
+                                      <div className="flex-1">
+                                        <div className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                                          {choice.label}
+                                          {!isChoiceAvailable && <Badge variant="destructive" className="text-[10px] uppercase">На стопе</Badge>}
+                                        </div>
+                                        {choice.description && <div className="text-xs text-gray-500 mt-0.5">{choice.description}</div>}
+                                      </div>
+                                      <div>
+                                        <Button
+                                          variant={isChoiceAvailable ? "outline" : "destructive"}
+                                          size="sm"
+                                          className={`text-xs h-7 px-2 ${isChoiceAvailable ? "text-gray-500" : ""}`}
+                                          onClick={() => handleToggleAvailability(variantId, isChoiceAvailable)}
+                                        >
+                                          {isChoiceAvailable ? "Снять" : "Вернуть"}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

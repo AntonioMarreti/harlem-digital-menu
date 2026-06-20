@@ -261,6 +261,34 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: normalizedOptions.error }, { status: 400 });
       }
 
+      let choiceLabel: string | null = null;
+      if (normalizedOptions.value?.notes) {
+        const notes = normalizedOptions.value.notes;
+        if (notes.startsWith('Сорт: ')) {
+          choiceLabel = notes.substring('Сорт: '.length).trim();
+        } else if (notes.startsWith('Вкус: ')) {
+          choiceLabel = notes.substring('Вкус: '.length).trim();
+        }
+      }
+
+      if (choiceLabel) {
+        const variantId = `${menuItemId}::${choiceLabel}`;
+        const isVariantAvailable = availabilityMap.get(variantId) ?? true;
+        if (!isVariantAvailable) {
+          logWarn('order.rejected', {
+            code: 'VARIANT_UNAVAILABLE',
+            tableSessionId,
+            tableIdOrSlug: safeTableIdOrSlug,
+            itemId: menuItemId,
+            variantId,
+          });
+          return NextResponse.json({
+            error: `Вариант «${choiceLabel}» для товара «${canonicalItem.name}» временно недоступен`,
+            code: 'VARIANT_UNAVAILABLE'
+          }, { status: 400 });
+        }
+      }
+
       serverTotalAmount += canonicalItem.price * item.quantity;
 
       itemsToInsert.push({

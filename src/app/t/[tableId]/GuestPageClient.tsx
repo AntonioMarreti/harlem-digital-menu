@@ -833,7 +833,13 @@ export default function GuestPageClient({
                 {menuItems
                   .filter((item) => item.categoryId === cat.id)
                   .map((item) => {
-                    const isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+                    let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+                    if (isItemAvailable && item.choices && item.choices.length > 0) {
+                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[`${item.id}::${choice.label}`] ?? true);
+                      if (!hasAvailableChoice) {
+                        isItemAvailable = false;
+                      }
+                    }
                     const cartQuantity = cart
                       .filter((cartItem) => cartItem.item.id === item.id)
                       .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
@@ -848,7 +854,7 @@ export default function GuestPageClient({
                               <CardTitle className="text-base font-medium leading-tight text-foreground flex items-center flex-wrap gap-2">
                                 {item.name}
                                 {!isItemAvailable && (
-                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
+                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
                                 )}
                               </CardTitle>
                               {item.sourceLabel && (
@@ -942,7 +948,7 @@ export default function GuestPageClient({
                                   disabled
                                   className="h-9 rounded-full px-4 text-muted-foreground font-medium text-xs opacity-70 disabled:opacity-70"
                                 >
-                                  Недоступно
+                                  Нет в наличии
                                 </Button>
                               ) : plainCartQuantity > 0 ? (
                                 <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1 animate-cart-pop">
@@ -1109,20 +1115,27 @@ export default function GuestPageClient({
                     {group !== 'default' && selectedChoiceItem?.categoryId === 'cat_tea' && (
                       <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
                     )}
-                    {items.map((choice) => (
+                    {items.map((choice) => {
+                      const isChoiceAvailable = availabilityMap[`${selectedChoiceItem?.id}::${choice.label}`] ?? true;
+                      return (
                       <label
                         key={choice.label}
-                        className={`flex items-start justify-between p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                          selectedChoice === choice.label
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-border/40 hover:border-primary/40'
+                        className={`flex items-start justify-between p-4 rounded-xl border-2 transition-all ${
+                          !isChoiceAvailable
+                            ? 'opacity-50 grayscale-[0.5] cursor-not-allowed pointer-events-none bg-secondary/20 border-border/20'
+                            : selectedChoice === choice.label
+                              ? 'border-primary bg-primary/5 shadow-sm cursor-pointer'
+                              : 'border-border/40 hover:border-primary/40 cursor-pointer'
                         }`}
                       >
                         <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
-                          <RadioGroupItem value={choice.label} id={choice.label} className="mt-1 shrink-0" />
+                          <RadioGroupItem value={choice.label} id={choice.label} className="mt-1 shrink-0" disabled={!isChoiceAvailable} />
                           <div className="space-y-1 min-w-0 flex-1">
-                            <div className={`font-semibold text-base leading-tight ${selectedChoice === choice.label ? 'text-primary' : 'text-foreground'}`}>
+                            <div className={`font-semibold text-base leading-tight flex items-center flex-wrap gap-2 ${selectedChoice === choice.label ? 'text-primary' : 'text-foreground'}`}>
                               {choice.label}
+                              {!isChoiceAvailable && (
+                                <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
+                              )}
                             </div>
                             {choice.description && (
                               <div className="text-sm text-foreground/70 line-clamp-2 leading-snug">
@@ -1132,7 +1145,7 @@ export default function GuestPageClient({
                           </div>
                         </div>
                       </label>
-                    ))}
+                    )})}
                   </div>
                 ));
               })()}
