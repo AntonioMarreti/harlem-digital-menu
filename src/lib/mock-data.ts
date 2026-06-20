@@ -84,9 +84,54 @@ export const menuItems: MenuItem[] = [
   { id: 'dr_17', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,45', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Лимонады (added to Напитки)
-  { id: 'dr_18', categoryId: 'cat_drinks', name: 'Мохито Очаково 0,45', description: 'вкусы: лимон-лайм, виноград-алоэ, клубника, черника-голубика, манго, гранат.', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_19', categoryId: 'cat_drinks', name: 'Лаймон Фреш 0,33', description: 'вкусы: лимон-лайм, клубника-огурец, лайм-лимон-мята.', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_20', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,33', description: 'вкусы: клубника-арбуз, черничный донат, фейхоа.', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  {
+    id: 'dr_18',
+    categoryId: 'cat_drinks',
+    name: 'Мохито Очаково 0,45',
+    description: 'Выберите вкус',
+    price: 190,
+    isAvailable: true,
+    source: 'harlem',
+    sourceLabel: 'Харлем',
+    choices: [
+      { label: 'лимон-лайм' },
+      { label: 'виноград-алоэ' },
+      { label: 'клубника' },
+      { label: 'черника-голубика' },
+      { label: 'манго' },
+      { label: 'гранат' }
+    ]
+  },
+  {
+    id: 'dr_19',
+    categoryId: 'cat_drinks',
+    name: 'Лаймон Фреш 0,33',
+    description: 'Выберите вкус',
+    price: 130,
+    isAvailable: true,
+    source: 'harlem',
+    sourceLabel: 'Харлем',
+    choices: [
+      { label: 'лимон-лайм' },
+      { label: 'клубника-огурец' },
+      { label: 'лайм-лимон-мята' }
+    ]
+  },
+  {
+    id: 'dr_20',
+    categoryId: 'cat_drinks',
+    name: 'Лит Энерджи 0,33',
+    description: 'Выберите вкус',
+    price: 130,
+    isAvailable: true,
+    source: 'harlem',
+    sourceLabel: 'Харлем',
+    choices: [
+      { label: 'клубника-арбуз' },
+      { label: 'черничный донат' },
+      { label: 'фейхоа' }
+    ]
+  },
 
   // Harlem / Сидр
   { id: 'cid_1', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 5,0%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
