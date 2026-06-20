@@ -125,4 +125,22 @@
   .animate-cart-pop {
     animation: cart-pop 200ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
   }
+  .animate-card-pulse {
+    animation: card-pulse 800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .animate-card-pulse-strong {
+    animation: card-pulse-strong 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes card-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,0,0,0.15); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(0,0,0,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
+
+@keyframes card-pulse-strong {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }

@@ -350,6 +350,8 @@ export default function StaffDashboard() {
   const initialLoadDone = useRef(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
   const knownCallIds = useRef<Set<string>>(new Set());
+  const [newOrderPulse, setNewOrderPulse] = useState(0);
+  const [newCallPulse, setNewCallPulse] = useState(0);
   const [tableSessions, setTableSessions] = useState<TableSessionInfo[]>([]);
   const [recentlyClosedSessions, setRecentlyClosedSessions] = useState<RecentlyClosedSession[]>([]);
   const [tables, setTables] = useState<StaffTable[]>([]);
@@ -408,16 +410,24 @@ export default function StaffDashboard() {
       const newCalls = callsData.calls || [];
 
       if (initialLoadDone.current) {
+        let hasNewOrder = false;
+        let hasNewCall = false;
+
         newOrders.forEach((o: Order) => {
           if (!knownOrderIds.current.has(o.id) && o.status === 'new') {
             toast('Новый заказ', { description: formatTableLabel(o.tableName, o.tableQrSlug) });
+            hasNewOrder = true;
           }
         });
         newCalls.forEach((c: StaffCall) => {
           if (!knownCallIds.current.has(c.id) && c.status === 'new') {
             toast('Вызов персонала', { description: formatTableLabel(c.tableName, c.tableQrSlug) });
+            hasNewCall = true;
           }
         });
+
+        if (hasNewOrder) setNewOrderPulse(prev => prev + 1);
+        if (hasNewCall) setNewCallPulse(prev => prev + 1);
       }
 
       newOrders.forEach((o: Order) => knownOrderIds.current.add(o.id));
@@ -693,9 +703,10 @@ export default function StaffDashboard() {
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
         <div className="grid grid-cols-3 gap-2 mb-4">
           <button
+            key={`order-pulse-${newOrderPulse}`}
             type="button"
             aria-label="Показать новые заказы"
-            className="flex flex-col overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
+            className={`flex flex-col overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm ${newOrderPulse > 0 ? 'animate-card-pulse' : ''}`}
             onClick={() => setActiveTab('new')}
           >
             <div className="p-3 w-full flex flex-col items-center justify-center text-center h-full">
@@ -705,9 +716,10 @@ export default function StaffDashboard() {
           </button>
 
           <button
+            key={`call-pulse-${newCallPulse}`}
             type="button"
             aria-label="Показать вызовы"
-            className={`flex flex-col overflow-hidden rounded-xl cursor-pointer transition-colors shadow-sm ${activeCalls.length > 0 ? 'bg-red-50 ring-1 ring-red-500 hover:bg-red-100' : 'bg-card ring-1 ring-foreground/10 hover:bg-gray-50'}`}
+            className={`flex flex-col overflow-hidden rounded-xl cursor-pointer transition-colors shadow-sm ${activeCalls.length > 0 ? 'bg-red-50 ring-1 ring-red-500 hover:bg-red-100' : 'bg-card ring-1 ring-foreground/10 hover:bg-gray-50'} ${newCallPulse > 0 ? 'animate-card-pulse-strong' : ''}`}
             onClick={() => setActiveTab('calls')}
           >
             <div className="p-3 w-full flex flex-col items-center justify-center text-center h-full">
