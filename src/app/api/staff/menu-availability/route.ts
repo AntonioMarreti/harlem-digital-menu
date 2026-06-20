@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const baseItemId = itemId.split('::')[0];
-    const itemExists = menuItems.some(m => m.id === baseItemId);
+    const itemExists = baseItemId === 'tea' || menuItems.some(m => m.id === baseItemId);
     if (!itemExists) {
       return NextResponse.json({ error: 'Item not found in menu' }, { status: 404 });
     }

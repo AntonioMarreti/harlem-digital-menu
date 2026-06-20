@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (choiceLabel) {
-        const variantId = `${menuItemId}::${choiceLabel}`;
+        const variantId = canonicalItem.categoryId === 'cat_tea' ? `tea::${choiceLabel}` : `${menuItemId}::${choiceLabel}`;
         const isVariantAvailable = availabilityMap.get(variantId) ?? true;
         if (!isVariantAvailable) {
           logWarn('order.rejected', {

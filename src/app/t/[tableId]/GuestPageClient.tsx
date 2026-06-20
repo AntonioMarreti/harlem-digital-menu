@@ -835,7 +835,7 @@ export default function GuestPageClient({
                   .map((item) => {
                     let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
                     if (isItemAvailable && item.choices && item.choices.length > 0) {
-                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[`${item.id}::${choice.label}`] ?? true);
+                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[item.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
                       if (!hasAvailableChoice) {
                         isItemAvailable = false;
                       }
@@ -1116,7 +1116,7 @@ export default function GuestPageClient({
                       <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
                     )}
                     {items.map((choice) => {
-                      const isChoiceAvailable = availabilityMap[`${selectedChoiceItem?.id}::${choice.label}`] ?? true;
+                      const isChoiceAvailable = availabilityMap[selectedChoiceItem?.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${selectedChoiceItem?.id}::${choice.label}`] ?? true;
                       return (
                       <label
                         key={choice.label}
