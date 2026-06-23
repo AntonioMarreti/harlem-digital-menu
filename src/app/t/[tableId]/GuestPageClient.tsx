@@ -127,6 +127,75 @@ export default function GuestPageClient({
 }) {
   const [tableSessionId, setTableSessionId] = useState<string | null>(null);
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id || "cat_hookah");
+  const touchStartRef = useRef<{ x: number, y: number } | null>(null);
+
+  const scrollToCategoryTab = useCallback((catId: string) => {
+    setTimeout(() => {
+      const trigger = document.querySelector(`[data-cat-trigger="${catId}"]`);
+      if (trigger) {
+        trigger.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 10);
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('textarea') ||
+      target.closest('select') ||
+      target.closest('.radio-label') ||
+      target.closest('[role="dialog"]') ||
+      target.closest('[role="tab"]') ||
+      target.closest('.choice-drawer-trigger')
+    ) {
+      return;
+    }
+    if (e.touches.length > 1) return;
+
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  }, []);
+
+  const handleTouchCancel = useCallback(() => {
+    touchStartRef.current = null;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const deltaX = touchEndX - touchStartRef.current.x;
+    const deltaY = Math.abs(touchEndY - touchStartRef.current.y);
+
+    const minSwipeDistance = 60;
+
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > deltaY * 1.5) {
+      const currentIndex = categories.findIndex(c => c.id === activeCategory);
+      if (currentIndex !== -1) {
+        let newCat = activeCategory;
+        if (deltaX > 0 && currentIndex > 0) {
+          newCat = categories[currentIndex - 1].id;
+        } else if (deltaX < 0 && currentIndex < categories.length - 1) {
+          newCat = categories[currentIndex + 1].id;
+        }
+
+        if (newCat !== activeCategory) {
+          setActiveCategory(newCat);
+          scrollToCategoryTab(newCat);
+        }
+      }
+    }
+
+    touchStartRef.current = null;
+  }, [activeCategory, categories, scrollToCategoryTab]);
 
   useEffect(() => {
     fetch('/api/menu-availability')
@@ -806,13 +875,21 @@ export default function GuestPageClient({
         )}
 
         {/* Menu Tabs */}
-        <Tabs defaultValue="cat_hookah" className="w-full flex-col">
+        <Tabs
+          value={activeCategory}
+          onValueChange={(val) => {
+            setActiveCategory(val);
+            scrollToCategoryTab(val);
+          }}
+          className="w-full flex-col"
+        >
           <div className="px-5 sticky top-[85px] z-10 bg-background/95 backdrop-blur-md py-3">
             <TabsList className="w-full min-h-9 flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20 scroll-px-5">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat.id}
                   value={cat.id}
+                  data-cat-trigger={cat.id}
                   className="rounded-full border border-transparent px-3.5 py-1.5 text-sm transition-all flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-sm"
                 >
                   {cat.name}
@@ -821,7 +898,12 @@ export default function GuestPageClient({
             </TabsList>
           </div>
 
-          <div className="px-5 mt-3">
+          <div
+            className="px-5 mt-3"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
+          >
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="space-y-2.5 outline-none pb-6">
                 {cat.id === 'cat_food' && (
