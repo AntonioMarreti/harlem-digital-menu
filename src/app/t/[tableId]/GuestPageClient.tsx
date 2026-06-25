@@ -839,7 +839,7 @@ export default function GuestPageClient({
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 pb-28 ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
+      <main className={`flex-1 pb-[calc(7rem+env(safe-area-inset-bottom))] ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
 
         {/* Bill block */}
         {billData && billData.totalAmount > 0 && (
@@ -1037,7 +1037,7 @@ export default function GuestPageClient({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full text-primary hover:bg-background active:scale-95 transition-transform duration-100"
+                                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                     onClick={() => removeFromCart(item)}
                                   >
                                     <Minus className="h-3.5 w-3.5" />
@@ -1046,7 +1046,7 @@ export default function GuestPageClient({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full text-primary hover:bg-background active:scale-95 transition-transform duration-100"
+                                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                     onClick={() => {
                                     if (item.choices && item.choices.length > 0) {
                                       setSelectedChoiceItem(item);
@@ -1064,7 +1064,7 @@ export default function GuestPageClient({
                               ) : (
                                 <Button
                                   variant="outline"
-                                  className="border-border/50 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
+                                  className="border-border/50 bg-transparent [@media(hover:hover)]:hover:bg-primary/10 [@media(hover:hover)]:hover:text-primary [@media(hover:hover)]:hover:border-primary/30 active:bg-primary/10 active:text-primary active:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
                                   onClick={() => {
                                     if (item.choices && item.choices.length > 0) {
                                       setSelectedChoiceItem(item);
@@ -1076,7 +1076,9 @@ export default function GuestPageClient({
                                     }
                                   }}
                                 >
-                                  Добавить
+                                  {item.choices && item.choices.length > 0
+                                    ? (item.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус')
+                                    : 'Добавить'}
                                 </Button>
                               )}
                             </div>
@@ -1112,7 +1114,7 @@ export default function GuestPageClient({
       </main>
 
       {/* Floating Action Menu Container */}
-      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5 pb-6 flex justify-center pointer-events-none">
+      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex justify-center pointer-events-none">
          <div className="w-full flex justify-between gap-3 pointer-events-auto">
             <Button
               size="lg"
@@ -1436,7 +1438,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
+                                      className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1445,7 +1447,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
+                                      className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => addToCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -1486,7 +1488,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
+                                      className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1495,7 +1497,7 @@ export default function GuestPageClient({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 rounded-full hover:bg-background active:scale-95 transition-transform duration-100"
+                                      className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                       onClick={() => addToCart(cartItem.item, cartItem.notes)}
                                     >
                                       <Plus className="h-3 w-3" />

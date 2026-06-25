@@ -1,5 +1,17 @@
 import type { Config } from "tailwindcss";
 
+function oklchAlpha(variable: string, defaultAlphaVar?: string): string {
+  return (({ opacityValue }: { opacityValue?: string }) => {
+    if (opacityValue !== undefined) {
+      return `oklch(var(${variable}) / ${opacityValue})`;
+    }
+    if (defaultAlphaVar) {
+      return `oklch(var(${variable}) / var(${defaultAlphaVar}))`;
+    }
+    return `oklch(var(${variable}))`;
+  }) as unknown as string;
+}
+
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -19,38 +31,38 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        border: oklchAlpha("--border", "--border-alpha"),
+        input: oklchAlpha("--input", "--input-alpha"),
+        ring: oklchAlpha("--ring"),
+        background: oklchAlpha("--background"),
+        foreground: oklchAlpha("--foreground"),
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: oklchAlpha("--primary"),
+          foreground: oklchAlpha("--primary-foreground"),
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: oklchAlpha("--secondary"),
+          foreground: oklchAlpha("--secondary-foreground"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: oklchAlpha("--destructive"),
+          foreground: oklchAlpha("--destructive-foreground"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: oklchAlpha("--muted"),
+          foreground: oklchAlpha("--muted-foreground"),
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: oklchAlpha("--accent"),
+          foreground: oklchAlpha("--accent-foreground"),
         },
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: oklchAlpha("--popover"),
+          foreground: oklchAlpha("--popover-foreground"),
         },
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: oklchAlpha("--card"),
+          foreground: oklchAlpha("--card-foreground"),
         },
       },
       borderRadius: {
