@@ -839,7 +839,7 @@ export default function GuestPageClient({
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 pb-28 ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
+      <main className={`flex-1 pb-[calc(7rem+env(safe-area-inset-bottom))] ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
 
         {/* Bill block */}
         {billData && billData.totalAmount > 0 && (
@@ -1112,7 +1112,7 @@ export default function GuestPageClient({
       </main>
 
       {/* Floating Action Menu Container */}
-      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5 pb-6 flex justify-center pointer-events-none">
+      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex justify-center pointer-events-none">
          <div className="w-full flex justify-between gap-3 pointer-events-auto">
             <Button
               size="lg"
