@@ -1369,7 +1369,7 @@ export default function GuestPageClient({
                    <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-6">
                      <div className="flex justify-between items-center mb-4">
                        <h3 className="font-semibold text-primary flex items-center gap-2">
-                          <Clock className="h-4 w-4" /> Заказ #{activeOrder.id.substring(0, 8)}
+                          <Clock className="h-4 w-4" /> Заказ {activeOrder.status === 'new' ? 'отправлен' : activeOrder.status === 'accepted' ? 'принят' : activeOrder.status === 'preparing' ? 'готовится' : 'вынесен'}
                        </h3>
                        <span className="font-bold">{activeOrder.total} ₽</span>
                      </div>
