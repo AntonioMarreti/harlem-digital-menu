@@ -224,8 +224,9 @@ export default function GuestPageClient({
   const [isHookahBuilderOpen, setIsHookahBuilderOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isStaffOpen, setIsStaffOpen] = useState(false);
-  const [isChoiceDrawerOpen, setIsChoiceDrawerOpen] = useState(false);
-  const [selectedChoiceItem, setSelectedChoiceItem] = useState<MenuItem | null>(null);
+  const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
+  const [itemDrawerMode, setItemDrawerMode] = useState<'details' | 'choice'>('details');
+  const [selectedDrawerItem, setSelectedDrawerItem] = useState<MenuItem | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<string>('');
   const [choiceSearchQuery, setChoiceSearchQuery] = useState('');
   type SubmittedOrder = {
@@ -996,10 +997,25 @@ export default function GuestPageClient({
                                 </Badge>
                               )}
                             </div>
-                            {item.description && (
-                              <p className="text-sm text-muted-foreground leading-snug line-clamp-2">
-                                {item.description}
+                            {item.shortDescription && (
+                              <p className="text-sm text-muted-foreground leading-snug">
+                                {item.shortDescription}
                               </p>
+                            )}
+                            {item.description && (
+                              <div className="mt-1.5">
+                                <Button
+                                  variant="link"
+                                  className="h-auto p-0 text-[13px] text-primary hover:text-primary/80 font-medium"
+                                  onClick={() => {
+                                    setSelectedDrawerItem(item);
+                                    setItemDrawerMode('details');
+                                    setIsItemDrawerOpen(true);
+                                  }}
+                                >
+                                  Подробнее
+                                </Button>
+                              </div>
                             )}
                             {item.tags && item.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-0.5">
@@ -1049,10 +1065,11 @@ export default function GuestPageClient({
                                     className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
                                     onClick={() => {
                                     if (item.choices && item.choices.length > 0) {
-                                      setSelectedChoiceItem(item);
+                                      setSelectedDrawerItem(item);
                                       setSelectedChoice('');
                                       setChoiceSearchQuery('');
-                                      setIsChoiceDrawerOpen(true);
+                                      setItemDrawerMode('choice');
+                                      setIsItemDrawerOpen(true);
                                     } else {
                                       addToCart(item);
                                     }
@@ -1067,10 +1084,11 @@ export default function GuestPageClient({
                                   className="border-border/50 bg-transparent [@media(hover:hover)]:hover:bg-primary/10 [@media(hover:hover)]:hover:text-primary [@media(hover:hover)]:hover:border-primary/30 active:bg-primary/10 active:text-primary active:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
                                   onClick={() => {
                                     if (item.choices && item.choices.length > 0) {
-                                      setSelectedChoiceItem(item);
+                                      setSelectedDrawerItem(item);
                                       setSelectedChoice('');
                                       setChoiceSearchQuery('');
-                                      setIsChoiceDrawerOpen(true);
+                                      setItemDrawerMode('choice');
+                                      setIsItemDrawerOpen(true);
                                     } else {
                                       addToCart(item);
                                     }
@@ -1144,17 +1162,17 @@ export default function GuestPageClient({
          </div>
       </div>
 
-      {/* Choice Drawer for Cider/Tea */}
-      <Drawer open={isChoiceDrawerOpen} onOpenChange={setIsChoiceDrawerOpen}>
+      {/* Item Details / Choice Drawer */}
+      <Drawer open={isItemDrawerOpen} onOpenChange={setIsItemDrawerOpen}>
         <DrawerContent className="guest-theme max-w-[430px] mx-auto bg-background/95 text-foreground backdrop-blur-xl border-border/50 max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left pb-2 flex-shrink-0">
             <DrawerTitle className="text-xl font-semibold flex justify-between items-start">
-              {selectedChoiceItem?.name}
+              {selectedDrawerItem?.name}
             </DrawerTitle>
             <DrawerDescription className="text-muted-foreground">
-              Выберите вариант
+              {itemDrawerMode === 'choice' ? 'Выберите вариант' : (selectedDrawerItem?.price + ' ₽')}
             </DrawerDescription>
-            {selectedChoiceItem?.categoryId === 'cat_tea' && (
+            {itemDrawerMode === 'choice' && selectedDrawerItem?.categoryId === 'cat_tea' && (
               <div className="mt-4 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -1168,87 +1186,113 @@ export default function GuestPageClient({
             )}
           </DrawerHeader>
           <div className="p-5 pb-8 overflow-y-auto flex-1">
-            <RadioGroup value={selectedChoice} onValueChange={setSelectedChoice} className="space-y-4">
-              {(() => {
-                let filteredChoices = selectedChoiceItem?.choices || [];
-                if (choiceSearchQuery.trim()) {
-                  const q = choiceSearchQuery.toLowerCase();
-                  filteredChoices = filteredChoices.filter(c =>
-                    c.label.toLowerCase().includes(q) ||
-                    (c.description && c.description.toLowerCase().includes(q))
-                  );
-                }
+            {itemDrawerMode === 'details' ? (
+              <div className="text-base text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                {selectedDrawerItem?.description}
+              </div>
+            ) : (
+              <RadioGroup value={selectedChoice} onValueChange={setSelectedChoice} className="space-y-4">
+                {(() => {
+                  let filteredChoices = selectedDrawerItem?.choices || [];
+                  if (choiceSearchQuery.trim()) {
+                    const q = choiceSearchQuery.toLowerCase();
+                    filteredChoices = filteredChoices.filter(c =>
+                      c.label.toLowerCase().includes(q) ||
+                      (c.description && c.description.toLowerCase().includes(q))
+                    );
+                  }
 
-                if (filteredChoices.length === 0) {
-                  return (
-                    <div className="text-center text-muted-foreground py-8 text-sm">
-                      Ничего не найдено по вашему запросу.
-                    </div>
-                  );
-                }
+                  if (filteredChoices.length === 0) {
+                    return (
+                      <div className="text-center text-muted-foreground py-8 text-sm">
+                        Ничего не найдено по вашему запросу.
+                      </div>
+                    );
+                  }
 
-                const grouped = filteredChoices.reduce((acc, curr) => {
-                  const g = curr.group || 'default';
-                  if (!acc[g]) acc[g] = [];
-                  acc[g].push(curr);
-                  return acc;
-                }, {} as Record<string, typeof filteredChoices>);
+                  const grouped = filteredChoices.reduce((acc, curr) => {
+                    const g = curr.group || 'default';
+                    if (!acc[g]) acc[g] = [];
+                    acc[g].push(curr);
+                    return acc;
+                  }, {} as Record<string, typeof filteredChoices>);
 
-                return Object.entries(grouped).map(([group, items]) => (
-                  <div key={group} className="space-y-3">
-                    {group !== 'default' && selectedChoiceItem?.categoryId === 'cat_tea' && (
-                      <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
-                    )}
-                    {items.map((choice) => {
-                      const isChoiceAvailable = availabilityMap[selectedChoiceItem?.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${selectedChoiceItem?.id}::${choice.label}`] ?? true;
-                      return (
-                      <label
-                        key={choice.label}
-                        className={`flex items-start justify-between p-4 rounded-xl border-2 transition-all ${
-                          !isChoiceAvailable
-                            ? 'opacity-50 grayscale-[0.5] cursor-not-allowed pointer-events-none bg-secondary/20 border-border/20'
-                            : selectedChoice === choice.label
-                              ? 'border-primary bg-primary/5 shadow-sm cursor-pointer'
-                              : 'border-border/40 hover:border-primary/40 cursor-pointer'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
-                          <RadioGroupItem value={choice.label} id={choice.label} className="mt-1 shrink-0" disabled={!isChoiceAvailable} />
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <div className={`font-semibold text-base leading-tight flex items-center flex-wrap gap-2 ${selectedChoice === choice.label ? 'text-primary' : 'text-foreground'}`}>
-                              {choice.label}
-                              {!isChoiceAvailable && (
-                                <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
+                  return Object.entries(grouped).map(([group, items]) => (
+                    <div key={group} className="space-y-3">
+                      {group !== 'default' && selectedDrawerItem?.categoryId === 'cat_tea' && (
+                        <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
+                      )}
+                      {items.map((choice) => {
+                        const isChoiceAvailable = availabilityMap[selectedDrawerItem?.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${selectedDrawerItem?.id}::${choice.label}`] ?? true;
+                        return (
+                        <label
+                          key={choice.label}
+                          className={`flex items-start justify-between p-4 rounded-xl border-2 transition-all ${
+                            !isChoiceAvailable
+                              ? 'opacity-50 grayscale-[0.5] cursor-not-allowed pointer-events-none bg-secondary/20 border-border/20'
+                              : selectedChoice === choice.label
+                                ? 'border-primary bg-primary/5 shadow-sm cursor-pointer'
+                                : 'border-border/40 hover:border-primary/40 cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
+                            <RadioGroupItem value={choice.label} id={choice.label} className="mt-1 shrink-0" disabled={!isChoiceAvailable} />
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className={`font-semibold text-base leading-tight flex items-center flex-wrap gap-2 ${selectedChoice === choice.label ? 'text-primary' : 'text-foreground'}`}>
+                                {choice.label}
+                                {!isChoiceAvailable && (
+                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
+                                )}
+                              </div>
+                              {choice.description && (
+                                <div className="text-sm text-foreground/70 line-clamp-2 leading-snug">
+                                  {choice.description}
+                                </div>
                               )}
                             </div>
-                            {choice.description && (
-                              <div className="text-sm text-foreground/70 line-clamp-2 leading-snug">
-                                {choice.description}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </label>
-                    )})}
-                  </div>
-                ));
-              })()}
-            </RadioGroup>
+                        </label>
+                      )})}
+                    </div>
+                  ));
+                })()}
+              </RadioGroup>
+            )}
           </div>
-          <div className="p-5 pt-2 flex-shrink-0 bg-background/95 backdrop-blur-xl border-t border-border/10">
-            <Button
-              disabled={!selectedChoice}
-              className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
-              onClick={() => {
-                if (selectedChoiceItem && selectedChoice) {
-                  const prefix = selectedChoiceItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ';
-                  addToCart(selectedChoiceItem, `${prefix}${selectedChoice}`);
-                  setIsChoiceDrawerOpen(false);
-                }
-              }}
-            >
-              Добавить • {selectedChoiceItem?.price} ₽
-            </Button>
+          <div className="p-5 pt-2 flex-shrink-0 bg-background/95 backdrop-blur-xl border-t border-border/10 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            {itemDrawerMode === 'details' ? (
+              <Button
+                className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                onClick={() => {
+                  if (selectedDrawerItem?.choices && selectedDrawerItem.choices.length > 0) {
+                    setSelectedChoice('');
+                    setChoiceSearchQuery('');
+                    setItemDrawerMode('choice');
+                  } else if (selectedDrawerItem) {
+                    addToCart(selectedDrawerItem);
+                    setIsItemDrawerOpen(false);
+                  }
+                }}
+              >
+                {selectedDrawerItem?.choices && selectedDrawerItem.choices.length > 0
+                  ? (selectedDrawerItem.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус')
+                  : 'Добавить в корзину'}
+              </Button>
+            ) : (
+              <Button
+                disabled={!selectedChoice}
+                className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
+                onClick={() => {
+                  if (selectedDrawerItem && selectedChoice) {
+                    const prefix = selectedDrawerItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ';
+                    addToCart(selectedDrawerItem, `${prefix}${selectedChoice}`);
+                    setIsItemDrawerOpen(false);
+                  }
+                }}
+              >
+                Добавить • {selectedDrawerItem?.price} ₽
+              </Button>
+            )}
           </div>
         </DrawerContent>
       </Drawer>

@@ -13,6 +13,7 @@ export type MenuItem = {
   id: string;
   categoryId: string;
   name: string;
+  shortDescription?: string;
   description: string;
   price: number;
   isAvailable: boolean;
