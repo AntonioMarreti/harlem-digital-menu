@@ -891,7 +891,7 @@ export default function GuestPageClient({
                   key={cat.id}
                   value={cat.id}
                   data-cat-trigger={cat.id}
-                  className="rounded-full border border-transparent px-3.5 py-1.5 text-sm transition-all flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-sm"
+                  className="rounded-full border border-transparent px-3.5 py-1.5 text-sm transition-all flex-shrink-0 text-foreground/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary/50 data-[state=active]:shadow-md data-[state=active]:shadow-primary/40"
                 >
                   {cat.name}
                 </TabsTrigger>
@@ -918,7 +918,7 @@ export default function GuestPageClient({
                   .map((item) => {
                     let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
                     if (isItemAvailable && item.choices && item.choices.length > 0) {
-                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[item.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
+                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[(item.choiceAvailabilityScope === 'shared_tea' || (!item.choiceAvailabilityScope && item.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
                       if (!hasAvailableChoice) {
                         isItemAvailable = false;
                       }
@@ -1095,7 +1095,7 @@ export default function GuestPageClient({
                                   }}
                                 >
                                   {item.choices && item.choices.length > 0
-                                    ? (item.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус')
+                                    ? (item.choiceActionLabel || (item.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус'))
                                     : 'Добавить'}
                                 </Button>
                               )}
@@ -1172,7 +1172,7 @@ export default function GuestPageClient({
             <DrawerDescription className="text-muted-foreground">
               {itemDrawerMode === 'choice' ? 'Выберите вариант' : (selectedDrawerItem?.price + ' ₽')}
             </DrawerDescription>
-            {itemDrawerMode === 'choice' && selectedDrawerItem?.categoryId === 'cat_tea' && (
+            {itemDrawerMode === 'choice' && (selectedDrawerItem?.choiceAvailabilityScope === 'shared_tea' || (!selectedDrawerItem?.choiceAvailabilityScope && selectedDrawerItem?.categoryId === 'cat_tea')) && (
               <div className="mt-4 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -1219,11 +1219,11 @@ export default function GuestPageClient({
 
                   return Object.entries(grouped).map(([group, items]) => (
                     <div key={group} className="space-y-3">
-                      {group !== 'default' && selectedDrawerItem?.categoryId === 'cat_tea' && (
+                      {group !== 'default' && (selectedDrawerItem?.choiceAvailabilityScope === 'shared_tea' || (!selectedDrawerItem?.choiceAvailabilityScope && selectedDrawerItem?.categoryId === 'cat_tea')) && (
                         <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
                       )}
                       {items.map((choice) => {
-                        const isChoiceAvailable = availabilityMap[selectedDrawerItem?.categoryId === 'cat_tea' ? `tea::${choice.label}` : `${selectedDrawerItem?.id}::${choice.label}`] ?? true;
+                        const isChoiceAvailable = availabilityMap[(selectedDrawerItem?.choiceAvailabilityScope === 'shared_tea' || (!selectedDrawerItem?.choiceAvailabilityScope && selectedDrawerItem?.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${selectedDrawerItem?.id}::${choice.label}`] ?? true;
                         return (
                         <label
                           key={choice.label}
@@ -1275,7 +1275,7 @@ export default function GuestPageClient({
                 }}
               >
                 {selectedDrawerItem?.choices && selectedDrawerItem.choices.length > 0
-                  ? (selectedDrawerItem.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус')
+                  ? (selectedDrawerItem.choiceActionLabel || (selectedDrawerItem.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус'))
                   : 'Добавить в корзину'}
               </Button>
             ) : (
@@ -1284,7 +1284,7 @@ export default function GuestPageClient({
                 className="w-full rounded-full py-6 text-lg bg-primary [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
                 onClick={() => {
                   if (selectedDrawerItem && selectedChoice) {
-                    const prefix = selectedDrawerItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ';
+                    const prefix = selectedDrawerItem.choiceNoteLabel || (selectedDrawerItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ');
                     addToCart(selectedDrawerItem, `${prefix}${selectedChoice}`);
                     setIsItemDrawerOpen(false);
                   }

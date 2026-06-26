@@ -21,6 +21,9 @@ export type MenuItem = {
   source?: 'harlem' | 'craft_beery';
   sourceLabel?: string;
   choices?: MenuChoice[];
+  choiceActionLabel?: string;
+  choiceNoteLabel?: string;
+  choiceAvailabilityScope?: 'item' | 'shared_tea';
 };
 
 export type Table = {
@@ -185,7 +188,7 @@ export const menuItems: MenuItem[] = [
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
   ] },
   { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: 'добавка к чаю.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', description: 'мята горная, чабрец, мята свежая, лимон, мёд или сироп.', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', shortDescription: 'Выберите добавку', description: 'мята горная, чабрец, мята свежая, лимон, мёд или сироп.', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
   { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', description: '50 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', description: '150 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', description: '300 мл.', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
