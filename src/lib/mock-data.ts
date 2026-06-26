@@ -88,14 +88,14 @@ export const menuItems: MenuItem[] = [
   { id: 'dr_17', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,45', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Лимонады (added to Напитки)
-  { 
-    id: 'dr_18', 
-    categoryId: 'cat_drinks', 
-    name: 'Мохито Очаково 0,45', 
-    description: 'Выберите вкус', 
-    price: 190, 
-    isAvailable: true, 
-    source: 'harlem', 
+  {
+    id: 'dr_18',
+    categoryId: 'cat_drinks',
+    name: 'Мохито Очаково 0,45',
+    description: '',
+    price: 190,
+    isAvailable: true,
+    source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
       { label: 'лимон-лайм' },
@@ -106,14 +106,14 @@ export const menuItems: MenuItem[] = [
       { label: 'гранат' }
     ]
   },
-  { 
-    id: 'dr_19', 
-    categoryId: 'cat_drinks', 
-    name: 'Лаймон Фреш 0,33', 
-    description: 'Выберите вкус', 
-    price: 130, 
-    isAvailable: true, 
-    source: 'harlem', 
+  {
+    id: 'dr_19',
+    categoryId: 'cat_drinks',
+    name: 'Лаймон Фреш 0,33',
+    description: '',
+    price: 130,
+    isAvailable: true,
+    source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
       { label: 'лимон-лайм' },
@@ -121,14 +121,14 @@ export const menuItems: MenuItem[] = [
       { label: 'лайм-лимон-мята' }
     ]
   },
-  { 
-    id: 'dr_20', 
-    categoryId: 'cat_drinks', 
-    name: 'Лит Энерджи 0,33', 
-    description: 'Выберите вкус', 
-    price: 130, 
-    isAvailable: true, 
-    source: 'harlem', 
+  {
+    id: 'dr_20',
+    categoryId: 'cat_drinks',
+    name: 'Лит Энерджи 0,33',
+    description: '',
+    price: 130,
+    isAvailable: true,
+    source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
       { label: 'клубника-арбуз' },
@@ -189,29 +189,29 @@ export const menuItems: MenuItem[] = [
   ] },
   { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', shortDescription: 'Выберите добавку', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
-  { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', description: '50 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', description: '150 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', description: '300 мл.', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', shortDescription: '50 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', shortDescription: '150 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', shortDescription: '300 мл', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Закуски
-  { id: 'sn_1', categoryId: 'cat_snacks', name: 'Арахис солёный', description: '100 г.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'sn_2', categoryId: 'cat_snacks', name: 'Арахис в хрустящей корочке', description: '100 г.', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'sn_3', categoryId: 'cat_snacks', name: 'Фисташки', description: '50 г.', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'sn_4', categoryId: 'cat_snacks', name: 'Чипсы в ассортименте', description: '50 г.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'sn_5', categoryId: 'cat_snacks', name: 'Гренки в ассортименте', description: '100 г.', price: 160, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'sn_6', categoryId: 'cat_snacks', name: 'Сыр косичка', description: '100 г.', price: 300, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_1', categoryId: 'cat_snacks', name: 'Арахис солёный', shortDescription: '100 г', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_2', categoryId: 'cat_snacks', name: 'Арахис в хрустящей корочке', shortDescription: '100 г', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_3', categoryId: 'cat_snacks', name: 'Фисташки', shortDescription: '50 г', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_4', categoryId: 'cat_snacks', name: 'Чипсы в ассортименте', shortDescription: '50 г', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_5', categoryId: 'cat_snacks', name: 'Гренки в ассортименте', shortDescription: '100 г', description: '', price: 160, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'sn_6', categoryId: 'cat_snacks', name: 'Сыр косичка', shortDescription: '100 г', description: '', price: 300, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Десерты
   { id: 'ds_1', categoryId: 'cat_desserts', name: 'Торт в ассортименте', description: '', price: 270, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'ds_2', categoryId: 'cat_desserts', name: 'Шоколад Alpen Gold', description: '80 г.', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'ds_3', categoryId: 'cat_desserts', name: 'Шоколад Milka', description: '80 г.', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'ds_4', categoryId: 'cat_desserts', name: 'Шоколад Ritter Sport', description: '100 г.', price: 330, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'ds_2', categoryId: 'cat_desserts', name: 'Шоколад Alpen Gold', shortDescription: '80 г', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'ds_3', categoryId: 'cat_desserts', name: 'Шоколад Milka', shortDescription: '80 г', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'ds_4', categoryId: 'cat_desserts', name: 'Шоколад Ritter Sport', shortDescription: '100 г', description: '', price: 330, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Craft Beery / Еда
-  { id: 'cb_1', categoryId: 'cat_food', name: 'Северная копчёная оленина', description: '40 г.', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_2', categoryId: 'cat_food', name: 'Бастурма из говядины', description: '40 г.', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_1', categoryId: 'cat_food', name: 'Северная копчёная оленина', shortDescription: '40 г', description: '', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_2', categoryId: 'cat_food', name: 'Бастурма из говядины', shortDescription: '40 г', description: '', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_3', categoryId: 'cat_food', name: 'Пастрами', description: 'копчёная грудинка из мраморной говядины, 40 г.', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_4', categoryId: 'cat_food', name: 'Суджук из оленины', description: '40 г.', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_4', categoryId: 'cat_food', name: 'Суджук из оленины', shortDescription: '40 г', description: '', price: 370, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_5', categoryId: 'cat_food', name: 'Фритес с беконом', description: 'хрустящий картофель фри с беконом, огурцом из бочки и сырным соусом. 190 г / 40 г.', price: 410, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_6', categoryId: 'cat_food', name: 'Клаб-сэндвич с цыплёнком', description: 'хрустящий тост, грудка цыплёнка на гриле, яйцо, свежие огурцы, помидор, сыр чеддер. 280 г / 40 г.', price: 430, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_7', categoryId: 'cat_food', name: 'Куриные стрипсы', description: 'мясо курицы в кляре с сырным соусом. 180 г / 40 г.', price: 430, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
@@ -245,8 +245,8 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_35', categoryId: 'cat_food', name: 'Курица сычуань', description: 'филе курицы в тайском соусе с овощами и рисом. 160 г / 100 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_36', categoryId: 'cat_food', name: 'Жарёха со свининой', description: 'свинина с морковью, сладким перцем и картофелем айдахо в томатном соусе. 360 г.', price: 640, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_37', categoryId: 'cat_food', name: 'Фрайд райс', description: 'тайский жареный рис с овощами и морепродуктами. 320 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_38', categoryId: 'cat_food', name: 'Айдахо в специях', description: '150 г.', price: 260, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_39', categoryId: 'cat_food', name: 'Картофель фри', description: '150 г.', price: 230, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_38', categoryId: 'cat_food', name: 'Айдахо в специях', shortDescription: '150 г', description: '', price: 260, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_39', categoryId: 'cat_food', name: 'Картофель фри', shortDescription: '150 г', description: '', price: 230, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_40', categoryId: 'cat_food', name: 'Соус ручной работы', description: 'томатный, BBQ, вишнёвый BBQ, пряный томатный, сладкий чили, сырный, тар-тар. 40 г.', price: 90, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_41', categoryId: 'cat_food', name: 'Тарелка Микс для друзей', description: 'кальмар, луковые кольца, гренки, чипсы куриные, чипсы из телятины, моцарелла, фри, 3 соуса. 450 г / 120 г.', price: 1090, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_42', categoryId: 'cat_food', name: 'Завтрак «Пиволюба»', description: 'крылышки, куриные стрипсы, жареная моцарелла, картофель айдахо фри, чесночные гренки и три соуса. 590 г / 120 г.', price: 1290, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
