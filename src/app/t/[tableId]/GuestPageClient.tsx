@@ -893,7 +893,7 @@ export default function GuestPageClient({
                   data-cat-trigger={cat.id}
                   className={`rounded-full border px-3.5 py-1.5 text-sm transition-all flex-shrink-0 ${
                     activeCategory === cat.id
-                      ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30 font-semibold'
+                      ? '!bg-primary !text-primary-foreground !border-primary !shadow-lg !shadow-primary/30 !font-semibold'
                       : 'border-transparent text-foreground/70 font-medium'
                   }`}
                 >
