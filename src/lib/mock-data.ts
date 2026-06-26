@@ -187,8 +187,8 @@ export const menuItems: MenuItem[] = [
     { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
   ] },
-  { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: 'добавка к чаю.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', shortDescription: 'Выберите добавку', description: 'мята горная, чабрец, мята свежая, лимон, мёд или сироп.', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
+  { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', shortDescription: 'Выберите добавку', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
   { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', description: '50 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', description: '150 мл.', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', description: '300 мл.', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
