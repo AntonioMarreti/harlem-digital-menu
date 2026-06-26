@@ -1006,7 +1006,7 @@ export default function GuestPageClient({
                               <div className="mt-1.5">
                                 <Button
                                   variant="link"
-                                  className="h-auto p-0 text-[13px] text-primary hover:text-primary/80 font-medium"
+                                  className="h-auto p-0 text-[13px] text-primary [@media(hover:hover)]:hover:text-primary/80 active:text-primary/80 font-medium transition-colors"
                                   onClick={() => {
                                     setSelectedDrawerItem(item);
                                     setItemDrawerMode('details');
@@ -1232,7 +1232,7 @@ export default function GuestPageClient({
                               ? 'opacity-50 grayscale-[0.5] cursor-not-allowed pointer-events-none bg-secondary/20 border-border/20'
                               : selectedChoice === choice.label
                                 ? 'border-primary bg-primary/5 shadow-sm cursor-pointer'
-                                : 'border-border/40 hover:border-primary/40 cursor-pointer'
+                                : 'border-border/40 [@media(hover:hover)]:hover:border-primary/40 active:border-primary/40 active:bg-primary/5 cursor-pointer'
                           }`}
                         >
                           <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
@@ -1262,7 +1262,7 @@ export default function GuestPageClient({
           <div className="p-5 pt-2 flex-shrink-0 bg-background/95 backdrop-blur-xl border-t border-border/10 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             {itemDrawerMode === 'details' ? (
               <Button
-                className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                className="w-full rounded-full py-6 text-lg bg-primary [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-lg shadow-primary/20 transition-all"
                 onClick={() => {
                   if (selectedDrawerItem?.choices && selectedDrawerItem.choices.length > 0) {
                     setSelectedChoice('');
@@ -1281,7 +1281,7 @@ export default function GuestPageClient({
             ) : (
               <Button
                 disabled={!selectedChoice}
-                className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
+                className="w-full rounded-full py-6 text-lg bg-primary [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
                 onClick={() => {
                   if (selectedDrawerItem && selectedChoice) {
                     const prefix = selectedDrawerItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ';
