@@ -945,7 +945,7 @@ export default function GuestPageClient({
                                 )}
                               </CardTitle>
                               {item.sourceLabel && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-1">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-1">
                                   {item.sourceLabel}
                                 </Badge>
                               )}
@@ -996,7 +996,7 @@ export default function GuestPageClient({
                                 )}
                               </div>
                               {item.sourceLabel && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-1 mb-0.5">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-0.5">
                                   {item.sourceLabel}
                                 </Badge>
                               )}

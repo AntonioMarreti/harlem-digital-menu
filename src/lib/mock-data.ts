@@ -188,7 +188,7 @@ export const menuItems: MenuItem[] = [
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
   ] },
   { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', shortDescription: 'Выберите добавку', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
+  { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
   { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', shortDescription: '50 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', shortDescription: '150 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', shortDescription: '300 мл', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
