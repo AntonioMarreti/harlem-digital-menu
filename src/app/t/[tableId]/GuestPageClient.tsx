@@ -891,7 +891,11 @@ export default function GuestPageClient({
                   key={cat.id}
                   value={cat.id}
                   data-cat-trigger={cat.id}
-                  className="rounded-full border border-transparent px-3.5 py-1.5 text-sm transition-all flex-shrink-0 text-foreground/70 data-active:bg-primary data-active:text-primary-foreground data-active:border-primary data-active:shadow-lg data-active:shadow-primary/30 data-active:font-semibold"
+                  className={`rounded-full border px-3.5 py-1.5 text-sm transition-all flex-shrink-0 ${
+                    activeCategory === cat.id
+                      ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30 font-semibold'
+                      : 'border-transparent text-foreground/70 font-medium'
+                  }`}
                 >
                   {cat.name}
                 </TabsTrigger>
