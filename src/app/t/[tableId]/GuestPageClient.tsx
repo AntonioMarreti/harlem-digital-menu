@@ -1103,10 +1103,15 @@ export default function GuestPageClient({
               <input
                 type="text"
                 placeholder="Найти в меню..."
-                className="w-full h-10 pl-9 pr-8 rounded-full border border-border/50 bg-secondary/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                className="w-full h-10 pl-9 pr-8 rounded-full border border-border/50 bg-secondary/30 text-[16px] focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
                 value={globalSearchQuery}
                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
                 autoFocus
+                inputMode="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
               />
               {globalSearchQuery && (
                 <button
@@ -1134,7 +1139,9 @@ export default function GuestPageClient({
         {globalSearchQuery.trim().length > 0 ? (
           <div className="px-5 pb-6 space-y-6 mt-2">
             {(() => {
-              const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е');
+              const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е').replace(/[-\']/g, ' ').replace(/\s+/g, ' ');
+              const searchTerms = normalizedQuery.split(' ').filter(Boolean);
+
               const getSearchableText = (item: MenuItem, categoryName: string) => {
                 const parts = [
                   item.name,
@@ -1143,19 +1150,27 @@ export default function GuestPageClient({
                   categoryName,
                   ...(item.tags || [])
                 ];
+                if (item.section) {
+                  parts.push(item.section);
+                }
                 if (item.choices) {
                   for (const choice of item.choices) {
                     parts.push(choice.label);
                     if (choice.description) parts.push(choice.description);
                   }
                 }
-                return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е');
+                if (item.searchAliases) {
+                  parts.push(...item.searchAliases);
+                }
+                return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е').replace(/[-\']/g, ' ').replace(/\s+/g, ' ');
               };
 
               const searchResults = menuItems.filter(item => {
                 const cat = categories.find(c => c.id === item.categoryId);
                 if (!cat) return false;
-                return getSearchableText(item, cat.name).includes(normalizedQuery);
+                if (searchTerms.length === 0) return true;
+                const text = getSearchableText(item, cat.name);
+                return searchTerms.every(term => text.includes(term));
               });
 
               const resultsByCategory = categories.map(cat => ({

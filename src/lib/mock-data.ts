@@ -25,6 +25,7 @@ export type MenuItem = {
   choiceNoteLabel?: string;
   choiceAvailabilityScope?: 'item' | 'shared_tea';
   section?: string;
+  searchAliases?: string[];
 };
 
 export type Table = {
@@ -71,23 +72,23 @@ export const menuItems: MenuItem[] = [
   },
 
   // Harlem / Напитки
-  { id: 'dr_1', categoryId: 'cat_drinks', name: 'Кола Добрый 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_2', categoryId: 'cat_drinks', name: 'Кола Добрый 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_3', categoryId: 'cat_drinks', name: 'Кола оригинальная 0,33', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_4', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_5', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_1', categoryId: 'cat_drinks', name: 'Кола Добрый 0,5', description: '', price: 170, isAvailable: true, searchAliases: ["кока кола","кока-кола"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_2', categoryId: 'cat_drinks', name: 'Кола Добрый 0,33', description: '', price: 130, isAvailable: true, searchAliases: ["кока кола","кока-кола"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_3', categoryId: 'cat_drinks', name: 'Кола оригинальная 0,33', description: '', price: 190, isAvailable: true, searchAliases: ["кока кола","кока-кола"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_4', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,5', description: '', price: 170, isAvailable: true, searchAliases: ["кока кола","кока-кола"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_5', categoryId: 'cat_drinks', name: 'Кола Добрый без сахара 0,33', description: '', price: 130, isAvailable: true, searchAliases: ["кока кола","кока-кола"] , source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_6', categoryId: 'cat_drinks', name: 'Фанта Добрый 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_7', categoryId: 'cat_drinks', name: 'Фанта Добрый 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_8', categoryId: 'cat_drinks', name: 'Спрайт Добрый 0,5', description: '', price: 170, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_9', categoryId: 'cat_drinks', name: 'Спрайт Добрый 0,33', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'dr_10', categoryId: 'cat_drinks', name: 'Сок в ассортименте', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_11', categoryId: 'cat_drinks', name: 'Чай Rich в ассортименте 0,5', description: '', price: 130, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_12', categoryId: 'cat_drinks', name: 'Вода газированная 0,5', description: '', price: 100, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_13', categoryId: 'cat_drinks', name: 'Вода без газа 0,5', description: '', price: 100, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_14', categoryId: 'cat_drinks', name: 'Ред Бул 0,25', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_15', categoryId: 'cat_drinks', name: 'Адреналин 0,45', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_16', categoryId: 'cat_drinks', name: 'Берн 0,45', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'dr_17', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,45', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_11', categoryId: 'cat_drinks', name: 'Чай Rich в ассортименте 0,5', description: '', price: 130, isAvailable: true, searchAliases: ["рич","айс ти","ice tea"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_12', categoryId: 'cat_drinks', name: 'Вода газированная 0,5', description: '', price: 100, isAvailable: true, searchAliases: ["минералка"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_13', categoryId: 'cat_drinks', name: 'Вода без газа 0,5', description: '', price: 100, isAvailable: true, searchAliases: ["минералка"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_14', categoryId: 'cat_drinks', name: 'Ред Бул 0,25', description: '', price: 250, isAvailable: true, searchAliases: ["редбул","ред бул","redbull"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_15', categoryId: 'cat_drinks', name: 'Адреналин 0,45', description: '', price: 250, isAvailable: true, searchAliases: ["адреналин раш","adrenaline rush","энергетик"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_16', categoryId: 'cat_drinks', name: 'Берн 0,45', description: '', price: 250, isAvailable: true, searchAliases: ["берн","burn","энергети"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'dr_17', categoryId: 'cat_drinks', name: 'Лит Энерджи 0,45', description: '', price: 250, isAvailable: true, searchAliases: ["литэнерджи","лит энерджи","энергетик"] , source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Лимонады (added to Напитки)
   {
@@ -140,34 +141,34 @@ export const menuItems: MenuItem[] = [
   },
 
   // Harlem / Пиво
-  { id: 'beer_1', categoryId: 'cat_beer', section: 'Светлое', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_2', categoryId: 'cat_beer', section: 'Светлое', name: 'Stella Artois 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_3', categoryId: 'cat_beer', section: 'Светлое', name: 'Kron Blanche 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_4', categoryId: 'cat_beer', section: 'Светлое', name: 'Spaten München 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_5', categoryId: 'cat_beer', section: 'Светлое', name: 'Хугарден 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_6', categoryId: 'cat_beer', section: 'Светлое', name: 'Corona Extra 0,35', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_7', categoryId: 'cat_beer', section: 'Светлое', name: 'Эль Капулько 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_8', categoryId: 'cat_beer', section: 'Светлое', name: 'Essa 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_9', categoryId: 'cat_beer', section: 'Светлое', name: 'Red’s Premium 0,33', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_10', categoryId: 'cat_beer', section: 'Тёмное', name: 'Велкопоповицкий Козел 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_11', categoryId: 'cat_beer', section: 'Тёмное', name: 'Старый мельник из бочонка 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_12', categoryId: 'cat_beer', section: 'Тёмное', name: 'Жатецкий гусь 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_13', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'beer_14', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Stella Artois 0,44', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_1', categoryId: 'cat_beer', section: 'Светлое', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["буд","бад","бадвайзер"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_2', categoryId: 'cat_beer', section: 'Светлое', name: 'Stella Artois 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["стелла","артуа"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_3', categoryId: 'cat_beer', section: 'Светлое', name: 'Kron Blanche 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["крон","кроненбург","бланш"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_4', categoryId: 'cat_beer', section: 'Светлое', name: 'Spaten München 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["шпатен","мюнхен","мюнхенское"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_5', categoryId: 'cat_beer', section: 'Светлое', name: 'Хугарден 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["hoegaarden"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_6', categoryId: 'cat_beer', section: 'Светлое', name: 'Corona Extra 0,35', description: '', price: 250, isAvailable: true, searchAliases: ["корона","экстра"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_7', categoryId: 'cat_beer', section: 'Светлое', name: 'Эль Капулько 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["капулько"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_8', categoryId: 'cat_beer', section: 'Светлое', name: 'Essa 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["эсса"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_9', categoryId: 'cat_beer', section: 'Светлое', name: 'Red’s Premium 0,33', description: '', price: 190, isAvailable: true, searchAliases: ["редс"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_10', categoryId: 'cat_beer', section: 'Тёмное', name: 'Велкопоповицкий Козел 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["козел","козёл","мельница"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_11', categoryId: 'cat_beer', section: 'Тёмное', name: 'Старый мельник из бочонка 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["мельник","бочонок"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_12', categoryId: 'cat_beer', section: 'Тёмное', name: 'Жатецкий гусь 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["жатецкий","гусь"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_13', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, searchAliases: ["буд","бад","бадвайзер","безалкогольное","нулевое","нулевка","0.0"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_14', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Stella Artois 0,44', description: '', price: 190, isAvailable: true, searchAliases: ["стелла","артуа","безалкогольное","нулевое","нулевка","0.0"] , source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Сидр
-  { id: 'cid_1', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 5,0%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+  { id: 'cid_1', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 5,0%', description: '', price: 250, isAvailable: true, searchAliases: ["честер","честерс","сидр"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'вишня' }, { label: 'груша' }, { label: 'лесные ягоды' }, { label: 'яблоко' }, { label: 'грейпфрут' }
   ] },
-  { id: 'cid_2', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 7,0%', description: '', price: 270, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+  { id: 'cid_2', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 7,0%', description: '', price: 270, isAvailable: true, searchAliases: ["честер","честерс","сидр"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'малина-крыжовник' }, { label: 'ежевика-мята' }, { label: 'персик-абрикос' }, { label: 'кокос-клубника' }
   ] },
-  { id: 'cid_3', categoryId: 'cat_cider', name: 'White Phoenix 0,45 · 5,6%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+  { id: 'cid_3', categoryId: 'cat_cider', name: 'White Phoenix 0,45 · 5,6%', description: '', price: 250, isAvailable: true, searchAliases: ["вайт феникс","феникс","сидр"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'виноград-мандарин' }, { label: 'гранат-малина' }, { label: 'кокос-цитрус' }, { label: 'манго-цитрус' }, { label: 'маракуя-вишня' }
   ] },
 
   // Harlem / Чай / кофе
-  { id: 'tea_1', categoryId: 'cat_tea', name: 'Чай 500 мл', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+  { id: 'tea_1', categoryId: 'cat_tea', name: 'Чай 500 мл', description: '', price: 200, isAvailable: true, searchAliases: ["эрлгрей","earl grey","пуэр","puer","дахунпао","da hong pao","тегуаньинь","tie guan yin"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'Эрл Грей', description: 'смесь китайских, цейлонских и индийских чаёв, ароматизированная натуральными маслами бергамота.', group: 'Чёрный чай' },
     { label: 'Горный Чабрец', description: 'чёрный цейлонский чай, чабрец.', group: 'Чёрный чай' },
     { label: 'Дикая вишня', description: 'смесь цейлонских и индийских чаёв с клюквой и листьями грецкого ореха; густой сладкий аромат спелой вишни.', group: 'Чёрный чай' },
@@ -186,7 +187,7 @@ export const menuItems: MenuItem[] = [
     { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
   ] },
-  { id: 'tea_2', categoryId: 'cat_tea', name: 'Чай 900 мл', description: '', price: 280, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
+  { id: 'tea_2', categoryId: 'cat_tea', name: 'Чай 900 мл', description: '', price: 280, isAvailable: true, searchAliases: ["эрлгрей","earl grey","пуэр","puer","дахунпао","da hong pao","тегуаньинь","tie guan yin"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'Эрл Грей', description: 'смесь китайских, цейлонских и индийских чаёв, ароматизированная натуральными маслами бергамота.', group: 'Чёрный чай' },
     { label: 'Горный Чабрец', description: 'чёрный цейлонский чай, чабрец.', group: 'Чёрный чай' },
     { label: 'Дикая вишня', description: 'смесь цейлонских и индийских чаёв с клюквой и листьями грецкого ореха; густой сладкий аромат спелой вишни.', group: 'Чёрный чай' },
@@ -205,11 +206,11 @@ export const menuItems: MenuItem[] = [
     { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
   ] },
-  { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, searchAliases: ["саган","саган дайля"] , source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
-  { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', shortDescription: '50 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', shortDescription: '150 мл', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
-  { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', shortDescription: '300 мл', description: '', price: 200, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', shortDescription: '50 мл', description: '', price: 120, isAvailable: true, searchAliases: ["эспрессо кофе"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_6', categoryId: 'cat_tea', name: 'Американо', shortDescription: '150 мл', description: '', price: 120, isAvailable: true, searchAliases: ["американо кофе"] , source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'tea_7', categoryId: 'cat_tea', name: 'Капучино', shortDescription: '300 мл', description: '', price: 200, isAvailable: true, searchAliases: ["капуч"] , source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Закуски
   { id: 'sn_1', categoryId: 'cat_snacks', name: 'Арахис солёный', shortDescription: '100 г', description: '', price: 120, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
@@ -235,7 +236,7 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_7', categoryId: 'cat_food', name: 'Куриные стрипсы', description: 'мясо курицы в кляре с сырным соусом. 180 г / 40 г.', price: 430, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_8', categoryId: 'cat_food', name: 'Жареный сулугуни', description: 'с авторским ягодным соусом. 230 г.', price: 410, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_9', categoryId: 'cat_food', name: 'Луковые кольца', description: 'в панировке, с кисло-сладким соусом. 100 г / 40 г.', price: 320, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_10', categoryId: 'cat_food', name: 'Куриные крылышки хот-чили', description: 'обжаренные крылышки со свежими овощами и сметанным соусом. 260 г / 60 г.', price: 490, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_10', categoryId: 'cat_food', name: 'Куриные крылышки хот-чили', description: 'обжаренные крылышки со свежими овощами и сметанным соусом. 260 г / 60 г.', price: 490, isAvailable: true, searchAliases: ["крылья"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_11', categoryId: 'cat_food', name: 'Кольца кальмара', description: 'в хрустящей панировке, с соусом сладкий чили. 150 г / 40 г.', price: 430, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_12', categoryId: 'cat_food', name: 'Жареная моцарелла', description: 'с ягодным соусом. 100 г / 40 г.', price: 410, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_13', categoryId: 'cat_food', name: 'Домашние чесночные гренки', description: 'с сырным соусом. 150 г / 40 г.', price: 250, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
@@ -247,15 +248,15 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_19', categoryId: 'cat_food', name: 'Картофель по-деревенски спайси', description: 'в остром сырном соусе с халапеньо и пармезаном. 200 г.', price: 390, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_20', categoryId: 'cat_food', name: 'Дядя Сэм', description: 'котлета из мраморной говядины, чеддер, BBQ, солёный огурец, лук шалот, салат. 350 г.', price: 590, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_21', categoryId: 'cat_food', name: 'Дядя Сэм Кукареку', description: 'куриная котлета, сыр чеддер, соус карри, солёный огурец, салат, лук. 230 г.', price: 550, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_22', categoryId: 'cat_food', name: 'Бургер с вишнёвым BBQ', description: 'мраморная говядина, чеддер, карамелизированный бекон, лук шалот, салат, вишнёвый BBQ. 350 г.', price: 700, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_22', categoryId: 'cat_food', name: 'Бургер с вишнёвым BBQ', description: 'мраморная говядина, чеддер, карамелизированный бекон, лук шалот, салат, вишнёвый BBQ. 350 г.', price: 700, isAvailable: true, searchAliases: ["вишневый бургер","вишнёвый бургер"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_23', categoryId: 'cat_food', name: 'Бургер Мексиканский', description: 'мраморная говядина, чеддер, сальса, халапеньо, лук шалот, салат. 350 г.', price: 660, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_24', categoryId: 'cat_food', name: 'Бургер с яйцом и беконом', description: 'мраморная говядина, чеддер, солёный огурец, яйцо, бекон, салат, сальса. 350 г.', price: 670, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_25', categoryId: 'cat_food', name: 'Бургер с грибами', description: 'мраморная говядина, грибное рагу с трюфельным маслом, бекон, моцарелла, карамелизированный лук, сырный соус. 350 г.', price: 670, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_26', categoryId: 'cat_food', name: 'Дубль колбасок с картофелем фри', description: '2 колбаски ручной работы на выбор, грузинская капуста, солёный огурец, картофель фри, BBQ и горчичный соус. 300 г / 40 г.', price: 790, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_27', categoryId: 'cat_food', name: 'Греческий', description: 'сезонные овощи, сыр Фета, зелень, заправка на основе соевого соуса. 230 г.', price: 420, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_28', categoryId: 'cat_food', name: 'Оливье с пастрами', description: 'оливье с копчёным пастрами и луком фри. 250 г.', price: 540, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_29', categoryId: 'cat_food', name: 'Цезарь с цыплёнком', description: 'цыплёнок гриль, романо, черри, гренки, заправка Цезарь. 270 г.', price: 540, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_30', categoryId: 'cat_food', name: 'Цезарь с креветками', description: 'тигровые креветки гриль, романо, черри, гренки, заправка Цезарь. 270 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_29', categoryId: 'cat_food', name: 'Цезарь с цыплёнком', description: 'цыплёнок гриль, романо, черри, гренки, заправка Цезарь. 270 г.', price: 540, isAvailable: true, searchAliases: ["цезар"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_30', categoryId: 'cat_food', name: 'Цезарь с креветками', description: 'тигровые креветки гриль, романо, черри, гренки, заправка Цезарь. 270 г.', price: 630, isAvailable: true, searchAliases: ["цезар"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_31', categoryId: 'cat_food', name: 'Стейк из свинины', description: 'на гриле, с картофелем айдахо и грибами в горчичном соусе. 320 г.', price: 780, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_32', categoryId: 'cat_food', name: 'Строганов с курицей', description: 'филе цыплёнка в сметанном соусе с грибами и картофелем фри. 300 г / 40 г.', price: 620, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_33', categoryId: 'cat_food', name: 'Соба с цыплёнком в устричном соусе', description: 'гречневая лапша с филе цыплёнка, овощами и шампиньонами. 330 г.', price: 520, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
@@ -263,14 +264,14 @@ export const menuItems: MenuItem[] = [
   { id: 'cb_35', categoryId: 'cat_food', name: 'Курица сычуань', description: 'филе курицы в тайском соусе с овощами и рисом. 160 г / 100 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_36', categoryId: 'cat_food', name: 'Жарёха со свининой', description: 'свинина с морковью, сладким перцем и картофелем айдахо в томатном соусе. 360 г.', price: 640, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_37', categoryId: 'cat_food', name: 'Фрайд райс', description: 'тайский жареный рис с овощами и морепродуктами. 320 г.', price: 630, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_38', categoryId: 'cat_food', name: 'Айдахо в специях', shortDescription: '150 г', description: '', price: 260, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_39', categoryId: 'cat_food', name: 'Картофель фри', shortDescription: '150 г', description: '', price: 230, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_40', categoryId: 'cat_food', name: 'Соус ручной работы', description: 'томатный, BBQ, вишнёвый BBQ, пряный томатный, сладкий чили, сырный, тар-тар. 40 г.', price: 90, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_38', categoryId: 'cat_food', name: 'Айдахо в специях', shortDescription: '150 г', description: '', price: 260, isAvailable: true, searchAliases: ["картошка"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_39', categoryId: 'cat_food', name: 'Картофель фри', shortDescription: '150 г', description: '', price: 230, isAvailable: true, searchAliases: ["картошка"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_40', categoryId: 'cat_food', name: 'Соус ручной работы', description: 'томатный, BBQ, вишнёвый BBQ, пряный томатный, сладкий чили, сырный, тар-тар. 40 г.', price: 90, isAvailable: true, searchAliases: ["соусы"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_41', categoryId: 'cat_food', name: 'Тарелка Микс для друзей', description: 'кальмар, луковые кольца, гренки, чипсы куриные, чипсы из телятины, моцарелла, фри, 3 соуса. 450 г / 120 г.', price: 1090, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
   { id: 'cb_42', categoryId: 'cat_food', name: 'Завтрак «Пиволюба»', description: 'крылышки, куриные стрипсы, жареная моцарелла, картофель айдахо фри, чесночные гренки и три соуса. 590 г / 120 г.', price: 1290, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_43', categoryId: 'cat_food', name: 'Хот-дог ХРЮ', description: 'свиная колбаска, медово-горчичный соус, майонез, маринованный лук, айсберг, перец, лук фри. 350 г.', price: 450, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_44', categoryId: 'cat_food', name: 'Хот-дог биф', description: 'говяжья колбаска, релиш огуречный, сальса, ширача, халапеньо, маринованный огурец, лук фри. 350 г.', price: 450, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' },
-  { id: 'cb_45', categoryId: 'cat_food', name: 'Хот-дог чикен', description: 'куриная колбаска, сырный соус, цезарь, свежий огурец, помидор, фриллис. 330 г.', price: 450, isAvailable: true, source: 'craft_beery', sourceLabel: 'Craft Beery' }
+  { id: 'cb_43', categoryId: 'cat_food', name: 'Хот-дог ХРЮ', description: 'свиная колбаска, медово-горчичный соус, майонез, маринованный лук, айсберг, перец, лук фри. 350 г.', price: 450, isAvailable: true, searchAliases: ["хотдог","хот дог"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_44', categoryId: 'cat_food', name: 'Хот-дог биф', description: 'говяжья колбаска, релиш огуречный, сальса, ширача, халапеньо, маринованный огурец, лук фри. 350 г.', price: 450, isAvailable: true, searchAliases: ["хотдог","хот дог"] , source: 'craft_beery', sourceLabel: 'Craft Beery' },
+  { id: 'cb_45', categoryId: 'cat_food', name: 'Хот-дог чикен', description: 'куриная колбаска, сырный соус, цезарь, свежий огурец, помидор, фриллис. 330 г.', price: 450, isAvailable: true, searchAliases: ["хотдог","хот дог"] , source: 'craft_beery', sourceLabel: 'Craft Beery' }
 ];
 
 export const tables: Table[] = [
