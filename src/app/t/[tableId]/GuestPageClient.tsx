@@ -1139,23 +1139,8 @@ export default function GuestPageClient({
         {globalSearchQuery.trim().length > 0 ? (
           <div className="px-5 pb-6 space-y-6 mt-2">
             {(() => {
-              const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е');
-              const searchAliases: Record<string, string[]> = {
-                beer_1: ['буд', 'бад'],
-                beer_2: ['стелла', 'артуа'],
-                beer_3: ['крон', 'бланш'],
-                beer_4: ['шпатен', 'мюнхен'],
-                beer_5: ['hoegaarden'],
-                beer_6: ['корона', 'экстра'],
-                beer_7: ['el capulco'],
-                beer_8: ['эсса'],
-                beer_9: ['редс'],
-                beer_10: ['козел', 'козёл'],
-                beer_11: ['старый', 'мельник'],
-                beer_12: ['жатецкий', 'гусь'],
-                beer_13: ['буд', 'бад'],
-                beer_14: ['стелла', 'артуа'],
-              };
+              const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е').replace(/[-\']/g, ' ').replace(/\s+/g, ' ');
+              const searchTerms = normalizedQuery.split(' ').filter(Boolean);
 
               const getSearchableText = (item: MenuItem, categoryName: string) => {
                 const parts = [
@@ -1165,22 +1150,27 @@ export default function GuestPageClient({
                   categoryName,
                   ...(item.tags || [])
                 ];
+                if (item.section) {
+                  parts.push(item.section);
+                }
                 if (item.choices) {
                   for (const choice of item.choices) {
                     parts.push(choice.label);
                     if (choice.description) parts.push(choice.description);
                   }
                 }
-                if (searchAliases[item.id]) {
-                  parts.push(...searchAliases[item.id]);
+                if (item.searchAliases) {
+                  parts.push(...item.searchAliases);
                 }
-                return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е');
+                return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е').replace(/[-\']/g, ' ').replace(/\s+/g, ' ');
               };
 
               const searchResults = menuItems.filter(item => {
                 const cat = categories.find(c => c.id === item.categoryId);
                 if (!cat) return false;
-                return getSearchableText(item, cat.name).includes(normalizedQuery);
+                if (searchTerms.length === 0) return true;
+                const text = getSearchableText(item, cat.name);
+                return searchTerms.every(term => text.includes(term));
               });
 
               const resultsByCategory = categories.map(cat => ({
