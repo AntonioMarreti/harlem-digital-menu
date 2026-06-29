@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle, Search } from 'lucide-react';
+import { Bell, ShoppingCart, Plus, Minus, Check, Flame, HelpCircle, Utensils, Clock, ChevronRight, AlertCircle, Search, X } from 'lucide-react';
 
 type OrderStatus = 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled';
 
@@ -237,6 +237,9 @@ export default function GuestPageClient({
   };
   const [activeOrder, setActiveOrder] = useState<SubmittedOrder | null>(null);
   const [staffCallStatus, setStaffCallStatus] = useState<string | null>(null);
+
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Bill and Order state
   const [billData, setBillData] = useState<{ totalAmount: number; ordersCount: number } | null>(null);
@@ -750,6 +753,208 @@ export default function GuestPageClient({
     );
   }
 
+  const renderSectionHeader = (item: MenuItem, prevItem: MenuItem | undefined) => {
+    if (item.categoryId === 'cat_beer' && item.section && (!prevItem || prevItem.section !== item.section)) {
+      return (
+        <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 mb-2 pl-1 shrink-0">
+          {item.section}
+        </h4>
+      );
+    }
+    return null;
+  };
+
+  const renderMenuItemCard = (item: MenuItem) => {
+    let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
+    if (isItemAvailable && item.choices && item.choices.length > 0) {
+      const hasAvailableChoice = item.choices.some(choice => availabilityMap[(item.choiceAvailabilityScope === 'shared_tea' || (!item.choiceAvailabilityScope && item.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
+      if (!hasAvailableChoice) {
+        isItemAvailable = false;
+      }
+    }
+    const cartQuantity = cart
+      .filter((cartItem) => cartItem.item.id === item.id)
+      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+    const plainCartQuantity = cart.find((cartItem) => cartItem.item.id === item.id && !cartItem.notes)?.quantity ?? 0;
+    const isInCart = cartQuantity > 0;
+
+    if (item.categoryId === 'cat_hookah') {
+      return (
+        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : 'hover:border-primary/30'} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+          <CardHeader className="p-3 pb-1.5 flex flex-row items-start justify-between gap-3">
+            <div className="flex-1">
+              <CardTitle className="text-base font-medium leading-tight text-foreground flex items-center flex-wrap gap-2">
+                {item.name}
+                {!isItemAvailable && (
+                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
+                )}
+              </CardTitle>
+              {item.sourceLabel && (
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-1">
+                  {item.sourceLabel}
+                </Badge>
+              )}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {item.tags.map(tag => (
+                    <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {isInCart && (
+                <Badge className="mt-2 bg-primary/10 text-primary/90 border-none rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-primary/15">
+                  В корзине: {cartQuantity}
+                </Badge>
+              )}
+            </div>
+            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
+          </CardHeader>
+          <CardContent className="px-3 pb-2 pt-0 text-sm text-muted-foreground leading-snug">
+            {item.description}
+          </CardContent>
+          <CardFooter className="px-3 pb-3 pt-1.5 border-t-0 bg-transparent flex justify-end">
+            <Button
+              size="sm"
+              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5 disabled:opacity-50"
+              onClick={() => isItemAvailable && handleBuildHookah(item)}
+              disabled={!isItemAvailable}
+            >
+              {!isItemAvailable ? 'Недоступно' : isInCart ? 'Настроить ещё' : 'Настроить кальян'}
+            </Button>
+          </CardFooter>
+        </Card>
+      );
+    }
+
+    return (
+      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+        <div className="px-3.5 py-3 flex gap-3.5 items-center">
+          {/* Left Column: Info */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+            <div>
+              <div className="flex items-center flex-wrap gap-2">
+                <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
+                {!isItemAvailable && (
+                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
+                )}
+              </div>
+              {item.sourceLabel && (
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-0.5">
+                  {item.sourceLabel}
+                </Badge>
+              )}
+            </div>
+            {item.shortDescription && (
+              <p className="text-sm text-muted-foreground leading-snug">
+                {item.shortDescription}
+              </p>
+            )}
+            {item.description && (
+              <div className="mt-1.5">
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-[13px] text-primary [@media(hover:hover)]:hover:text-primary/80 active:text-primary/80 font-medium transition-colors"
+                  onClick={() => {
+                    setSelectedDrawerItem(item);
+                    setItemDrawerMode('details');
+                    setIsItemDrawerOpen(true);
+                  }}
+                >
+                  Подробнее
+                </Button>
+              </div>
+            )}
+            {item.tags && item.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {item.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {/* Fallback cart text if complex quantities differ from plain buttons */}
+            {isInCart && cartQuantity > plainCartQuantity && (
+              <div className="mt-0.5">
+                <span className="text-[11px] text-primary font-medium">В корзине: {cartQuantity}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Coherent Action */}
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
+
+            <div>
+              {!isItemAvailable ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled
+                  className="h-9 rounded-full px-4 text-muted-foreground font-medium text-xs opacity-70 disabled:opacity-70"
+                >
+                  Нет в наличии
+                </Button>
+              ) : plainCartQuantity > 0 ? (
+                <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1 animate-cart-pop">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
+                    onClick={() => removeFromCart(item)}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <span key={cartPulseKeys[item.id] || 'default'} className="min-w-5 text-center text-sm font-semibold text-primary animate-cart-pop inline-block">{plainCartQuantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
+                    onClick={() => {
+                    if (item.choices && item.choices.length > 0) {
+                      setSelectedDrawerItem(item);
+                      setSelectedChoice('');
+                      setChoiceSearchQuery('');
+                      setItemDrawerMode('choice');
+                      setIsItemDrawerOpen(true);
+                    } else {
+                      addToCart(item);
+                    }
+                  }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="border-border/50 bg-transparent [@media(hover:hover)]:hover:bg-primary/10 [@media(hover:hover)]:hover:text-primary [@media(hover:hover)]:hover:border-primary/30 active:bg-primary/10 active:text-primary active:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
+                  onClick={() => {
+                    if (item.choices && item.choices.length > 0) {
+                      setSelectedDrawerItem(item);
+                      setSelectedChoice('');
+                      setChoiceSearchQuery('');
+                      setItemDrawerMode('choice');
+                      setIsItemDrawerOpen(true);
+                    } else {
+                      addToCart(item);
+                    }
+                  }}
+                >
+                  {item.choices && item.choices.length > 0
+                    ? (item.choiceActionLabel || (item.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус'))
+                    : 'Добавить'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="guest-theme min-h-screen w-full bg-background overflow-x-clip">
       <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background relative flex flex-col text-foreground font-sans shadow-2xl selection:bg-primary/30">
@@ -818,6 +1023,14 @@ export default function GuestPageClient({
           <Button
             variant="outline"
             size="icon"
+            className="rounded-full border-border/50 bg-background/50 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors relative"
+            onClick={() => setIsSearchActive(true)}
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             className="rounded-full border-border/50 bg-background/50 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             onClick={() => setIsStaffOpen(true)}
           >
@@ -875,264 +1088,176 @@ export default function GuestPageClient({
           </div>
         )}
 
-        {/* Menu Tabs */}
-        <Tabs
-          value={activeCategory}
-          onValueChange={(val) => {
-            setActiveCategory(val);
-            scrollToCategoryTab(val);
-          }}
-          className="w-full flex-col"
-        >
-          <div className="px-5 sticky top-[85px] z-10 bg-background/95 backdrop-blur-md py-3">
-            <TabsList className="w-full min-h-9 flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20 scroll-px-5">
-              {categories.map((cat) => (
-                <TabsTrigger
-                  key={cat.id}
-                  value={cat.id}
-                  data-cat-trigger={cat.id}
-                  className={`rounded-full border px-3.5 py-1.5 text-sm transition-all flex-shrink-0 ${
-                    activeCategory === cat.id
-                      ? '!bg-primary !text-primary-foreground !border-primary !shadow-sm !shadow-black/20 !font-semibold'
-                      : 'border-transparent text-foreground/70 font-medium'
-                  }`}
+        {/* Search Bar */}
+        {isSearchActive && (
+          <div className="px-5 mb-3 mt-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Найти в меню..."
+                className="w-full h-10 pl-9 pr-8 rounded-full border border-border/50 bg-secondary/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                value={globalSearchQuery}
+                onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                autoFocus
+              />
+              {globalSearchQuery && (
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                  onClick={() => setGlobalSearchQuery('')}
                 >
-                  {cat.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              className="text-sm rounded-full px-3 h-10 shrink-0"
+              onClick={() => {
+                setIsSearchActive(false);
+                setGlobalSearchQuery('');
+              }}
+            >
+              Отмена
+            </Button>
           </div>
+        )}
 
-          <div
-            className="px-5 mt-3"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchCancel}
-          >
-            {categories.map((cat) => (
-              <TabsContent key={cat.id} value={cat.id} className="space-y-2.5 outline-none pb-6">
-                {cat.id === 'cat_food' && (
-                  <div className="bg-secondary/40 border border-secondary p-3 rounded-xl mb-4 text-xs text-muted-foreground text-center">
-                    Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
+        {/* Menu Tabs or Search Results */}
+        {globalSearchQuery.trim().length > 0 ? (
+          <div className="px-5 pb-6 space-y-6 mt-2">
+            {(() => {
+              const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е');
+              const getSearchableText = (item: MenuItem, categoryName: string) => {
+                const parts = [
+                  item.name,
+                  item.shortDescription,
+                  item.description,
+                  categoryName,
+                  ...(item.tags || [])
+                ];
+                if (item.choices) {
+                  for (const choice of item.choices) {
+                    parts.push(choice.label);
+                    if (choice.description) parts.push(choice.description);
+                  }
+                }
+                return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е');
+              };
+
+              const searchResults = menuItems.filter(item => {
+                const cat = categories.find(c => c.id === item.categoryId);
+                if (!cat) return false;
+                return getSearchableText(item, cat.name).includes(normalizedQuery);
+              });
+
+              const resultsByCategory = categories.map(cat => ({
+                category: cat,
+                items: searchResults.filter(item => item.categoryId === cat.id)
+              })).filter(g => g.items.length > 0);
+
+              if (resultsByCategory.length === 0) {
+                return (
+                  <div className="text-center py-10 px-4 text-muted-foreground bg-secondary/20 rounded-2xl border border-border/40">
+                    <p>Ничего не найдено. Попробуйте другое название или вкус.</p>
                   </div>
-                )}
+                );
+              }
 
-                {menuItems
-                  .filter((item) => item.categoryId === cat.id)
-                  .map((item) => {
-                    let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
-                    if (isItemAvailable && item.choices && item.choices.length > 0) {
-                      const hasAvailableChoice = item.choices.some(choice => availabilityMap[(item.choiceAvailabilityScope === 'shared_tea' || (!item.choiceAvailabilityScope && item.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
-                      if (!hasAvailableChoice) {
-                        isItemAvailable = false;
-                      }
-                    }
-                    const cartQuantity = cart
-                      .filter((cartItem) => cartItem.item.id === item.id)
-                      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-                    const plainCartQuantity = cart.find((cartItem) => cartItem.item.id === item.id && !cartItem.notes)?.quantity ?? 0;
-                    const isInCart = cartQuantity > 0;
-
-                    if (cat.id === 'cat_hookah') {
-                      return (
-                        <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors ${isInCart ? 'border-primary/50 bg-primary/5 shadow-primary/10' : 'hover:border-primary/30'} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
-                          <CardHeader className="p-3 pb-1.5 flex flex-row items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <CardTitle className="text-base font-medium leading-tight text-foreground flex items-center flex-wrap gap-2">
-                                {item.name}
-                                {!isItemAvailable && (
-                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">Нет в наличии</Badge>
-                                )}
-                              </CardTitle>
-                              {item.sourceLabel && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-1">
-                                  {item.sourceLabel}
-                                </Badge>
-                              )}
-                              {item.tags && item.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                  {item.tags.map(tag => (
-                                    <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                              {isInCart && (
-                                <Badge className="mt-2 bg-primary/10 text-primary/90 border-none rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-primary/15">
-                                  В корзине: {cartQuantity}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-2 pt-0 text-sm text-muted-foreground leading-snug">
-                            {item.description}
-                          </CardContent>
-                          <CardFooter className="px-3 pb-3 pt-1.5 border-t-0 bg-transparent flex justify-end">
-                            <Button
-                              size="sm"
-                              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none transition-colors rounded-full px-5 disabled:opacity-50"
-                              onClick={() => isItemAvailable && handleBuildHookah(item)}
-                              disabled={!isItemAvailable}
-                            >
-                              {!isItemAvailable ? 'Недоступно' : isInCart ? 'Настроить ещё' : 'Настроить кальян'}
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      );
-                    }
-
+              return resultsByCategory.map(group => (
+                <div key={group.category.id} className="space-y-2.5">
+                  <h3 className="font-bold text-lg text-foreground px-1 mb-3">{group.category.name}</h3>
+                  {group.items.map((item, index, array) => {
+                    const prevItem = index > 0 ? array[index - 1] : undefined;
                     return (
-                      <Card key={item.id} className={`w-full min-w-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-sm transition-colors p-0 gap-0 ${isInCart ? 'border-primary/50 bg-primary/5' : ''} ${!isItemAvailable ? 'opacity-60 grayscale-[0.3]' : ''}`}>
-                        <div className="px-3.5 py-3 flex gap-3.5 items-center">
-                          {/* Left Column: Info */}
-                          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                            <div>
-                              <div className="flex items-center flex-wrap gap-2">
-                                <h3 className="text-base font-medium leading-tight text-foreground">{item.name}</h3>
-                                {!isItemAvailable && (
-                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 font-medium whitespace-nowrap">На стопе</Badge>
-                                )}
-                              </div>
-                              {item.sourceLabel && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary/80 mt-2 mb-0.5">
-                                  {item.sourceLabel}
-                                </Badge>
-                              )}
-                            </div>
-                            {item.shortDescription && (
-                              <p className="text-sm text-muted-foreground leading-snug">
-                                {item.shortDescription}
-                              </p>
-                            )}
-                            {item.description && (
-                              <div className="mt-1.5">
-                                <Button
-                                  variant="link"
-                                  className="h-auto p-0 text-[13px] text-primary [@media(hover:hover)]:hover:text-primary/80 active:text-primary/80 font-medium transition-colors"
-                                  onClick={() => {
-                                    setSelectedDrawerItem(item);
-                                    setItemDrawerMode('details');
-                                    setIsItemDrawerOpen(true);
-                                  }}
-                                >
-                                  Подробнее
-                                </Button>
-                              </div>
-                            )}
-                            {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                {item.tags.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-[10px] py-0 px-2 bg-secondary/80 text-secondary-foreground border-none font-medium">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                            {/* Fallback cart text if complex quantities differ from plain buttons */}
-                            {isInCart && cartQuantity > plainCartQuantity && (
-                              <div className="mt-0.5">
-                                <span className="text-[11px] text-primary font-medium">В корзине: {cartQuantity}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right Column: Coherent Action */}
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
-
-                            <div>
-                              {!isItemAvailable ? (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  disabled
-                                  className="h-9 rounded-full px-4 text-muted-foreground font-medium text-xs opacity-70 disabled:opacity-70"
-                                >
-                                  Нет в наличии
-                                </Button>
-                              ) : plainCartQuantity > 0 ? (
-                                <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 p-1 animate-cart-pop">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                    onClick={() => removeFromCart(item)}
-                                  >
-                                    <Minus className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <span key={cartPulseKeys[item.id] || 'default'} className="min-w-5 text-center text-sm font-semibold text-primary animate-cart-pop inline-block">{plainCartQuantity}</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full text-primary [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                    onClick={() => {
-                                    if (item.choices && item.choices.length > 0) {
-                                      setSelectedDrawerItem(item);
-                                      setSelectedChoice('');
-                                      setChoiceSearchQuery('');
-                                      setItemDrawerMode('choice');
-                                      setIsItemDrawerOpen(true);
-                                    } else {
-                                      addToCart(item);
-                                    }
-                                  }}
-                                  >
-                                    <Plus className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  className="border-border/50 bg-transparent [@media(hover:hover)]:hover:bg-primary/10 [@media(hover:hover)]:hover:text-primary [@media(hover:hover)]:hover:border-primary/30 active:bg-primary/10 active:text-primary active:border-primary/30 rounded-full px-4 h-9 text-sm active:scale-95 transition-all duration-100"
-                                  onClick={() => {
-                                    if (item.choices && item.choices.length > 0) {
-                                      setSelectedDrawerItem(item);
-                                      setSelectedChoice('');
-                                      setChoiceSearchQuery('');
-                                      setItemDrawerMode('choice');
-                                      setIsItemDrawerOpen(true);
-                                    } else {
-                                      addToCart(item);
-                                    }
-                                  }}
-                                >
-                                  {item.choices && item.choices.length > 0
-                                    ? (item.choiceActionLabel || (item.categoryId === 'cat_tea' ? 'Выбрать сорт' : 'Выбрать вкус'))
-                                    : 'Добавить'}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
+                      <Fragment key={item.id}>
+                        {renderSectionHeader(item, prevItem)}
+                        {renderMenuItemCard(item)}
+                      </Fragment>
                     );
                   })}
-                {cat.id === 'cat_hookah' && (
-                  <Card className="p-3.5 bg-primary/5 border-primary/20 rounded-xl flex items-start gap-3 mt-2 shadow-sm">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Clock className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 flex flex-col min-w-0">
-                      <div className="font-semibold text-foreground text-sm leading-tight mb-0.5">
-                        Дневной кальян до 17:00
-                      </div>
-                      <div className="text-xs font-medium text-primary flex flex-wrap gap-x-1 mb-1">
-                        <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
-                        <span className="text-primary/50">·</span>
-                        <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
-                      </div>
-                      <div className="text-[11px] text-muted-foreground leading-tight">
-                        Успейте заказать до 17:00
-                      </div>
-                    </div>
-                  </Card>
-                )}
-              </TabsContent>
-            ))}
+                </div>
+              ));
+            })()}
           </div>
-        </Tabs>
+        ) : (
+          <Tabs
+            value={activeCategory}
+            onValueChange={(val) => {
+              setActiveCategory(val);
+              scrollToCategoryTab(val);
+            }}
+            className="w-full flex-col"
+          >
+            <div className="px-5 sticky top-[85px] z-10 bg-background/95 backdrop-blur-md py-3">
+              <TabsList className="w-full min-h-9 flex-nowrap justify-start overflow-x-auto h-auto py-1 px-1 bg-secondary/50 rounded-full gap-1 no-scrollbar border border-border/20 scroll-px-5">
+                {categories.map((cat) => (
+                  <TabsTrigger
+                    key={cat.id}
+                    value={cat.id}
+                    data-cat-trigger={cat.id}
+                    className={`rounded-full border px-3.5 py-1.5 text-sm transition-all flex-shrink-0 ${
+                      activeCategory === cat.id
+                        ? '!bg-primary !text-primary-foreground !border-primary !shadow-sm !shadow-black/20 !font-semibold'
+                        : 'border-transparent text-foreground/70 font-medium'
+                    }`}
+                  >
+                    {cat.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            <div
+              className="px-5 mt-3"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchCancel}
+            >
+              {categories.map((cat) => (
+                <TabsContent key={cat.id} value={cat.id} className="space-y-2.5 outline-none pb-6">
+                  {cat.id === 'cat_food' && (
+                    <div className="bg-secondary/40 border border-secondary p-3 rounded-xl mb-4 text-xs text-muted-foreground text-center">
+                      Еда готовится в соседнем баре Craft Beery и передаётся к вашему столику.
+                    </div>
+                  )}
+
+                  {menuItems
+                    .filter((item) => item.categoryId === cat.id)
+                    .map((item, index, array) => {
+                      const prevItem = index > 0 ? array[index - 1] : undefined;
+                      return (
+                        <Fragment key={item.id}>
+                          {renderSectionHeader(item, prevItem)}
+                          {renderMenuItemCard(item)}
+                        </Fragment>
+                      );
+                    })}
+                  {cat.id === 'cat_hookah' && (
+                    <Card className="p-3.5 bg-primary/5 border-primary/20 rounded-xl flex items-start gap-3 mt-2 shadow-sm">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Clock className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <div className="font-semibold text-foreground text-sm leading-tight mb-0.5">
+                          Дневной кальян до 17:00
+                        </div>
+                        <div className="text-xs font-medium text-primary flex flex-wrap gap-x-1 mb-1">
+                          <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
+                          <span className="text-primary/50">·</span>
+                          <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight">
+                          Успейте заказать до 17:00
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </TabsContent>
+              ))}
+            </div>
+          </Tabs>
+        )}
       </main>
 
       {/* Floating Action Menu Container */}

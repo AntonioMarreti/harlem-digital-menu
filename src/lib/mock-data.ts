@@ -24,6 +24,7 @@ export type MenuItem = {
   choiceActionLabel?: string;
   choiceNoteLabel?: string;
   choiceAvailabilityScope?: 'item' | 'shared_tea';
+  section?: string;
 };
 
 export type Table = {
@@ -36,6 +37,7 @@ export type Table = {
 export const categories: Category[] = [
   { id: 'cat_hookah', name: 'Кальяны' },
   { id: 'cat_drinks', name: 'Напитки' },
+  { id: 'cat_beer', name: 'Пиво' },
   { id: 'cat_tea', name: 'Чай / кофе' },
   { id: 'cat_snacks', name: 'Закуски' },
   { id: 'cat_desserts', name: 'Десерты' },
@@ -136,6 +138,22 @@ export const menuItems: MenuItem[] = [
       { label: 'фейхоа' }
     ]
   },
+
+  // Harlem / Пиво
+  { id: 'beer_1', categoryId: 'cat_beer', section: 'Светлое', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_2', categoryId: 'cat_beer', section: 'Светлое', name: 'Stella Artois 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_3', categoryId: 'cat_beer', section: 'Светлое', name: 'Kron Blanche 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_4', categoryId: 'cat_beer', section: 'Светлое', name: 'Spaten München 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_5', categoryId: 'cat_beer', section: 'Светлое', name: 'Хугарден 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_6', categoryId: 'cat_beer', section: 'Светлое', name: 'Corona Extra 0,35', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_7', categoryId: 'cat_beer', section: 'Светлое', name: 'Эль Капулько 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_8', categoryId: 'cat_beer', section: 'Светлое', name: 'Essa 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_9', categoryId: 'cat_beer', section: 'Светлое', name: 'Red’s Premium 0,33', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_10', categoryId: 'cat_beer', section: 'Тёмное', name: 'Велкопоповицкий Козел 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_11', categoryId: 'cat_beer', section: 'Тёмное', name: 'Старый мельник из бочонка 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_12', categoryId: 'cat_beer', section: 'Тёмное', name: 'Жатецкий гусь 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_13', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Bud 0,45', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
+  { id: 'beer_14', categoryId: 'cat_beer', section: 'Безалкогольное', name: 'Stella Artois 0,44', description: '', price: 190, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем' },
 
   // Harlem / Сидр
   { id: 'cid_1', categoryId: 'cat_cider', name: 'Chester’s 0,45 · 5,0%', description: '', price: 250, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choices: [
