@@ -1103,10 +1103,15 @@ export default function GuestPageClient({
               <input
                 type="text"
                 placeholder="Найти в меню..."
-                className="w-full h-10 pl-9 pr-8 rounded-full border border-border/50 bg-secondary/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                className="w-full h-10 pl-9 pr-8 rounded-full border border-border/50 bg-secondary/30 text-[16px] focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
                 value={globalSearchQuery}
                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
                 autoFocus
+                inputMode="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
               />
               {globalSearchQuery && (
                 <button
@@ -1135,6 +1140,23 @@ export default function GuestPageClient({
           <div className="px-5 pb-6 space-y-6 mt-2">
             {(() => {
               const normalizedQuery = globalSearchQuery.trim().toLowerCase().replace(/ё/g, 'е');
+              const searchAliases: Record<string, string[]> = {
+                beer_1: ['буд', 'бад'],
+                beer_2: ['стелла', 'артуа'],
+                beer_3: ['крон', 'бланш'],
+                beer_4: ['шпатен', 'мюнхен'],
+                beer_5: ['hoegaarden'],
+                beer_6: ['корона', 'экстра'],
+                beer_7: ['el capulco'],
+                beer_8: ['эсса'],
+                beer_9: ['редс'],
+                beer_10: ['козел', 'козёл'],
+                beer_11: ['старый', 'мельник'],
+                beer_12: ['жатецкий', 'гусь'],
+                beer_13: ['буд', 'бад'],
+                beer_14: ['стелла', 'артуа'],
+              };
+
               const getSearchableText = (item: MenuItem, categoryName: string) => {
                 const parts = [
                   item.name,
@@ -1148,6 +1170,9 @@ export default function GuestPageClient({
                     parts.push(choice.label);
                     if (choice.description) parts.push(choice.description);
                   }
+                }
+                if (searchAliases[item.id]) {
+                  parts.push(...searchAliases[item.id]);
                 }
                 return parts.filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е');
               };
