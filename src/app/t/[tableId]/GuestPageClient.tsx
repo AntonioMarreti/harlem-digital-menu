@@ -1024,7 +1024,14 @@ export default function GuestPageClient({
             variant="outline"
             size="icon"
             className="rounded-full border-border/50 bg-background/50 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors relative"
-            onClick={() => setIsSearchActive(true)}
+            onClick={() => {
+              if (isSearchActive) {
+                setIsSearchActive(false);
+                setGlobalSearchQuery('');
+              } else {
+                setIsSearchActive(true);
+              }
+            }}
           >
             <Search className="h-4 w-4" />
           </Button>
