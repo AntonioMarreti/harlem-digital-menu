@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   executePendingOrderSubmission,
+  finalizeConfirmedPendingOrder,
+  getConfirmedCartDisposition,
   getOrderSnapshotFingerprint,
   getPendingOrderStorageKey,
   preparePendingOrderSubmission,
@@ -17,6 +19,18 @@ class MemoryStorage implements PendingOrderStorage {
   getItem(key: string) { return this.values.get(key) ?? null; }
   setItem(key: string, value: string) { this.values.set(key, value); }
   removeItem(key: string) { this.values.delete(key); }
+}
+
+class TrackingStorage extends MemoryStorage {
+  readonly operations: string[] = [];
+  setItem(key: string, value: string) {
+    this.operations.push(`set:${key}`);
+    super.setItem(key, value);
+  }
+  removeItem(key: string) {
+    this.operations.push(`remove:${key}`);
+    super.removeItem(key);
+  }
 }
 
 class MemoryLockManager implements PendingOrderLockManager {
@@ -68,7 +82,7 @@ async function prepare(
   return preparePendingOrderSubmission(storage, locks, sessionId, items, keyFactory());
 }
 
-test('ordinary successful submit persists before request and then clears the pending state', async () => {
+test('ordinary success remains confirmed until cart reconciliation completes', async () => {
   const storage = new MemoryStorage();
   const server = new IdempotentOrderServer();
   const prepared = await prepare(storage, sessionA);
@@ -82,7 +96,51 @@ test('ordinary successful submit persists before request and then clears the pen
   assert.equal(wasPersistedBeforeSend, true);
   assert.equal(result.kind, 'success');
   assert.equal(server.orders.size, 1);
+  assert.equal(readPendingOrderSubmission(storage, sessionA)?.status, 'confirmed');
+
+  const finalized = finalizeConfirmedPendingOrder(storage, prepared.submission, () => true);
+  assert.equal(finalized, true);
   assert.equal(readPendingOrderSubmission(storage, sessionA), null);
+});
+
+test('crash after server success leaves confirmed key for reload and cannot create a duplicate', async () => {
+  const storage = new MemoryStorage();
+  const server = new IdempotentOrderServer();
+  const prepared = await prepare(storage, sessionA);
+  await executePendingOrderSubmission(storage, prepared.submission, async (submission) => ({
+    kind: 'success',
+    value: server.submit(submission),
+  }));
+
+  // Simulate a crash before cart reconciliation and a reload in another tab.
+  const afterReload = readPendingOrderSubmission(storage, sessionA)!;
+  assert.equal(afterReload.status, 'confirmed');
+  const retry = await prepare(storage, sessionA);
+  assert.equal(retry.submission.idempotencyKey, prepared.submission.idempotencyKey);
+  let networkRequests = 0;
+  await executePendingOrderSubmission(storage, retry.submission, async (submission) => {
+    networkRequests += 1;
+    return { kind: 'success', value: server.submit(submission) };
+  });
+
+  assert.equal(networkRequests, 0);
+  assert.equal(server.orders.size, 1);
+});
+
+test('durable cart cleanup happens before pending protection is removed', async () => {
+  const storage = new TrackingStorage();
+  const cartKey = 'cart:session-a';
+  const prepared = await prepare(storage, sessionA);
+  await executePendingOrderSubmission(storage, prepared.submission, async () => ({ kind: 'success', value: true }));
+  storage.operations.length = 0;
+
+  const finalized = finalizeConfirmedPendingOrder(storage, prepared.submission, () => {
+    storage.removeItem(cartKey);
+    return true;
+  });
+
+  assert.equal(finalized, true);
+  assert.ok(storage.operations.indexOf(`remove:${cartKey}`) < storage.operations.indexOf(`remove:${getPendingOrderStorageKey(sessionA)}`));
 });
 
 test('double-click preparation reuses the same pending submission and key', async () => {
@@ -186,6 +244,70 @@ test('pending state is retained for failures and cleared only after confirmed su
   assert.equal(readPendingOrderSubmission(storage, sessionA)?.status, 'rejected');
 
   await executePendingOrderSubmission(storage, prepared.submission, async () => ({ kind: 'success', value: true }));
+  assert.equal(readPendingOrderSubmission(storage, sessionA)?.status, 'confirmed');
+  finalizeConfirmedPendingOrder(storage, prepared.submission, () => true);
+  assert.equal(readPendingOrderSubmission(storage, sessionA), null);
+});
+
+test('two tabs: success in A cannot be downgraded by uncertain response in B or create a second key', async () => {
+  const storage = new MemoryStorage();
+  const locks = new MemoryLockManager();
+  const server = new IdempotentOrderServer();
+  let durableCart = ordinaryCart;
+  let generatedKeys = 0;
+  const [tabA, tabB] = await Promise.all([
+    prepare(storage, sessionA, ordinaryCart, locks),
+    prepare(storage, sessionA, ordinaryCart, locks),
+  ]);
+
+  let finishTabB!: (result: { kind: 'uncertain' }) => void;
+  const tabBRequest = executePendingOrderSubmission(storage, tabB.submission, async (submission) => {
+    server.submit(submission);
+    return new Promise<{ kind: 'uncertain' }>((resolve) => { finishTabB = resolve; });
+  });
+  await executePendingOrderSubmission(storage, tabA.submission, async (submission) => ({
+    kind: 'success',
+    value: server.submit(submission),
+  }));
+  finishTabB({ kind: 'uncertain' });
+  const tabBResult = await tabBRequest;
+  assert.equal(tabBResult.kind, 'uncertain');
+  assert.equal(readPendingOrderSubmission(storage, sessionA)?.status, 'confirmed');
+
+  // A reconciles the durable cart before removing the confirmed key. B still
+  // has the old cart in React memory, but submitOrder re-reads localStorage.
+  assert.equal(finalizeConfirmedPendingOrder(storage, tabA.submission, () => {
+    durableCart = [];
+    return true;
+  }), true);
+  const tabBClickCart = durableCart;
+  const userRetry = tabBClickCart.length === 0
+    ? null
+    : await preparePendingOrderSubmission(storage, locks, sessionA, tabBClickCart, () => `unexpected-${++generatedKeys}`);
+  assert.equal(userRetry, null);
+  assert.equal(generatedKeys, 0);
+  assert.equal(server.orders.size, 1);
+});
+
+test('cart edits made while submission is in flight remain as the next durable cart', async () => {
+  const storage = new MemoryStorage();
+  const prepared = await prepare(storage, sessionA, ordinaryCart);
+  await executePendingOrderSubmission(storage, prepared.submission, async () => ({ kind: 'success', value: true }));
+  const editedCart = [{ id: 'tea_5', quantity: 1 }];
+  let durableCart: PendingOrderItem[] = ordinaryCart;
+  const finalized = finalizeConfirmedPendingOrder(storage, prepared.submission, () => {
+    const disposition = getConfirmedCartDisposition(prepared.submission, editedCart, durableCart);
+    const reconciledCart = disposition === 'memory'
+      ? editedCart
+      : disposition === 'durable'
+        ? durableCart
+        : [];
+    durableCart = reconciledCart;
+    return true;
+  });
+
+  assert.equal(finalized, true);
+  assert.deepEqual(durableCart, editedCart);
   assert.equal(readPendingOrderSubmission(storage, sessionA), null);
 });
 
@@ -193,6 +315,7 @@ test('a changed cart after a confirmed order receives a new idempotency key', as
   const storage = new MemoryStorage();
   const first = await prepare(storage, sessionA, ordinaryCart);
   await executePendingOrderSubmission(storage, first.submission, async () => ({ kind: 'success', value: true }));
+  finalizeConfirmedPendingOrder(storage, first.submission, () => true);
   const second = await prepare(storage, sessionA, [{ id: 'tea_5', quantity: 1 }]);
 
   assert.notEqual(first.submission.idempotencyKey, second.submission.idempotencyKey);

@@ -6,7 +6,8 @@ import { getCanonicalMenuItemPrice, isHarlemDaytime, millisecondsUntilNextHookah
 import { getDisplayChoice, getDisplayNotes, getChoiceAvailabilityId } from '@/lib/menu-choices';
 import {
   executePendingOrderSubmission,
-  getOrderSnapshotFingerprint,
+  finalizeConfirmedPendingOrder,
+  getConfirmedCartDisposition,
   preparePendingOrderSubmission,
   readPendingOrderSubmission,
   shouldRecoverPendingOrderOnLoad,
@@ -105,21 +106,20 @@ const loadCartFromLocalStorage = (tableSessionId: string): CartItem[] => {
 };
 
 const saveCartToLocalStorage = (tableSessionId: string, cart: CartItem[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
+  if (typeof window === 'undefined') return false;
 
   const storageKey = getCartStorageKey(tableSessionId);
 
   try {
     if (cart.length === 0) {
       window.localStorage.removeItem(storageKey);
-      return;
+      return true;
     }
 
     window.localStorage.setItem(storageKey, JSON.stringify(cart));
+    return true;
   } catch {
-    // Ignore storage write errors: the in-memory cart is still the source of truth for this render.
+    return false;
   }
 };
 
@@ -557,6 +557,27 @@ export default function GuestPageClient({
     handleStaleTableSession,
   ]);
 
+  const reconcileConfirmedOrder = useCallback((submission: PendingOrderSubmission) => {
+    const inMemoryCart = cartRef.current;
+    const durableCart = loadCartFromLocalStorage(submission.tableSessionId);
+    const disposition = getConfirmedCartDisposition(
+      submission,
+      getPendingItemsFromCart(inMemoryCart),
+      getPendingItemsFromCart(durableCart)
+    );
+    // Prefer an unsaved local edit, otherwise honor another tab's durable cart update.
+    const nextCart = disposition === 'memory'
+      ? inMemoryCart
+      : disposition === 'durable'
+        ? durableCart
+        : [];
+
+    if (!saveCartToLocalStorage(submission.tableSessionId, nextCart)) return false;
+    cartRef.current = nextCart;
+    setCart(nextCart);
+    return true;
+  }, []);
+
   const sendPendingOrder = useCallback(async (submission: PendingOrderSubmission, isRecovery = false) => {
     if (orderSubmittingRef.current || !tableSessionId || submission.tableSessionId !== tableSessionId) {
       return;
@@ -613,18 +634,18 @@ export default function GuestPageClient({
       );
 
       if (result.kind === 'success') {
-        const currentFingerprint = getOrderSnapshotFingerprint(
-          submission.tableSessionId,
-          getPendingItemsFromCart(cartRef.current)
+        const finalized = finalizeConfirmedPendingOrder(
+          window.localStorage,
+          submission,
+          () => reconcileConfirmedOrder(submission)
         );
-        if (currentFingerprint === submission.fingerprint) {
-          saveCartToLocalStorage(submission.tableSessionId, []);
-          cartRef.current = [];
-          setCart([]);
+        if (finalized && cartRef.current.length === 0) {
           setIsCartOpen(false);
           setOrderSubmitError(null);
-        } else {
+        } else if (finalized) {
           setOrderSubmitError('Предыдущая отправка подтверждена. Текущая корзина сохранена — отправьте её отдельно.');
+        } else {
+          setOrderSubmitError('Заказ подтверждён. Корзина и ключ сохранены до завершения синхронизации.');
         }
         setStaleTableSessionNotice(null);
         await fetchSessionState();
@@ -662,6 +683,7 @@ export default function GuestPageClient({
     refreshTableSession,
     handleMovedTableSession,
     handleStaleTableSession,
+    reconcileConfirmedOrder,
   ]);
 
   useEffect(() => {
@@ -757,7 +779,12 @@ export default function GuestPageClient({
       setOrderSubmitError('Нет активной сессии стола.');
       return;
     }
-    if (cart.length === 0) return;
+    // React state may lag another tab's localStorage update. Re-read the durable
+    // cart before minting or reusing a submission key.
+    const durableCart = loadCartFromLocalStorage(tableSessionId);
+    cartRef.current = durableCart;
+    setCart(durableCart);
+    if (durableCart.length === 0) return;
 
     try {
       const browserLocks = typeof navigator !== 'undefined' && 'locks' in navigator
@@ -767,7 +794,7 @@ export default function GuestPageClient({
         window.localStorage,
         browserLocks,
         tableSessionId,
-        getPendingItemsFromCart(cart),
+        getPendingItemsFromCart(durableCart),
         () => crypto.randomUUID()
       );
 
@@ -796,6 +823,18 @@ export default function GuestPageClient({
     }
     if (!submission) return;
 
+    if (submission.status === 'confirmed') {
+      const finalized = finalizeConfirmedPendingOrder(
+        window.localStorage,
+        submission,
+        () => reconcileConfirmedOrder(submission)
+      );
+      if (!finalized) {
+        setOrderSubmitError('Заказ подтверждён. Корзина и ключ сохранены до завершения синхронизации.');
+      }
+      return;
+    }
+
     if (submission.status === 'rejected') {
       setOrderSubmitError('Предыдущая отправка была отклонена. Исправьте корзину и повторите попытку.');
       return;
@@ -810,7 +849,41 @@ export default function GuestPageClient({
     if (attemptedRecoveryKeysRef.current.has(recoveryKey)) return;
     attemptedRecoveryKeysRef.current.add(recoveryKey);
     void sendPendingOrder(submission, true);
-  }, [tableSessionId, cartStorageReadyForSessionId, sendPendingOrder]);
+  }, [tableSessionId, cartStorageReadyForSessionId, sendPendingOrder, reconcileConfirmedOrder]);
+
+  useEffect(() => {
+    if (!tableSessionId || cartStorageReadyForSessionId !== tableSessionId) return;
+
+    const cartKey = getCartStorageKey(tableSessionId);
+    const pendingKey = `harlem_pending_order:${encodeURIComponent(tableSessionId)}`;
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage) return;
+
+      if (event.key === cartKey) {
+        const nextCart = loadCartFromLocalStorage(tableSessionId);
+        cartRef.current = nextCart;
+        setCart(nextCart);
+      }
+
+      if (event.key === pendingKey) {
+        try {
+          const pending = readPendingOrderSubmission(window.localStorage, tableSessionId);
+          if (pending?.status === 'confirmed') {
+            finalizeConfirmedPendingOrder(
+              window.localStorage,
+              pending,
+              () => reconcileConfirmedOrder(pending)
+            );
+          }
+        } catch (error) {
+          setOrderSubmitError(error instanceof Error ? error.message : 'Не удалось синхронизировать отправку заказа.');
+        }
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [tableSessionId, cartStorageReadyForSessionId, reconcileConfirmedOrder]);
 
   const callStaff = async (reason: string) => {
     if (!tableSessionId) return;

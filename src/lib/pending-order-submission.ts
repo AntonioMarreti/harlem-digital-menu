@@ -7,7 +7,7 @@ export type PendingOrderItem = {
   };
 };
 
-export type PendingOrderStatus = 'pending' | 'uncertain' | 'rejected' | 'lifecycle_blocked';
+export type PendingOrderStatus = 'pending' | 'uncertain' | 'confirmed' | 'rejected' | 'lifecycle_blocked';
 
 export type PendingOrderSubmission = {
   version: 1;
@@ -36,7 +36,7 @@ export type PreparedPendingSubmission = {
 };
 
 export type PendingOrderAttemptResult<T> =
-  | { kind: 'success'; value: T }
+  | { kind: 'success'; value?: T }
   | { kind: 'rejected' | 'lifecycle' | 'uncertain'; value?: T };
 
 export function getPendingOrderStorageKey(tableSessionId: string) {
@@ -86,6 +86,23 @@ export function getOrderSnapshotFingerprint(
   return JSON.stringify({ tableSessionId, items: normalizeOrderItems(items) });
 }
 
+export function getConfirmedCartDisposition(
+  submission: PendingOrderSubmission,
+  inMemoryItems: readonly PendingOrderItem[],
+  durableItems: readonly PendingOrderItem[]
+): 'memory' | 'durable' | 'clear' {
+  const inMemoryFingerprint = inMemoryItems.length
+    ? getOrderSnapshotFingerprint(submission.tableSessionId, inMemoryItems)
+    : null;
+  const durableFingerprint = durableItems.length
+    ? getOrderSnapshotFingerprint(submission.tableSessionId, durableItems)
+    : null;
+
+  if (inMemoryFingerprint && inMemoryFingerprint !== submission.fingerprint) return 'memory';
+  if (durableFingerprint && durableFingerprint !== submission.fingerprint) return 'durable';
+  return 'clear';
+}
+
 export function readPendingOrderSubmission(
   storage: PendingOrderStorage,
   tableSessionId: string
@@ -107,7 +124,7 @@ export function readPendingOrderSubmission(
       !value.idempotencyKey ||
       typeof value.fingerprint !== 'string' ||
       !Array.isArray(value.items) ||
-      !['pending', 'uncertain', 'rejected', 'lifecycle_blocked'].includes(value.status || '') ||
+      !['pending', 'uncertain', 'confirmed', 'rejected', 'lifecycle_blocked'].includes(value.status || '') ||
       typeof value.createdAt !== 'string' ||
       getOrderSnapshotFingerprint(tableSessionId, value.items as PendingOrderItem[]) !== value.fingerprint
     ) {
@@ -184,6 +201,9 @@ export function updatePendingOrderStatus(
   if (!current || current.idempotencyKey !== submission.idempotencyKey || current.fingerprint !== submission.fingerprint) {
     return false;
   }
+  // A concurrent tab may already have received success. Never let a late
+  // timeout/rejection overwrite that durable confirmation.
+  if (current.status === 'confirmed' && status !== 'confirmed') return false;
 
   try {
     storage.setItem(getPendingOrderStorageKey(submission.tableSessionId), JSON.stringify({ ...current, status }));
@@ -214,6 +234,26 @@ export function shouldRecoverPendingOrderOnLoad(submission: PendingOrderSubmissi
   return submission.status === 'pending' || submission.status === 'uncertain';
 }
 
+export function finalizeConfirmedPendingOrder(
+  storage: PendingOrderStorage,
+  submission: PendingOrderSubmission,
+  reconcileDurableCart: () => boolean
+) {
+  const current = readPendingOrderSubmission(storage, submission.tableSessionId);
+  if (
+    !current ||
+    current.idempotencyKey !== submission.idempotencyKey ||
+    current.fingerprint !== submission.fingerprint ||
+    current.status !== 'confirmed'
+  ) {
+    return false;
+  }
+
+  // Keep the confirmed key until the caller has durably reconciled cart state.
+  if (!reconcileDurableCart()) return false;
+  return clearPendingOrderSubmission(storage, submission);
+}
+
 export async function executePendingOrderSubmission<T>(
   storage: PendingOrderStorage,
   submission: PendingOrderSubmission,
@@ -222,6 +262,15 @@ export async function executePendingOrderSubmission<T>(
   updatePendingOrderStatus(storage, submission, 'pending');
 
   let result: PendingOrderAttemptResult<T>;
+  const existing = readPendingOrderSubmission(storage, submission.tableSessionId);
+  if (
+    existing?.idempotencyKey === submission.idempotencyKey &&
+    existing.fingerprint === submission.fingerprint &&
+    existing.status === 'confirmed'
+  ) {
+    return { kind: 'success' };
+  }
+
   try {
     result = await send(submission);
   } catch {
@@ -229,7 +278,7 @@ export async function executePendingOrderSubmission<T>(
   }
 
   if (result.kind === 'success') {
-    clearPendingOrderSubmission(storage, submission);
+    updatePendingOrderStatus(storage, submission, 'confirmed');
   } else if (result.kind === 'lifecycle') {
     updatePendingOrderStatus(storage, submission, 'lifecycle_blocked');
   } else if (result.kind === 'rejected') {
