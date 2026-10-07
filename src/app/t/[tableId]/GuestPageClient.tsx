@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { getCanonicalMenuItemPrice, isHarlemDaytime, millisecondsUntilNextHookahPriceChange } from '@/lib/menu-pricing';
+import { getDisplayChoice, getDisplayNotes, getChoiceAvailabilityId } from '@/lib/menu-choices';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ type MovedTableSessionNotice = {
   targetLabel?: string;
 };
 
-type CartItem = { item: MenuItem, quantity: number, notes?: string };
+type CartItem = { item: MenuItem, quantity: number, choice?: string, notes?: string };
 
 const CLOSED_SESSION_NOTICE = 'Этот счёт уже закрыт. Если хотите сделать новый заказ, мы подготовили новый счёт для этого стола. Корзина в этой вкладке сохранена.';
 const CLOSED_SESSION_SUBMIT_MESSAGE = 'Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз, чтобы отправить её в новый счёт.';
@@ -39,6 +40,7 @@ const isStoredCartItem = (value: unknown): value is CartItem => {
   const candidate = value as {
     item?: { id?: unknown; name?: unknown; price?: unknown };
     quantity?: unknown;
+    choice?: unknown;
     notes?: unknown;
   };
 
@@ -51,6 +53,7 @@ const isStoredCartItem = (value: unknown): value is CartItem => {
     typeof candidate.quantity === 'number' &&
     Number.isFinite(candidate.quantity) &&
     candidate.quantity > 0 &&
+    (candidate.choice === undefined || typeof candidate.choice === 'string') &&
     (candidate.notes === undefined || typeof candidate.notes === 'string')
   );
 };
@@ -234,7 +237,7 @@ export default function GuestPageClient({
   const [choiceSearchQuery, setChoiceSearchQuery] = useState('');
   type SubmittedOrder = {
     id: string;
-    items: { item: MenuItem; quantity: number; notes?: string }[];
+    items: { item: MenuItem; quantity: number; choice?: string; notes?: string }[];
     total: number;
     status: OrderStatus;
   };
@@ -488,17 +491,13 @@ export default function GuestPageClient({
               description: ''
             };
 
-            let notes = undefined;
-            try {
-              if (backendItem.options) {
-                const parsed = JSON.parse(backendItem.options as string);
-                notes = parsed.notes;
-              }
-            } catch { }
+            const choice = getDisplayChoice(backendItem.options);
+            const notes = getDisplayNotes(backendItem.options);
 
             return {
               item: fullMenuItem as MenuItem,
               quantity: backendItem.quantity,
+              choice: choice || undefined,
               notes
             };
           });
@@ -554,25 +553,28 @@ export default function GuestPageClient({
   const getDisplayedPrice = (item: MenuItem) =>
     pricingNow ? (getCanonicalMenuItemPrice(item.id, pricingNow) ?? item.price) : item.price;
 
+  const getChoiceDisplayLabel = (item: MenuItem, choice: string) =>
+    `${item.choiceNoteLabel || (item.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ')}${choice}`;
+
   const cartTotal = cart.reduce((total, cartItem) => total + (getDisplayedPrice(cartItem.item) * cartItem.quantity), 0);
   const cartCount = cart.reduce((count, cartItem) => count + cartItem.quantity, 0);
 
-  const addToCart = (item: MenuItem, notes?: string) => {
+  const addToCart = (item: MenuItem, notes?: string, choice?: string) => {
     setCartPulseKeys(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
     setCart(prev => {
-      const existing = prev.find(i => i.item.id === item.id && i.notes === notes);
+      const existing = prev.find(i => i.item.id === item.id && i.choice === choice && i.notes === notes);
       if (existing) {
         return prev.map(i => i === existing ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { item, quantity: 1, notes }];
+      return [...prev, { item, quantity: 1, choice, notes }];
     });
   };
 
-  const removeFromCart = (item: MenuItem, notes?: string) => {
+  const removeFromCart = (item: MenuItem, notes?: string, choice?: string) => {
     setCartPulseKeys(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
     setCart(prev => {
       const newCart = [...prev];
-      const index = newCart.findIndex(i => i.item.id === item.id && i.notes === notes);
+      const index = newCart.findIndex(i => i.item.id === item.id && i.choice === choice && i.notes === notes);
       if (index > -1) {
         if (newCart[index].quantity > 1) {
           newCart[index].quantity -= 1;
@@ -644,7 +646,10 @@ export default function GuestPageClient({
         source: item.item.source,
         quantity: item.quantity,
         price: getDisplayedPrice(item.item),
-        options: item.notes ? { notes: item.notes } : undefined
+        options: item.choice || item.notes ? {
+          ...(item.choice ? { choice: item.choice } : {}),
+          ...(item.notes ? { notes: item.notes } : {})
+        } : undefined
       }))
     };
 
@@ -805,7 +810,7 @@ export default function GuestPageClient({
   const renderMenuItemCard = (item: MenuItem) => {
     let isItemAvailable = availabilityMap[item.id] ?? item.isAvailable ?? true;
     if (isItemAvailable && item.choices && item.choices.length > 0) {
-      const hasAvailableChoice = item.choices.some(choice => availabilityMap[(item.choiceAvailabilityScope === 'shared_tea' || (!item.choiceAvailabilityScope && item.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${item.id}::${choice.label}`] ?? true);
+      const hasAvailableChoice = item.choices.some(choice => availabilityMap[getChoiceAvailabilityId(item, choice.label)] ?? true);
       if (!hasAvailableChoice) {
         isItemAvailable = false;
       }
@@ -813,7 +818,7 @@ export default function GuestPageClient({
     const cartQuantity = cart
       .filter((cartItem) => cartItem.item.id === item.id)
       .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-    const plainCartQuantity = cart.find((cartItem) => cartItem.item.id === item.id && !cartItem.notes)?.quantity ?? 0;
+    const plainCartQuantity = cart.find((cartItem) => cartItem.item.id === item.id && !cartItem.choice && !cartItem.notes)?.quantity ?? 0;
     const isInCart = cartQuantity > 0;
 
     if (item.categoryId === 'cat_hookah') {
@@ -1412,7 +1417,9 @@ export default function GuestPageClient({
                         <h4 className="font-semibold text-sm text-foreground/60 uppercase tracking-wider mt-4 first:mt-0 pl-1">{group}</h4>
                       )}
                       {items.map((choice) => {
-                        const isChoiceAvailable = availabilityMap[(selectedDrawerItem?.choiceAvailabilityScope === 'shared_tea' || (!selectedDrawerItem?.choiceAvailabilityScope && selectedDrawerItem?.categoryId === 'cat_tea')) ? `tea::${choice.label}` : `${selectedDrawerItem?.id}::${choice.label}`] ?? true;
+                        const isChoiceAvailable = selectedDrawerItem
+                          ? availabilityMap[getChoiceAvailabilityId(selectedDrawerItem, choice.label)] ?? true
+                          : true;
                         return (
                         <label
                           key={choice.label}
@@ -1473,8 +1480,7 @@ export default function GuestPageClient({
                 className="w-full rounded-full py-6 text-lg bg-primary [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
                 onClick={() => {
                   if (selectedDrawerItem && selectedChoice) {
-                    const prefix = selectedDrawerItem.choiceNoteLabel || (selectedDrawerItem.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ');
-                    addToCart(selectedDrawerItem, `${prefix}${selectedChoice}`);
+                    addToCart(selectedDrawerItem, undefined, selectedChoice);
                     setIsItemDrawerOpen(false);
                   }
                 }}
@@ -1629,7 +1635,11 @@ export default function GuestPageClient({
                      <div className="space-y-2 mt-4 pt-4 border-t border-primary/20">
                        {activeOrder.items.map((cartItem, idx) => (
                           <div key={idx} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{cartItem.quantity}x {cartItem.item.name}</span>
+                            <div className="text-muted-foreground">
+                              <div>{cartItem.quantity}x {cartItem.item.name}</div>
+                              {cartItem.choice && <div className="text-xs">{getChoiceDisplayLabel(cartItem.item, cartItem.choice)}</div>}
+                              {cartItem.notes && <div className="text-xs">{cartItem.notes}</div>}
+                            </div>
                           </div>
                        ))}
                      </div>
@@ -1661,9 +1671,10 @@ export default function GuestPageClient({
                                       </div>
                                       <p className="font-semibold">{getDisplayedPrice(cartItem.item) * cartItem.quantity} ₽</p>
                                     </div>
-                                    {cartItem.notes && (
+                                    {(cartItem.choice || cartItem.notes) && (
                                       <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
-                                        {cartItem.notes}
+                                        {cartItem.choice && <span className="block">{getChoiceDisplayLabel(cartItem.item, cartItem.choice)}</span>}
+                                        {cartItem.notes && <span className="block">{cartItem.notes}</span>}
                                       </p>
                                     )}
                                   </div>
@@ -1672,7 +1683,7 @@ export default function GuestPageClient({
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
+                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes, cartItem.choice)}
                                     >
                                       <Minus className="h-3 w-3" />
                                     </Button>
@@ -1681,7 +1692,7 @@ export default function GuestPageClient({
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                      onClick={() => addToCart(cartItem.item, cartItem.notes)}
+                                      onClick={() => addToCart(cartItem.item, cartItem.notes, cartItem.choice)}
                                     >
                                       <Plus className="h-3 w-3" />
                                     </Button>
@@ -1711,9 +1722,10 @@ export default function GuestPageClient({
                                       </div>
                                       <p className="font-semibold">{getDisplayedPrice(cartItem.item) * cartItem.quantity} ₽</p>
                                     </div>
-                                    {cartItem.notes && (
+                                    {(cartItem.choice || cartItem.notes) && (
                                       <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
-                                        {cartItem.notes}
+                                        {cartItem.choice && <span className="block">{getChoiceDisplayLabel(cartItem.item, cartItem.choice)}</span>}
+                                        {cartItem.notes && <span className="block">{cartItem.notes}</span>}
                                       </p>
                                     )}
                                   </div>
@@ -1722,7 +1734,7 @@ export default function GuestPageClient({
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes)}
+                                      onClick={() => removeFromCart(cartItem.item, cartItem.notes, cartItem.choice)}
                                     >
                                       <Minus className="h-3 w-3" />
                                     </Button>
@@ -1731,7 +1743,7 @@ export default function GuestPageClient({
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6 rounded-full [@media(hover:hover)]:hover:bg-background active:bg-background active:scale-95 transition-transform duration-100"
-                                      onClick={() => addToCart(cartItem.item, cartItem.notes)}
+                                      onClick={() => addToCart(cartItem.item, cartItem.notes, cartItem.choice)}
                                     >
                                       <Plus className="h-3 w-3" />
                                     </Button>
