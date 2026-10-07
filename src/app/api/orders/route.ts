@@ -7,13 +7,14 @@ import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownersh
 import { menuItems } from '@/lib/mock-data';
 import { getCanonicalOrderItemPrice } from '@/lib/menu-pricing';
 import { validateCanonicalItemOptions } from '@/lib/menu-choices';
-import { createIdempotentOrder, createNeonOrderWritePort } from '@/lib/order-persistence';
+import { createNeonOrderWritePort, verifyOwnershipThenPrepareOrReuseIdempotentOrder } from '@/lib/order-persistence';
 import { TableSessionNotActiveError } from '@/lib/table-session-lifecycle';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
 const MIN_IDEMPOTENCY_KEY_LENGTH = 8;
 const MAX_IDEMPOTENCY_KEY_LENGTH = 128;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const canonicalMenuItemById = new Map(menuItems.map((item) => [item.id, item]));
 
@@ -32,7 +33,12 @@ export async function POST(request: NextRequest) {
       ? tableIdOrSlug
       : undefined;
 
-    if (!tableSessionId || !items || !Array.isArray(items) || items.length === 0) {
+    if (
+      typeof tableSessionId !== 'string' ||
+      !UUID_PATTERN.test(tableSessionId) ||
+      !Array.isArray(items) ||
+      items.length === 0
+    ) {
       logWarn('order.rejected', {
         code: 'MISSING_REQUIRED_FIELDS',
         tableSessionId: typeof tableSessionId === 'string' ? tableSessionId : undefined,
@@ -110,118 +116,131 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Table session is not active' }, { status: 400 });
     }
 
-    const ownershipError = await verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug);
-    if (ownershipError) return ownershipError;
+    const writePort = createNeonOrderWritePort(db);
+    const resolution = await verifyOwnershipThenPrepareOrReuseIdempotentOrder(
+      writePort,
+      { tableSessionId, idempotencyKey: normalizedIdempotencyKey },
+      () => verifyRequiredTableSessionOwnership(db, session, tableIdOrSlug),
+      async () => {
+        let availabilityRecords: { itemId: string, isAvailable: boolean }[] = [];
+        try {
+          availabilityRecords = await db.select().from(menuItemAvailability);
+        } catch (err) {
+          // Graceful fallback if table doesn't exist yet
+          const isMissingTable = err instanceof Error && err.message.includes('relation "menu_item_availability" does not exist');
+          if (!isMissingTable) {
+            throw err;
+          }
+        }
+        const availabilityMap = new Map(availabilityRecords.map(r => [r.itemId, r.isAvailable]));
 
-    let availabilityRecords: { itemId: string, isAvailable: boolean }[] = [];
-    try {
-      availabilityRecords = await db.select().from(menuItemAvailability);
-    } catch (err) {
-      // Graceful fallback if table doesn't exist yet
-      const isMissingTable = err instanceof Error && err.message.includes('relation "menu_item_availability" does not exist');
-      if (!isMissingTable) {
-        throw err;
+        const itemsToInsert = [];
+        let serverTotalAmount = 0;
+        const pricedAt = new Date();
+
+        for (const item of items as IncomingOrderItem[]) {
+          const menuItemId = typeof item.menuItemId === 'string'
+            ? item.menuItemId
+            : typeof item.id === 'string'
+              ? item.id
+              : null;
+
+          if (!menuItemId) {
+            logWarn('order.rejected', {
+              code: 'ITEM_ID_REQUIRED',
+              tableSessionId,
+              tableIdOrSlug: safeTableIdOrSlug,
+              itemCount: items.length,
+            });
+            return { kind: 'rejected' as const, response: NextResponse.json({ error: 'Item missing menuItemId or id' }, { status: 400 }) };
+          }
+
+          const canonicalItem = canonicalMenuItemById.get(menuItemId);
+          if (!canonicalItem) {
+            logWarn('order.rejected', {
+              code: 'UNKNOWN_MENU_ITEM',
+              tableSessionId,
+              tableIdOrSlug: safeTableIdOrSlug,
+              itemCount: items.length,
+            });
+            return { kind: 'rejected' as const, response: NextResponse.json({ error: 'Unknown menu item' }, { status: 400 }) };
+          }
+
+          const isAvailable = availabilityMap.get(menuItemId) ?? canonicalItem.isAvailable ?? true;
+          if (!isAvailable) {
+            logWarn('order.rejected', {
+              code: 'ITEM_UNAVAILABLE',
+              tableSessionId,
+              tableIdOrSlug: safeTableIdOrSlug,
+              itemId: menuItemId,
+            });
+            return {
+              kind: 'rejected' as const,
+              response: NextResponse.json({
+                error: `Товар «${canonicalItem.name}» временно недоступен`,
+                code: 'ITEM_UNAVAILABLE'
+              }, { status: 400 }),
+            };
+          }
+
+          if (
+            typeof item.quantity !== 'number' ||
+            !Number.isInteger(item.quantity) ||
+            item.quantity <= 0 ||
+            item.quantity > MAX_ITEM_QUANTITY
+          ) {
+            logWarn('order.rejected', {
+              code: 'INVALID_ITEM_QUANTITY',
+              tableSessionId,
+              tableIdOrSlug: safeTableIdOrSlug,
+              itemCount: items.length,
+            });
+            return { kind: 'rejected' as const, response: NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 }) };
+          }
+
+          const normalizedOptions = validateCanonicalItemOptions(canonicalItem, item.options, availabilityMap);
+          if (!normalizedOptions.ok) {
+            logWarn('order.rejected', {
+              code: normalizedOptions.code,
+              tableSessionId,
+              tableIdOrSlug: safeTableIdOrSlug,
+              itemId: menuItemId,
+            });
+            return {
+              kind: 'rejected' as const,
+              response: NextResponse.json({ error: normalizedOptions.error, code: normalizedOptions.code }, { status: 400 }),
+            };
+          }
+
+          const canonicalPrice = getCanonicalOrderItemPrice(item, pricedAt)!;
+          serverTotalAmount += canonicalPrice * item.quantity;
+
+          itemsToInsert.push({
+            menuItemId,
+            name: canonicalItem.name,
+            source: canonicalItem.source || 'harlem',
+            quantity: item.quantity,
+            price: canonicalPrice,
+            options: normalizedOptions.value ? JSON.stringify(normalizedOptions.value) : null,
+          });
+        }
+
+        return {
+          kind: 'ready' as const,
+          order: {
+            tableSessionId,
+            guestSessionId: finalGuestSessionId,
+            idempotencyKey: normalizedIdempotencyKey,
+            status: 'new' as const,
+            totalAmount: serverTotalAmount,
+          },
+          items: itemsToInsert,
+        };
       }
-    }
-    const availabilityMap = new Map(availabilityRecords.map(r => [r.itemId, r.isAvailable]));
+    );
 
-    const itemsToInsert = [];
-    let serverTotalAmount = 0;
-    const pricedAt = new Date();
-
-    for (const item of items as IncomingOrderItem[]) {
-      const menuItemId = typeof item.menuItemId === 'string'
-        ? item.menuItemId
-        : typeof item.id === 'string'
-          ? item.id
-          : null;
-
-      if (!menuItemId) {
-        logWarn('order.rejected', {
-          code: 'ITEM_ID_REQUIRED',
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          itemCount: items.length,
-        });
-        return NextResponse.json({ error: 'Item missing menuItemId or id' }, { status: 400 });
-      }
-
-      const canonicalItem = canonicalMenuItemById.get(menuItemId);
-      if (!canonicalItem) {
-        logWarn('order.rejected', {
-          code: 'UNKNOWN_MENU_ITEM',
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          itemCount: items.length,
-        });
-        return NextResponse.json({ error: 'Unknown menu item' }, { status: 400 });
-      }
-
-      const isAvailable = availabilityMap.get(menuItemId) ?? canonicalItem.isAvailable ?? true;
-      if (!isAvailable) {
-        logWarn('order.rejected', {
-          code: 'ITEM_UNAVAILABLE',
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          itemId: menuItemId,
-        });
-        return NextResponse.json({
-          error: `Товар «${canonicalItem.name}» временно недоступен`,
-          code: 'ITEM_UNAVAILABLE'
-        }, { status: 400 });
-      }
-
-      if (
-        typeof item.quantity !== 'number' ||
-        !Number.isInteger(item.quantity) ||
-        item.quantity <= 0 ||
-        item.quantity > MAX_ITEM_QUANTITY
-      ) {
-        logWarn('order.rejected', {
-          code: 'INVALID_ITEM_QUANTITY',
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          itemCount: items.length,
-        });
-        return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 });
-      }
-
-      const normalizedOptions = validateCanonicalItemOptions(canonicalItem, item.options, availabilityMap);
-      if (!normalizedOptions.ok) {
-        logWarn('order.rejected', {
-          code: normalizedOptions.code,
-          tableSessionId,
-          tableIdOrSlug: safeTableIdOrSlug,
-          itemId: menuItemId,
-        });
-        return NextResponse.json({ error: normalizedOptions.error, code: normalizedOptions.code }, { status: 400 });
-      }
-
-      const canonicalPrice = getCanonicalOrderItemPrice(item, pricedAt)!;
-      serverTotalAmount += canonicalPrice * item.quantity;
-
-      itemsToInsert.push({
-        menuItemId,
-        name: canonicalItem.name,
-        source: canonicalItem.source || 'harlem',
-        quantity: item.quantity,
-        price: canonicalPrice,
-        options: normalizedOptions.value ? JSON.stringify(normalizedOptions.value) : null,
-      });
-    }
-
-    const persistedOrder = await createIdempotentOrder(createNeonOrderWritePort(db), {
-      tableSessionId,
-      idempotencyKey: normalizedIdempotencyKey,
-      order: {
-        tableSessionId,
-        guestSessionId: finalGuestSessionId,
-        idempotencyKey: normalizedIdempotencyKey,
-        status: 'new',
-        totalAmount: serverTotalAmount,
-      },
-      items: itemsToInsert,
-    });
+    if (resolution.kind === 'rejected') return resolution.response;
+    const persistedOrder = resolution.result;
 
     if (persistedOrder.idempotent) {
       logInfo('order.idempotent_hit', {

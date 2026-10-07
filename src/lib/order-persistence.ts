@@ -24,6 +24,79 @@ export interface OrderWritePort<TOrder, TItem, TOrderInput, TItemInput> {
   ): Promise<CompleteOrder<TOrder, TItem> | null>;
 }
 
+export type PreparedIdempotentOrder<TOrderInput, TItemInput, TRejection> =
+  | { kind: 'ready'; order: TOrderInput; items: TItemInput[] }
+  | { kind: 'rejected'; response: TRejection };
+
+export async function findExistingCompleteOrder<TOrder, TItem, TOrderInput, TItemInput>(
+  port: OrderWritePort<TOrder, TItem, TOrderInput, TItemInput>,
+  tableSessionId: string,
+  idempotencyKey: string
+): Promise<(CompleteOrder<TOrder, TItem> & { idempotent: true }) | null> {
+  const existing = await port.findCompleteOrder(tableSessionId, idempotencyKey);
+  return existing ? { ...existing, idempotent: true } : null;
+}
+
+/**
+ * Reuse a complete persisted order before running mutable menu validation.
+ * Call only after the route has checked session ownership and table context.
+ * The regular createIdempotentOrder path remains responsible for concurrent
+ * requests that both miss this fast-path lookup.
+ */
+export async function prepareOrReuseIdempotentOrder<
+  TOrder,
+  TItem,
+  TOrderInput,
+  TItemInput,
+  TRejection
+>(
+  port: OrderWritePort<TOrder, TItem, TOrderInput, TItemInput>,
+  identity: { tableSessionId: string; idempotencyKey: string },
+  prepare: () => Promise<PreparedIdempotentOrder<TOrderInput, TItemInput, TRejection>>
+): Promise<
+  | { kind: 'ready'; result: CompleteOrder<TOrder, TItem> & { idempotent: boolean } }
+  | { kind: 'rejected'; response: TRejection }
+> {
+  const existing = await findExistingCompleteOrder(
+    port,
+    identity.tableSessionId,
+    identity.idempotencyKey
+  );
+  if (existing) return { kind: 'ready', result: existing };
+
+  const prepared = await prepare();
+  if (prepared.kind === 'rejected') return prepared;
+
+  const result = await createIdempotentOrder(port, {
+    ...identity,
+    order: prepared.order,
+    items: prepared.items,
+  });
+  return { kind: 'ready', result };
+}
+
+/** Keeps a known idempotency key behind the route's session/table ownership guard. */
+export async function verifyOwnershipThenPrepareOrReuseIdempotentOrder<
+  TOrder,
+  TItem,
+  TOrderInput,
+  TItemInput,
+  TOwnershipRejection,
+  TPreparationRejection
+>(
+  port: OrderWritePort<TOrder, TItem, TOrderInput, TItemInput>,
+  identity: { tableSessionId: string; idempotencyKey: string },
+  verifyOwnership: () => Promise<TOwnershipRejection | null>,
+  prepare: () => Promise<PreparedIdempotentOrder<TOrderInput, TItemInput, TPreparationRejection>>
+): Promise<
+  | { kind: 'ready'; result: CompleteOrder<TOrder, TItem> & { idempotent: boolean } }
+  | { kind: 'rejected'; response: TOwnershipRejection | TPreparationRejection }
+> {
+  const ownershipRejection = await verifyOwnership();
+  if (ownershipRejection) return { kind: 'rejected', response: ownershipRejection };
+  return prepareOrReuseIdempotentOrder(port, identity, prepare);
+}
+
 export async function createIdempotentOrder<TOrder, TItem, TOrderInput, TItemInput>(
   port: OrderWritePort<TOrder, TItem, TOrderInput, TItemInput>,
   input: {
@@ -33,8 +106,8 @@ export async function createIdempotentOrder<TOrder, TItem, TOrderInput, TItemInp
     items: TItemInput[];
   }
 ): Promise<CompleteOrder<TOrder, TItem> & { idempotent: boolean }> {
-  const existing = await port.findCompleteOrder(input.tableSessionId, input.idempotencyKey);
-  if (existing) return { ...existing, idempotent: true };
+  const existing = await findExistingCompleteOrder(port, input.tableSessionId, input.idempotencyKey);
+  if (existing) return existing;
 
   try {
     const created = await port.insertOrderAndItems(input.order, input.items);
