@@ -4,6 +4,16 @@ import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
 import { getCanonicalMenuItemPrice, isHarlemDaytime, millisecondsUntilNextHookahPriceChange } from '@/lib/menu-pricing';
 import { getDisplayChoice, getDisplayNotes, getChoiceAvailabilityId } from '@/lib/menu-choices';
+import {
+  executePendingOrderSubmission,
+  finalizeConfirmedPendingOrder,
+  getConfirmedCartDisposition,
+  preparePendingOrderSubmission,
+  readPendingOrderSubmission,
+  shouldRecoverPendingOrderOnLoad,
+  type PendingOrderItem,
+  type PendingOrderSubmission,
+} from '@/lib/pending-order-submission';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +35,17 @@ type MovedTableSessionNotice = {
 };
 
 type CartItem = { item: MenuItem, quantity: number, choice?: string, notes?: string };
+
+const getPendingItemsFromCart = (items: CartItem[]): PendingOrderItem[] => items.map((cartItem) => ({
+  id: cartItem.item.id,
+  quantity: cartItem.quantity,
+  ...(cartItem.choice || cartItem.notes ? {
+    options: {
+      ...(cartItem.choice ? { choice: cartItem.choice } : {}),
+      ...(cartItem.notes ? { notes: cartItem.notes } : {}),
+    },
+  } : {}),
+}));
 
 const CLOSED_SESSION_NOTICE = 'Этот счёт уже закрыт. Если хотите сделать новый заказ, мы подготовили новый счёт для этого стола. Корзина в этой вкладке сохранена.';
 const CLOSED_SESSION_SUBMIT_MESSAGE = 'Счёт уже закрыт. Корзина сохранена — нажмите «Отправить заказ» ещё раз, чтобы отправить её в новый счёт.';
@@ -85,21 +106,20 @@ const loadCartFromLocalStorage = (tableSessionId: string): CartItem[] => {
 };
 
 const saveCartToLocalStorage = (tableSessionId: string, cart: CartItem[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
+  if (typeof window === 'undefined') return false;
 
   const storageKey = getCartStorageKey(tableSessionId);
 
   try {
     if (cart.length === 0) {
       window.localStorage.removeItem(storageKey);
-      return;
+      return true;
     }
 
     window.localStorage.setItem(storageKey, JSON.stringify(cart));
+    return true;
   } catch {
-    // Ignore storage write errors: the in-memory cart is still the source of truth for this render.
+    return false;
   }
 };
 
@@ -219,9 +239,10 @@ export default function GuestPageClient({
   const [staleTableSessionNotice, setStaleTableSessionNotice] = useState<string | null>(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSubmitError, setOrderSubmitError] = useState<string | null>(null);
+  const [recoveringPreviousOrder, setRecoveringPreviousOrder] = useState(false);
   const tableSessionIdRef = useRef<string | null>(null);
   const orderSubmittingRef = useRef(false);
-  const pendingOrderIdempotencyKeyRef = useRef<string | null>(null);
+  const attemptedRecoveryKeysRef = useRef(new Set<string>());
   const [cartPulseKeys, setCartPulseKeys] = useState<Record<string, number>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
   const cartRef = useRef<CartItem[]>([]);
@@ -404,10 +425,6 @@ export default function GuestPageClient({
   }, [cart]);
 
   useEffect(() => {
-    pendingOrderIdempotencyKeyRef.current = null;
-  }, [cart]);
-
-  useEffect(() => {
     if (!tableSessionId) {
       setCartStorageReadyForSessionId(null);
       return;
@@ -415,7 +432,9 @@ export default function GuestPageClient({
 
     cleanupOldCartStorage(tableSessionId);
     if (cartRef.current.length === 0) {
-      setCart(loadCartFromLocalStorage(tableSessionId));
+      const restoredCart = loadCartFromLocalStorage(tableSessionId);
+      cartRef.current = restoredCart;
+      setCart(restoredCart);
     }
 
     setCartStorageReadyForSessionId(tableSessionId);
@@ -538,6 +557,135 @@ export default function GuestPageClient({
     handleStaleTableSession,
   ]);
 
+  const reconcileConfirmedOrder = useCallback((submission: PendingOrderSubmission) => {
+    const inMemoryCart = cartRef.current;
+    const durableCart = loadCartFromLocalStorage(submission.tableSessionId);
+    const disposition = getConfirmedCartDisposition(
+      submission,
+      getPendingItemsFromCart(inMemoryCart),
+      getPendingItemsFromCart(durableCart)
+    );
+    // Prefer an unsaved local edit, otherwise honor another tab's durable cart update.
+    const nextCart = disposition === 'memory'
+      ? inMemoryCart
+      : disposition === 'durable'
+        ? durableCart
+        : [];
+
+    if (!saveCartToLocalStorage(submission.tableSessionId, nextCart)) return false;
+    cartRef.current = nextCart;
+    setCart(nextCart);
+    return true;
+  }, []);
+
+  const sendPendingOrder = useCallback(async (submission: PendingOrderSubmission, isRecovery = false) => {
+    if (orderSubmittingRef.current || !tableSessionId || submission.tableSessionId !== tableSessionId) {
+      return;
+    }
+
+    orderSubmittingRef.current = true;
+    setOrderSubmitting(true);
+    setRecoveringPreviousOrder(isRecovery);
+    if (isRecovery) setIsCartOpen(true);
+    setOrderSubmitError(null);
+
+    try {
+      const result = await executePendingOrderSubmission(
+        window.localStorage,
+        submission,
+        async (pending) => {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tableSessionId: pending.tableSessionId,
+              tableIdOrSlug,
+              idempotencyKey: pending.idempotencyKey,
+              items: pending.items,
+            }),
+          });
+
+          const movedNotice = await getMovedTableSessionNotice(res);
+          const body = await res.clone().json().catch(() => null) as Record<string, unknown> | null;
+          const errorMessage = typeof body?.error === 'string' ? body.error : '';
+
+          if (res.ok) {
+            const order = body?.order;
+            if (order && typeof order === 'object' && 'id' in order && typeof order.id === 'string') {
+              return { kind: 'success' as const, value: body };
+            }
+            return { kind: 'uncertain' as const };
+          }
+
+          const isLifecycleConflict = Boolean(
+            movedNotice ||
+            res.status === 409 ||
+            await isInactiveTableSessionResponse(res) ||
+            (res.status === 404 && body?.isClosed === true)
+          );
+          if (isLifecycleConflict) {
+            return { kind: 'lifecycle' as const, value: { body, movedNotice, errorMessage } };
+          }
+          if (res.status >= 500) {
+            return { kind: 'uncertain' as const, value: { errorMessage } };
+          }
+          return { kind: 'rejected' as const, value: { errorMessage } };
+        }
+      );
+
+      if (result.kind === 'success') {
+        const finalized = finalizeConfirmedPendingOrder(
+          window.localStorage,
+          submission,
+          () => reconcileConfirmedOrder(submission)
+        );
+        if (finalized && cartRef.current.length === 0) {
+          setIsCartOpen(false);
+          setOrderSubmitError(null);
+        } else if (finalized) {
+          setOrderSubmitError('Предыдущая отправка подтверждена. Текущая корзина сохранена — отправьте её отдельно.');
+        } else {
+          setOrderSubmitError('Заказ подтверждён. Корзина и ключ сохранены до завершения синхронизации.');
+        }
+        setStaleTableSessionNotice(null);
+        await fetchSessionState();
+      } else if (result.kind === 'lifecycle') {
+        const value = result.value as { body?: Record<string, unknown> | null; movedNotice?: MovedTableSessionNotice | null } | undefined;
+        if (value?.movedNotice) {
+          handleMovedTableSession(value.movedNotice);
+        } else {
+          await refreshTableSession().catch(() => {});
+          handleStaleTableSession();
+          setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
+        }
+      } else if (result.kind === 'rejected') {
+        const value = result.value as { errorMessage?: string } | undefined;
+        setOrderSubmitError(value?.errorMessage || 'Не удалось отправить заказ. Проверьте корзину и повторите попытку.');
+      } else {
+        setOrderSubmitError('Не удалось подтвердить отправку. Корзина сохранена; повторите проверку — она использует ту же попытку.');
+      }
+    } catch (error) {
+      console.error(error);
+      setOrderSubmitError(error instanceof Error
+        ? error.message
+        : 'Не удалось сохранить состояние отправки заказа. Корзина сохранена.');
+    } finally {
+      orderSubmittingRef.current = false;
+      setOrderSubmitting(false);
+      setRecoveringPreviousOrder(false);
+    }
+  }, [
+    tableSessionId,
+    tableIdOrSlug,
+    getMovedTableSessionNotice,
+    isInactiveTableSessionResponse,
+    fetchSessionState,
+    refreshTableSession,
+    handleMovedTableSession,
+    handleStaleTableSession,
+    reconcileConfirmedOrder,
+  ]);
+
   useEffect(() => {
     fetchSessionState();
     const interval = setInterval(fetchSessionState, 10000);
@@ -564,9 +712,13 @@ export default function GuestPageClient({
     setCart(prev => {
       const existing = prev.find(i => i.item.id === item.id && i.choice === choice && i.notes === notes);
       if (existing) {
-        return prev.map(i => i === existing ? { ...i, quantity: i.quantity + 1 } : i);
+        const nextCart = prev.map(i => i === existing ? { ...i, quantity: i.quantity + 1 } : i);
+        cartRef.current = nextCart;
+        return nextCart;
       }
-      return [...prev, { item, quantity: 1, choice, notes }];
+      const nextCart = [...prev, { item, quantity: 1, choice, notes }];
+      cartRef.current = nextCart;
+      return nextCart;
     });
   };
 
@@ -582,6 +734,7 @@ export default function GuestPageClient({
           newCart.splice(index, 1);
         }
       }
+      cartRef.current = newCart;
       return newCart;
     });
   };
@@ -626,102 +779,111 @@ export default function GuestPageClient({
       setOrderSubmitError('Нет активной сессии стола.');
       return;
     }
-
-    orderSubmittingRef.current = true;
-    setOrderSubmitting(true);
-    setOrderSubmitError(null);
-
-    if (!pendingOrderIdempotencyKeyRef.current) {
-      pendingOrderIdempotencyKeyRef.current = crypto.randomUUID();
-    }
-
-    const orderPayload = {
-      tableSessionId,
-      tableIdOrSlug,
-      idempotencyKey: pendingOrderIdempotencyKeyRef.current,
-      totalAmount: cartTotal,
-      items: cart.map(item => ({
-        id: item.item.id,
-        name: item.item.name,
-        source: item.item.source,
-        quantity: item.quantity,
-        price: getDisplayedPrice(item.item),
-        options: item.choice || item.notes ? {
-          ...(item.choice ? { choice: item.choice } : {}),
-          ...(item.notes ? { notes: item.notes } : {})
-        } : undefined
-      }))
-    };
+    // React state may lag another tab's localStorage update. Re-read the durable
+    // cart before minting or reusing a submission key.
+    const durableCart = loadCartFromLocalStorage(tableSessionId);
+    cartRef.current = durableCart;
+    setCart(durableCart);
+    if (durableCart.length === 0) return;
 
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderPayload)
-      });
+      const browserLocks = typeof navigator !== 'undefined' && 'locks' in navigator
+        ? navigator.locks
+        : undefined;
+      const prepared = await preparePendingOrderSubmission(
+        window.localStorage,
+        browserLocks,
+        tableSessionId,
+        getPendingItemsFromCart(durableCart),
+        () => crypto.randomUUID()
+      );
 
-      if (!res.ok) {
-        let errorBody: Record<string, unknown> | null = null;
-        let errorMessage = '';
-        try {
-          errorBody = await res.json();
-          errorMessage = typeof errorBody?.error === 'string' ? errorBody.error : '';
-        } catch {}
-
-        if (res.status === 409 && errorBody?.code === 'TABLE_SESSION_MOVED') {
-          const targetTableName = typeof errorBody.targetTableName === 'string' ? errorBody.targetTableName : '';
-          const targetTableQrSlug = typeof errorBody.targetTableQrSlug === 'string' ? errorBody.targetTableQrSlug : '';
-          handleMovedTableSession({
-            message: targetTableName
-              ? `Вас пересадили за ${targetTableName}. Старый QR больше не принимает заказы. Откройте новый стол — корзина сохранена.`
-              : 'Вас пересадили за другой стол. Старый QR больше не принимает заказы. Откройте QR нового стола — корзина сохранена.',
-            targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
-            targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
-          });
-          return;
-        }
-
-        const normalizedError = errorMessage.toLowerCase();
-        const isStaleSessionError =
-          (res.status === 400 || res.status === 404) &&
-          (
-            normalizedError.includes('table session is not active') ||
-            normalizedError.includes('session') ||
-            normalizedError.includes('closed') ||
-            normalizedError.includes('inactive')
-          );
-
-        if (isStaleSessionError) {
-          await refreshTableSession();
-          handleStaleTableSession();
-          setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
-          return;
-        }
-        if (errorMessage) {
-          setOrderSubmitError(errorMessage);
-          return;
-        }
-
-        throw new Error('Не удалось отправить заказ');
+      if (prepared.submission.status === 'lifecycle_blocked') {
+        setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
+        return;
       }
 
-      await res.json();
-      await fetchSessionState();
-      setIsCartOpen(false);
-      saveCartToLocalStorage(tableSessionId, []);
-      setCart([]);
-      setStaleTableSessionNotice(null);
-      pendingOrderIdempotencyKeyRef.current = null;
+      await sendPendingOrder(prepared.submission, !prepared.matchesRequestedCart);
     } catch (err) {
-      console.error(err);
-      setOrderSubmitError('Ошибка при отправке заказа. Пожалуйста, попробуйте еще раз.');
-    } finally {
-      orderSubmittingRef.current = false;
-      setOrderSubmitting(false);
+      setOrderSubmitError(err instanceof Error
+        ? err.message
+        : 'Не удалось подготовить отправку заказа. Корзина сохранена.');
     }
   };
+
+  useEffect(() => {
+    if (!tableSessionId || cartStorageReadyForSessionId !== tableSessionId) return;
+
+    let submission: PendingOrderSubmission | null;
+    try {
+      submission = readPendingOrderSubmission(window.localStorage, tableSessionId);
+    } catch (error) {
+      setOrderSubmitError(error instanceof Error ? error.message : 'Не удалось восстановить отправку заказа.');
+      return;
+    }
+    if (!submission) return;
+
+    if (submission.status === 'confirmed') {
+      const finalized = finalizeConfirmedPendingOrder(
+        window.localStorage,
+        submission,
+        () => reconcileConfirmedOrder(submission)
+      );
+      if (!finalized) {
+        setOrderSubmitError('Заказ подтверждён. Корзина и ключ сохранены до завершения синхронизации.');
+      }
+      return;
+    }
+
+    if (submission.status === 'rejected') {
+      setOrderSubmitError('Предыдущая отправка была отклонена. Исправьте корзину и повторите попытку.');
+      return;
+    }
+    if (submission.status === 'lifecycle_blocked') {
+      setOrderSubmitError(CLOSED_SESSION_SUBMIT_MESSAGE);
+      return;
+    }
+    if (!shouldRecoverPendingOrderOnLoad(submission)) return;
+
+    const recoveryKey = `${submission.tableSessionId}:${submission.idempotencyKey}`;
+    if (attemptedRecoveryKeysRef.current.has(recoveryKey)) return;
+    attemptedRecoveryKeysRef.current.add(recoveryKey);
+    void sendPendingOrder(submission, true);
+  }, [tableSessionId, cartStorageReadyForSessionId, sendPendingOrder, reconcileConfirmedOrder]);
+
+  useEffect(() => {
+    if (!tableSessionId || cartStorageReadyForSessionId !== tableSessionId) return;
+
+    const cartKey = getCartStorageKey(tableSessionId);
+    const pendingKey = `harlem_pending_order:${encodeURIComponent(tableSessionId)}`;
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage) return;
+
+      if (event.key === cartKey) {
+        const nextCart = loadCartFromLocalStorage(tableSessionId);
+        cartRef.current = nextCart;
+        setCart(nextCart);
+      }
+
+      if (event.key === pendingKey) {
+        try {
+          const pending = readPendingOrderSubmission(window.localStorage, tableSessionId);
+          if (pending?.status === 'confirmed') {
+            finalizeConfirmedPendingOrder(
+              window.localStorage,
+              pending,
+              () => reconcileConfirmedOrder(pending)
+            );
+          }
+        } catch (error) {
+          setOrderSubmitError(error instanceof Error ? error.message : 'Не удалось синхронизировать отправку заказа.');
+        }
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [tableSessionId, cartStorageReadyForSessionId, reconcileConfirmedOrder]);
 
   const callStaff = async (reason: string) => {
     if (!tableSessionId) return;
@@ -1104,6 +1266,12 @@ export default function GuestPageClient({
 
       {/* Main Content */}
       <main className={`flex-1 pb-[calc(7rem+env(safe-area-inset-bottom))] ${((billData && billData.totalAmount > 0) || activeOrder) ? 'pt-6' : 'pt-2'}`}>
+
+        {recoveringPreviousOrder && (
+          <div role="status" className="mx-5 mb-4 rounded-xl border border-primary/20 bg-primary/10 p-3 text-sm text-primary">
+            Проверяем предыдущую отправку…
+          </div>
+        )}
 
         {/* Bill block */}
         {billData && billData.totalAmount > 0 && (
@@ -1773,6 +1941,9 @@ export default function GuestPageClient({
                   <span>{orderSubmitError}</span>
                 </div>
               )}
+              {recoveringPreviousOrder && (
+                <p role="status" className="mb-3 text-sm text-muted-foreground">Проверяем предыдущую отправку…</p>
+              )}
               <Button
                 className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                 onClick={submitOrder}
@@ -1781,7 +1952,7 @@ export default function GuestPageClient({
                 {orderSubmitting ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                 ) : null}
-                {orderSubmitting ? 'Отправка...' : 'Отправить заказ'}
+                {orderSubmitting ? (recoveringPreviousOrder ? 'Проверяем отправку...' : 'Отправка...') : 'Отправить заказ'}
               </Button>
             </div>
           )}
