@@ -14,6 +14,10 @@ import {
   type PendingOrderItem,
   type PendingOrderSubmission,
 } from '@/lib/pending-order-submission';
+import {
+  recoverBrowserTableSession,
+  writeBrowserTableSessionMarker,
+} from '@/lib/moved-session-recovery';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -288,6 +292,14 @@ export default function GuestPageClient({
     const targetTableQrSlug = 'targetTableQrSlug' in body && typeof body.targetTableQrSlug === 'string'
       ? body.targetTableQrSlug
       : '';
+    if (tableSessionId && targetTableQrSlug) {
+      writeBrowserTableSessionMarker(window.localStorage, {
+        sourceTableIdOrSlug: tableIdOrSlug,
+        tableSessionId,
+        targetTableIdOrSlug: targetTableQrSlug,
+        targetTableName,
+      });
+    }
 
     return {
       message: targetTableName
@@ -296,7 +308,7 @@ export default function GuestPageClient({
       targetUrl: targetTableQrSlug ? `/t/${targetTableQrSlug}` : undefined,
       targetLabel: targetTableName ? `Открыть ${targetTableName}` : undefined,
     };
-  }, []);
+  }, [tableIdOrSlug, tableSessionId]);
 
   const isClosedTableSessionResponse = useCallback(async (res: Response) => {
     if (res.status !== 404) {
@@ -342,6 +354,35 @@ export default function GuestPageClient({
     setOrderSubmitError(notice.message);
   }, []);
 
+  const applyTableSessionResponse = useCallback((data: { serverNow?: unknown; table?: Table; session?: { id?: unknown } }) => {
+    const serverTime = typeof data.serverNow === 'string' ? Date.parse(data.serverNow) : NaN;
+    if (!Number.isFinite(serverTime) || typeof data.session?.id !== 'string') {
+      throw new Error('Invalid table session recovery response');
+    }
+    serverTimeAnchorRef.current = { time: serverTime, monotonicTime: performance.now() };
+    setPricingNow(new Date(serverTime));
+    const nextTableName = typeof data.table?.name === 'string' ? data.table.name.trim() : '';
+    const nextTableIdOrSlug = data.table?.qrSlug || data.table?.id;
+    if (nextTableName) setDisplayTableName(nextTableName);
+    if (nextTableIdOrSlug) {
+      writeBrowserTableSessionMarker(window.localStorage, {
+        sourceTableIdOrSlug: tableIdOrSlug,
+        tableSessionId: data.session.id,
+        targetTableIdOrSlug: nextTableIdOrSlug,
+        targetTableName: nextTableName,
+      });
+    }
+
+    const previousSessionId = tableSessionIdRef.current;
+    if (previousSessionId && previousSessionId !== data.session.id) {
+      setActiveOrder(null);
+      setBillData(null);
+    }
+    tableSessionIdRef.current = data.session.id;
+    setTableSessionId(data.session.id);
+    setMovedTableSessionNotice(null);
+  }, [tableIdOrSlug]);
+
   const refreshTableSession = useCallback(async (showLoading = false) => {
     try {
       if (showLoading) {
@@ -357,28 +398,7 @@ export default function GuestPageClient({
       }
 
       const data = await res.json();
-      const serverTime = typeof data.serverNow === 'string' ? Date.parse(data.serverNow) : NaN;
-      if (!Number.isFinite(serverTime)) {
-        throw new Error('Invalid server time');
-      }
-      serverTimeAnchorRef.current = { time: serverTime, monotonicTime: performance.now() };
-      setPricingNow(new Date(serverTime));
-      const nextTableName = typeof data.table?.name === 'string' ? data.table.name.trim() : '';
-      if (nextTableName) {
-        setDisplayTableName(nextTableName);
-      }
-
-      const nextSessionId = data.session.id;
-      const previousSessionId = tableSessionIdRef.current;
-
-      if (previousSessionId && previousSessionId !== nextSessionId) {
-        setActiveOrder(null);
-        setBillData(null);
-      }
-
-      tableSessionIdRef.current = nextSessionId;
-      setTableSessionId(nextSessionId);
-      setMovedTableSessionNotice(null);
+      applyTableSessionResponse(data);
     } catch (err) {
       console.error(err);
       setSessionError('Не удалось загрузить сессию стола. Пожалуйста, обновите страницу.');
@@ -388,11 +408,72 @@ export default function GuestPageClient({
         setSessionLoading(false);
       }
     }
-  }, [tableIdOrSlug]);
+  }, [tableIdOrSlug, applyTableSessionResponse]);
 
   useEffect(() => {
-    refreshTableSession(true).catch(() => {});
-  }, [refreshTableSession]);
+    let cancelled = false;
+    const initializeSession = async () => {
+      try {
+        const recovery = await recoverBrowserTableSession(
+          window.localStorage,
+          tableIdOrSlug,
+          async (marker) => {
+            const url = `/api/table-sessions/${encodeURIComponent(marker.tableSessionId)}/recovery?sourceTableIdOrSlug=${encodeURIComponent(tableIdOrSlug)}&ts=${Date.now()}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            const body = await res.json().catch(() => null);
+            if (res.ok && body?.session?.id === marker.tableSessionId && body?.table) {
+              const targetTableIdOrSlug = typeof body.table.qrSlug === 'string' ? body.table.qrSlug : body.table.id;
+              if (typeof targetTableIdOrSlug !== 'string') return { kind: 'unavailable' as const };
+              return {
+                kind: 'active' as const,
+                targetTableIdOrSlug,
+                targetTableName: typeof body.table.name === 'string' ? body.table.name : '',
+                value: body,
+              };
+            }
+            if (res.status === 409 && body?.code === 'TABLE_SESSION_MOVED' && typeof body.targetTableQrSlug === 'string') {
+              return {
+                kind: 'moved' as const,
+                targetTableIdOrSlug: body.targetTableQrSlug,
+                targetTableName: typeof body.targetTableName === 'string' ? body.targetTableName : '',
+              };
+            }
+            if (res.status === 404 && ['TABLE_SESSION_NOT_FOUND', 'TABLE_SESSION_INACTIVE'].includes(body?.code)) {
+              return { kind: 'inactive' as const };
+            }
+            return { kind: 'unavailable' as const };
+          }
+        );
+        if (cancelled) return;
+
+        if (recovery.kind === 'none' || recovery.kind === 'inactive') {
+          await refreshTableSession(true);
+        } else if (recovery.kind === 'active') {
+          setSessionLoading(true);
+          setSessionError(null);
+          applyTableSessionResponse(recovery.value);
+          setSessionLoading(false);
+        } else if (recovery.kind === 'moved') {
+          const targetUrl = `/t/${encodeURIComponent(recovery.marker.targetTableIdOrSlug)}`;
+          window.location.replace(targetUrl);
+        } else if (recovery.kind === 'invalid') {
+          setSessionLoading(false);
+          setSessionError('Не удалось проверить сохранённую пересадку. Корзина сохранена: откройте QR нового стола или обратитесь к персоналу.');
+        } else {
+          setSessionLoading(false);
+          setSessionError('Не удалось проверить текущий визит. Корзина сохранена; обновите страницу, чтобы повторить восстановление.');
+        }
+      } catch {
+        if (!cancelled) {
+          setSessionLoading(false);
+          setSessionError('Не удалось загрузить сессию стола. Корзина сохранена; обновите страницу и повторите попытку.');
+        }
+      }
+    };
+
+    void initializeSession();
+    return () => { cancelled = true; };
+  }, [tableIdOrSlug, refreshTableSession, applyTableSessionResponse]);
 
   useEffect(() => {
     if (!tableSessionId || !serverTimeAnchorRef.current) return;
