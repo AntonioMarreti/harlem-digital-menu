@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { Category, MenuItem, Table } from '@/lib/mock-data';
+import { getCanonicalMenuItemPrice, isHarlemDaytime, millisecondsUntilNextHookahPriceChange } from '@/lib/menu-pricing';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,6 +127,8 @@ export default function GuestPageClient({
   menuItems: MenuItem[];
 }) {
   const [tableSessionId, setTableSessionId] = useState<string | null>(null);
+  const [pricingNow, setPricingNow] = useState<Date | null>(null);
+  const serverTimeAnchorRef = useRef<{ time: number; monotonicTime: number } | null>(null);
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id || "cat_hookah");
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
@@ -330,6 +333,12 @@ export default function GuestPageClient({
       }
 
       const data = await res.json();
+      const serverTime = typeof data.serverNow === 'string' ? Date.parse(data.serverNow) : NaN;
+      if (!Number.isFinite(serverTime)) {
+        throw new Error('Invalid server time');
+      }
+      serverTimeAnchorRef.current = { time: serverTime, monotonicTime: performance.now() };
+      setPricingNow(new Date(serverTime));
       const nextTableName = typeof data.table?.name === 'string' ? data.table.name.trim() : '';
       if (nextTableName) {
         setDisplayTableName(nextTableName);
@@ -360,6 +369,32 @@ export default function GuestPageClient({
   useEffect(() => {
     refreshTableSession(true).catch(() => {});
   }, [refreshTableSession]);
+
+  useEffect(() => {
+    if (!tableSessionId || !serverTimeAnchorRef.current) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    const updatePriceTime = () => {
+      const anchor = serverTimeAnchorRef.current;
+      if (!anchor) return;
+      const now = new Date(anchor.time + performance.now() - anchor.monotonicTime);
+      setPricingNow(now);
+      timer = setTimeout(updatePriceTime, millisecondsUntilNextHookahPriceChange(now) + 50);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        clearTimeout(timer);
+        updatePriceTime();
+      }
+    };
+
+    updatePriceTime();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [tableSessionId]);
 
   useEffect(() => {
     cartRef.current = cart;
@@ -516,7 +551,10 @@ export default function GuestPageClient({
   const [hookahNotes, setHookahNotes] = useState('');
   const [selectedHookahItem, setSelectedHookahItem] = useState<MenuItem | null>(null);
 
-  const cartTotal = cart.reduce((total, cartItem) => total + (cartItem.item.price * cartItem.quantity), 0);
+  const getDisplayedPrice = (item: MenuItem) =>
+    pricingNow ? (getCanonicalMenuItemPrice(item.id, pricingNow) ?? item.price) : item.price;
+
+  const cartTotal = cart.reduce((total, cartItem) => total + (getDisplayedPrice(cartItem.item) * cartItem.quantity), 0);
   const cartCount = cart.reduce((count, cartItem) => count + cartItem.quantity, 0);
 
   const addToCart = (item: MenuItem, notes?: string) => {
@@ -605,7 +643,7 @@ export default function GuestPageClient({
         name: item.item.name,
         source: item.item.source,
         quantity: item.quantity,
-        price: item.item.price,
+        price: getDisplayedPrice(item.item),
         options: item.notes ? { notes: item.notes } : undefined
       }))
     };
@@ -809,7 +847,7 @@ export default function GuestPageClient({
                 </Badge>
               )}
             </div>
-            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
+            <span className="font-semibold text-primary whitespace-nowrap">{getDisplayedPrice(item)} ₽</span>
           </CardHeader>
           <CardContent className="px-3 pb-2 pt-0 text-sm text-muted-foreground leading-snug">
             {item.description}
@@ -885,7 +923,7 @@ export default function GuestPageClient({
 
           {/* Right Column: Coherent Action */}
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <span className="font-semibold text-primary whitespace-nowrap">{item.price} ₽</span>
+            <span className="font-semibold text-primary whitespace-nowrap">{getDisplayedPrice(item)} ₽</span>
 
             <div>
               {!isItemAvailable ? (
@@ -1255,19 +1293,19 @@ export default function GuestPageClient({
                         </Fragment>
                       );
                     })}
-                  {cat.id === 'cat_hookah' && (
+                  {cat.id === 'cat_hookah' && pricingNow && isHarlemDaytime(pricingNow) && (
                     <Card className="p-3.5 bg-primary/5 border-primary/20 rounded-xl flex items-start gap-3 mt-2 shadow-sm">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                         <Clock className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 flex flex-col min-w-0">
                         <div className="font-semibold text-foreground text-sm leading-tight mb-0.5">
-                          Дневной кальян до 17:00
+                          Дневной кальян с 13:00 до 17:00
                         </div>
                         <div className="text-xs font-medium text-primary flex flex-wrap gap-x-1 mb-1">
-                          <span className="whitespace-nowrap">Стандарт — 700&nbsp;₽</span>
+                          <span className="whitespace-nowrap">Стандарт — {getCanonicalMenuItemPrice('item_1', pricingNow)}&nbsp;₽</span>
                           <span className="text-primary/50">·</span>
-                          <span className="whitespace-nowrap">Премиум — 999&nbsp;₽</span>
+                          <span className="whitespace-nowrap">Премиум — {getCanonicalMenuItemPrice('item_2', pricingNow)}&nbsp;₽</span>
                         </div>
                         <div className="text-[11px] text-muted-foreground leading-tight">
                           Успейте заказать до 17:00
@@ -1321,7 +1359,7 @@ export default function GuestPageClient({
               {selectedDrawerItem?.name}
             </DrawerTitle>
             <DrawerDescription className="text-muted-foreground">
-              {itemDrawerMode === 'choice' ? 'Выберите вариант' : (selectedDrawerItem?.price + ' ₽')}
+              {itemDrawerMode === 'choice' ? 'Выберите вариант' : (selectedDrawerItem ? `${getDisplayedPrice(selectedDrawerItem)} ₽` : '')}
             </DrawerDescription>
             {itemDrawerMode === 'choice' && (selectedDrawerItem?.choiceAvailabilityScope === 'shared_tea' || (!selectedDrawerItem?.choiceAvailabilityScope && selectedDrawerItem?.categoryId === 'cat_tea')) && (
               <div className="mt-4 relative">
@@ -1441,7 +1479,7 @@ export default function GuestPageClient({
                   }
                 }}
               >
-                Добавить • {selectedDrawerItem?.price} ₽
+                Добавить • {selectedDrawerItem ? getDisplayedPrice(selectedDrawerItem) : ''} ₽
               </Button>
             )}
           </div>
@@ -1533,7 +1571,7 @@ export default function GuestPageClient({
           </ScrollArea>
           <DrawerFooter className="pt-2 pb-6 border-t border-border/20 bg-card/80 backdrop-blur-sm">
             <Button className="w-full rounded-full py-6 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" onClick={confirmHookahBuild}>
-              Добавить • {selectedHookahItem?.price} ₽
+              Добавить • {selectedHookahItem ? getDisplayedPrice(selectedHookahItem) : ''} ₽
             </Button>
             <DrawerClose asChild>
               <Button variant="ghost" className="rounded-full w-full">Отмена</Button>
@@ -1621,7 +1659,7 @@ export default function GuestPageClient({
                                           </Badge>
                                         )}
                                       </div>
-                                      <p className="font-semibold">{cartItem.item.price * cartItem.quantity} ₽</p>
+                                      <p className="font-semibold">{getDisplayedPrice(cartItem.item) * cartItem.quantity} ₽</p>
                                     </div>
                                     {cartItem.notes && (
                                       <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
@@ -1671,7 +1709,7 @@ export default function GuestPageClient({
                                           </Badge>
                                         )}
                                       </div>
-                                      <p className="font-semibold">{cartItem.item.price * cartItem.quantity} ₽</p>
+                                      <p className="font-semibold">{getDisplayedPrice(cartItem.item) * cartItem.quantity} ₽</p>
                                     </div>
                                     {cartItem.notes && (
                                       <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg mt-2 leading-relaxed">
