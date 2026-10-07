@@ -1300,7 +1300,7 @@ export default function GuestPageClient({
                       </div>
                       <div className="flex-1 flex flex-col min-w-0">
                         <div className="font-semibold text-foreground text-sm leading-tight mb-0.5">
-                          Дневной кальян до 17:00
+                          Дневной кальян с 13:00 до 17:00
                         </div>
                         <div className="text-xs font-medium text-primary flex flex-wrap gap-x-1 mb-1">
                           <span className="whitespace-nowrap">Стандарт — {getCanonicalMenuItemPrice('item_1', pricingNow)}&nbsp;₽</span>

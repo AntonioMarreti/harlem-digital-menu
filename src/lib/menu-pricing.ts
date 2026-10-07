@@ -6,6 +6,9 @@ const DAYTIME_HOOKAH_PRICES: Record<string, number> = {
   item_1: 700,
   item_2: 999,
 };
+const DAYTIME_START_SECONDS = 13 * 60 * 60;
+const DAYTIME_END_SECONDS = 17 * 60 * 60;
+const SECONDS_PER_DAY = 24 * 60 * 60;
 
 const menuItemById = new Map(menuItems.map((item) => [item.id, item]));
 const harlemClock = new Intl.DateTimeFormat('en-GB', {
@@ -25,7 +28,8 @@ function getHarlemSecondsSinceMidnight(at: Date): number {
 }
 
 export function isHarlemDaytime(at: Date): boolean {
-  return getHarlemSecondsSinceMidnight(at) < 17 * 60 * 60;
+  const seconds = getHarlemSecondsSinceMidnight(at);
+  return seconds >= DAYTIME_START_SECONDS && seconds < DAYTIME_END_SECONDS;
 }
 
 export function getCanonicalMenuItemPrice(itemId: string, at: Date): number | null {
@@ -53,6 +57,10 @@ export function getCanonicalOrderItemPrice(
 // The guest clock is anchored to server time; wake it at the next local price boundary.
 export function millisecondsUntilNextHookahPriceChange(at: Date): number {
   const seconds = getHarlemSecondsSinceMidnight(at);
-  const nextBoundary = seconds < 17 * 3600 ? 17 * 3600 : 24 * 3600;
+  const nextBoundary = seconds < DAYTIME_START_SECONDS
+    ? DAYTIME_START_SECONDS
+    : seconds < DAYTIME_END_SECONDS
+      ? DAYTIME_END_SECONDS
+      : SECONDS_PER_DAY + DAYTIME_START_SECONDS;
   return (nextBoundary - seconds) * 1000 - at.getMilliseconds();
 }
