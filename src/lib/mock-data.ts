@@ -189,7 +189,7 @@ export const menuItems: MenuItem[] = [
     { label: 'Молочный Улун', description: 'китайский улун с ароматом молока.', group: 'Зелёный чай и улун' },
     { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
-  ] },
+  ], choiceAvailabilityScope: 'shared_tea' },
   { id: 'tea_2', categoryId: 'cat_tea', name: 'Чай 900 мл', description: '', price: 280, isAvailable: true, searchAliases: ["эрлгрей","earl grey","пуэр","puer","дахунпао","da hong pao","тегуаньинь","tie guan yin"] , source: 'harlem', sourceLabel: 'Харлем', choices: [
     { label: 'Эрл Грей', description: 'смесь китайских, цейлонских и индийских чаёв, ароматизированная натуральными маслами бергамота.', group: 'Чёрный чай' },
     { label: 'Горный Чабрец', description: 'чёрный цейлонский чай, чабрец.', group: 'Чёрный чай' },
@@ -208,7 +208,7 @@ export const menuItems: MenuItem[] = [
     { label: 'Молочный Улун', description: 'китайский улун с ароматом молока.', group: 'Зелёный чай и улун' },
     { label: 'Жасмин', description: 'китайский чай со свежими бутонами жасмина, нежный цветочный аромат и сладковатый вкус.', group: 'Зелёный чай и улун' },
     { label: 'Сенча', description: 'зелёный японский чай со вкусом свежескошенной травы и цветочно-терпким ароматом.', group: 'Зелёный чай и улун' }
-  ] },
+  ], choiceAvailabilityScope: 'shared_tea' },
   { id: 'tea_3', categoryId: 'cat_tea', name: 'Саган дайля', description: '', price: 120, isAvailable: true, searchAliases: ["саган","саган дайля"] , source: 'harlem', sourceLabel: 'Харлем' },
   { id: 'tea_4', categoryId: 'cat_tea', name: 'Добавка к чаю', description: '', price: 40, isAvailable: true, source: 'harlem', sourceLabel: 'Харлем', choiceActionLabel: 'Выбрать добавку', choiceNoteLabel: 'Добавка: ', choiceAvailabilityScope: 'item', choices: [{ label: 'мята горная' }, { label: 'чабрец' }, { label: 'мята свежая' }, { label: 'лимон' }, { label: 'мёд' }, { label: 'сироп' }] },
   { id: 'tea_5', categoryId: 'cat_tea', name: 'Эспрессо', shortDescription: '50 мл', description: '', price: 120, isAvailable: true, searchAliases: ["эспрессо кофе"] , source: 'harlem', sourceLabel: 'Харлем' },

@@ -6,12 +6,12 @@ import { eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
 import { getCanonicalOrderItemPrice } from '@/lib/menu-pricing';
+import { validateCanonicalItemOptions } from '@/lib/menu-choices';
 import { createIdempotentOrder, createNeonOrderWritePort } from '@/lib/order-persistence';
 import { TableSessionNotActiveError } from '@/lib/table-session-lifecycle';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
-const MAX_ITEM_NOTES_LENGTH = 500;
 const MIN_IDEMPOTENCY_KEY_LENGTH = 8;
 const MAX_IDEMPOTENCY_KEY_LENGTH = 128;
 
@@ -23,40 +23,6 @@ type IncomingOrderItem = {
   quantity?: unknown;
   options?: unknown;
 };
-
-function getNormalizedItemOptions(options: unknown) {
-  if (options === undefined || options === null) {
-    return { ok: true as const, value: null };
-  }
-
-  if (typeof options !== 'object' || Array.isArray(options)) {
-    return { ok: false as const, error: 'Invalid item options' };
-  }
-
-  if (!('notes' in options)) {
-    return { ok: true as const, value: null };
-  }
-
-  const notes = (options as { notes?: unknown }).notes;
-  if (notes === undefined || notes === null) {
-    return { ok: true as const, value: null };
-  }
-
-  if (typeof notes !== 'string') {
-    return { ok: false as const, error: 'Invalid item notes' };
-  }
-
-  const trimmedNotes = notes.trim();
-  if (!trimmedNotes) {
-    return { ok: true as const, value: null };
-  }
-
-  if (trimmedNotes.length > MAX_ITEM_NOTES_LENGTH) {
-    return { ok: false as const, error: 'Item notes are too long' };
-  }
-
-  return { ok: true as const, value: { notes: trimmedNotes } };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -220,43 +186,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 });
       }
 
-      const normalizedOptions = getNormalizedItemOptions(item.options);
+      const normalizedOptions = validateCanonicalItemOptions(canonicalItem, item.options, availabilityMap);
       if (!normalizedOptions.ok) {
         logWarn('order.rejected', {
-          code: 'INVALID_ITEM_OPTIONS',
+          code: normalizedOptions.code,
           tableSessionId,
           tableIdOrSlug: safeTableIdOrSlug,
-          itemCount: items.length,
+          itemId: menuItemId,
         });
-        return NextResponse.json({ error: normalizedOptions.error }, { status: 400 });
-      }
-
-      let choiceLabel: string | null = null;
-      if (normalizedOptions.value?.notes) {
-        const notes = normalizedOptions.value.notes;
-        if (notes.startsWith('Сорт: ')) {
-          choiceLabel = notes.substring('Сорт: '.length).trim();
-        } else if (notes.startsWith('Вкус: ')) {
-          choiceLabel = notes.substring('Вкус: '.length).trim();
-        }
-      }
-
-      if (choiceLabel) {
-        const variantId = canonicalItem.categoryId === 'cat_tea' ? `tea::${choiceLabel}` : `${menuItemId}::${choiceLabel}`;
-        const isVariantAvailable = availabilityMap.get(variantId) ?? true;
-        if (!isVariantAvailable) {
-          logWarn('order.rejected', {
-            code: 'VARIANT_UNAVAILABLE',
-            tableSessionId,
-            tableIdOrSlug: safeTableIdOrSlug,
-            itemId: menuItemId,
-            variantId,
-          });
-          return NextResponse.json({
-            error: `Вариант «${choiceLabel}» для товара «${canonicalItem.name}» временно недоступен`,
-            code: 'VARIANT_UNAVAILABLE'
-          }, { status: 400 });
-        }
+        return NextResponse.json({ error: normalizedOptions.error, code: normalizedOptions.code }, { status: 400 });
       }
 
       const canonicalPrice = getCanonicalOrderItemPrice(item, pricedAt)!;

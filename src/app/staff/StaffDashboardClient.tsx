@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { categories, menuItems } from '@/lib/mock-data';
+import { getChoiceAvailabilityId, getDisplayChoice, getDisplayNotes } from '@/lib/menu-choices';
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
@@ -100,25 +101,23 @@ function formatTableLabel(tableName?: string | null, tableQrSlug?: string | null
   return `Стол ${qrSlug}`;
 }
 
-function formatOrderItemOptions(options: unknown): string[] {
-  if (!options || typeof options !== 'object' || !('notes' in options)) {
-    return [];
+function formatOrderItemOptions(options: unknown, menuItemId: string): string[] {
+  const lines: string[] = [];
+  const choice = getDisplayChoice(options);
+  if (choice) {
+    const item = menuItems.find((candidate) => candidate.id === menuItemId);
+    const prefix = item?.choiceNoteLabel || (item?.categoryId === 'cat_tea' ? 'Сорт: ' : 'Вкус: ');
+    lines.push(`${prefix}${choice}`);
   }
 
-  const notes = (options as { notes?: unknown }).notes;
+  const notes = getDisplayNotes(options);
+  if (!notes) return lines;
 
-  if (typeof notes !== 'string') {
-    return [];
-  }
-
-  const trimmedNotes = notes.trim();
-  if (!trimmedNotes) {
-    return [];
-  }
-
-  const legacyMatch = trimmedNotes.match(/^Strength:\s*([^,]+),\s*Taste:\s*([^-]+?)(?:\s*-\s*(.+))?$/i);
+  const legacyMatch = notes.match(/^Strength:\s*([^,]+),\s*Taste:\s*([^-]+?)(?:\s*-\s*(.+))?$/i);
   if (!legacyMatch) {
-    return trimmedNotes
+    return [
+      ...lines,
+      ...notes
       .split(';')
       .map((line) => line.trim())
       .filter(Boolean)
@@ -130,7 +129,8 @@ function formatOrderItemOptions(options: unknown): string[] {
           return `Пожелания:${line.slice(line.indexOf(':') + 1)}`;
         }
         return line;
-      });
+      })
+    ];
   }
 
   const strengthLabels: Record<string, string> = {
@@ -151,7 +151,7 @@ function formatOrderItemOptions(options: unknown): string[] {
   const taste = legacyMatch[2].trim();
   const guestNotes = legacyMatch[3]?.trim();
 
-  return [
+  return [...lines,
     `Крепость: ${strengthLabels[strength] || strength}`,
     `Вкус: ${tasteLabels[taste] || taste}`,
     ...(guestNotes ? [`Пожелания: ${guestNotes}`] : [])
@@ -253,7 +253,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Харлем</h4>
                   <ul className="space-y-1 text-sm">
                     {harlemItems.map((item, idx) => {
-                      const itemOptionLines = formatOrderItemOptions(item.options);
+                      const itemOptionLines = formatOrderItemOptions(item.options, item.menuItemId);
 
                       return (
                         <li key={idx}>
@@ -279,7 +279,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
                   <h4 className="text-xs font-semibold text-orange-600 uppercase mb-1">Craft Beery</h4>
                   <ul className="space-y-1 text-sm text-orange-900 bg-orange-50 p-2 rounded">
                     {craftBeeryItems.map((item, idx) => {
-                      const itemOptionLines = formatOrderItemOptions(item.options);
+                      const itemOptionLines = formatOrderItemOptions(item.options, item.menuItemId);
 
                       return (
                         <li key={idx}>
@@ -872,7 +872,7 @@ export default function StaffDashboard() {
                 let filteredItems = query
                   ? catItems.filter(item => {
                       const matchesMain = item.name.toLowerCase().includes(query) || cat.name.toLowerCase().includes(query) || (item.sourceLabel && item.sourceLabel.toLowerCase().includes(query));
-                      const matchesChoice = cat.id !== 'cat_tea' && item.choices?.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query)));
+                      const matchesChoice = item.choiceAvailabilityScope !== 'shared_tea' && item.choices?.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query)));
                       return matchesMain || matchesChoice;
                     })
                   : [...catItems];
@@ -881,7 +881,9 @@ export default function StaffDashboard() {
                   const allTeaChoices = catItems.find(i => i.id === 'tea_1')?.choices || [];
                   const matchesTeaChoices = query ? allTeaChoices.some(c => c.label.toLowerCase().includes(query) || (c.description && c.description.toLowerCase().includes(query))) : true;
 
-                  filteredItems = filteredItems.map(item => ({ ...item, choices: undefined }));
+                  filteredItems = filteredItems.map(item => item.choiceAvailabilityScope === 'shared_tea'
+                    ? { ...item, choices: undefined }
+                    : item);
 
                   if (!query || matchesTeaChoices) {
                     filteredItems.push({
@@ -891,7 +893,8 @@ export default function StaffDashboard() {
                       price: 0,
                       isAvailable: true,
                       description: 'Управление наличием сортов',
-                      choices: allTeaChoices
+                      choices: allTeaChoices,
+                      choiceAvailabilityScope: 'shared_tea' as const,
                     });
                   }
                 }
@@ -947,7 +950,7 @@ export default function StaffDashboard() {
                             {hasChoices && isExpanded && (
                               <div className="bg-gray-50 border-t border-gray-100 divide-y divide-gray-100 pl-4">
                                 {item.choices?.map(choice => {
-                                  const variantId = item.id === 'tea_sorts_group' ? `tea::${choice.label}` : `${item.id}::${choice.label}`;
+                                  const variantId = getChoiceAvailabilityId(item, choice.label);
                                   const isChoiceAvailable = availabilityMap[variantId] ?? true;
                                   const isHighlighted = query && (choice.label.toLowerCase().includes(query) || (choice.description && choice.description.toLowerCase().includes(query)));
                                   return (
