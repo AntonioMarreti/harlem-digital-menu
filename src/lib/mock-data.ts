@@ -98,6 +98,7 @@ export const menuItems: MenuItem[] = [
     description: '',
     price: 190,
     isAvailable: true,
+    searchAliases: ['мохито', 'очаково'],
     source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
@@ -116,6 +117,7 @@ export const menuItems: MenuItem[] = [
     description: '',
     price: 130,
     isAvailable: true,
+    searchAliases: ['лаймон', 'лаймон фреш'],
     source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
@@ -131,6 +133,7 @@ export const menuItems: MenuItem[] = [
     description: '',
     price: 130,
     isAvailable: true,
+    searchAliases: ['литэнерджи', 'лит энерджи', 'энергетик'],
     source: 'harlem',
     sourceLabel: 'Харлем',
     choices: [
