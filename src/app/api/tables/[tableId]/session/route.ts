@@ -101,7 +101,7 @@ export async function GET(request: NextRequest, { params }: { params: { tableId:
       }
     }
 
-    return NextResponse.json({ session, table }, {
+    return NextResponse.json({ session, table, serverNow: new Date().toISOString() }, {
       status: 200,
       headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' }
     });

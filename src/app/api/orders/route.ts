@@ -5,6 +5,7 @@ import { tableSessions, orders, orderItems, menuItemAvailability } from '@/db/sc
 import { and, eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
+import { getCanonicalOrderItemPrice } from '@/lib/menu-pricing';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
 
     const itemsToInsert = [];
     let serverTotalAmount = 0;
+    const pricedAt = new Date();
 
     for (const item of items as IncomingOrderItem[]) {
       const menuItemId = typeof item.menuItemId === 'string'
@@ -289,14 +291,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      serverTotalAmount += canonicalItem.price * item.quantity;
+      const canonicalPrice = getCanonicalOrderItemPrice(item, pricedAt)!;
+      serverTotalAmount += canonicalPrice * item.quantity;
 
       itemsToInsert.push({
         menuItemId,
         name: canonicalItem.name,
         source: canonicalItem.source || 'harlem',
         quantity: item.quantity,
-        price: canonicalItem.price,
+        price: canonicalPrice,
         options: normalizedOptions.value ? JSON.stringify(normalizedOptions.value) : null,
       });
     }
