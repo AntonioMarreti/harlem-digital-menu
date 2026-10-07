@@ -9,6 +9,7 @@ import { Clock, CheckCircle2, AlertCircle, RefreshCw, Inbox, Bell, LayoutGrid, S
 import Link from 'next/link';
 import { categories, menuItems } from '@/lib/mock-data';
 import { getChoiceAvailabilityId, getDisplayChoice, getDisplayNotes } from '@/lib/menu-choices';
+import { refreshAfterOrderStatusConflict } from '@/lib/order-status-client';
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
@@ -459,14 +460,28 @@ export default function StaffDashboard() {
 
   const handleUpdateOrderStatus = async (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => {
     try {
+      const expectedStatus = orders.find((order) => order.id === id)?.status;
+      if (!expectedStatus) {
+        await fetchData();
+        setError('Заказ уже изменён другим сотрудником. Данные обновлены.');
+        setTimeout(() => setError(null), 4000);
+        return;
+      }
       const res = await fetch(`/api/staff/orders/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, expectedStatus })
       });
 
       if (!res.ok) {
-        throw new Error('Не удалось обновить статус');
+        const body = await res.json().catch(() => null);
+        const conflictMessage = await refreshAfterOrderStatusConflict(res.status, body?.code, fetchData);
+        if (conflictMessage) {
+          setError(conflictMessage);
+          setTimeout(() => setError(null), 4000);
+          return;
+        }
+        throw new Error(typeof body?.error === 'string' ? body.error : 'Не удалось обновить статус');
       }
 
       if (status === 'closed') {
