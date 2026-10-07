@@ -5,9 +5,13 @@ import * as schema from '../src/db/schema';
 import {
   createIdempotentOrder,
   createNeonOrderWritePort,
+  prepareOrReuseIdempotentOrder,
+  verifyOwnershipThenPrepareOrReuseIdempotentOrder,
   type OrderWritePort,
 } from '../src/lib/order-persistence';
 import { getCanonicalMenuItemPrice } from '../src/lib/menu-pricing';
+import { menuItems } from '../src/lib/mock-data';
+import { validateCanonicalItemOptions } from '../src/lib/menu-choices';
 
 type TestOrder = {
   id: string;
@@ -34,9 +38,11 @@ class InMemoryOrderWritePort implements OrderWritePort<
   readonly orders = new Map<string, TestOrder>();
   readonly items = new Map<string, TestItem[]>();
   insertCalls = 0;
+  findCalls = 0;
   failItemWrite = false;
 
   async findCompleteOrder(tableSessionId: string, idempotencyKey: string) {
+    this.findCalls += 1;
     const order = Array.from(this.orders.values()).find((candidate) =>
       candidate.tableSessionId === tableSessionId && candidate.idempotencyKey === idempotencyKey
     );
@@ -169,21 +175,154 @@ test('retry with the same idempotency key returns the same complete order withou
   assert.equal(retry.items.length, 2);
 });
 
-test('concurrent requests with the same idempotency key converge on one complete order', async () => {
+test('lost-response retry reuses the persisted order before a newly stopped item is validated', async () => {
   const port = new InMemoryOrderWritePort();
-  const request = () => createIdempotentOrder(port, {
+  let validationRuns = 0;
+  const createRequest = (available: boolean) => verifyOwnershipThenPrepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey },
+    async () => null,
+    async () => {
+      validationRuns += 1;
+      if (!available) {
+        return { kind: 'rejected' as const, response: { status: 400, code: 'ITEM_UNAVAILABLE' } };
+      }
+      const price = getCanonicalMenuItemPrice('item_1', promoAt)!;
+      const item = { menuItemId: 'item_1', quantity: 1, price };
+      return {
+        kind: 'ready' as const,
+        order: { tableSessionId, idempotencyKey, totalAmount: price },
+        items: [item],
+      };
+    }
+  );
+
+  // First request commits; the caller then loses the HTTP response.
+  const first = await createRequest(true);
+  assert.equal(first.kind, 'ready');
+  if (first.kind !== 'ready') return;
+  const persistedOrder = first.result.order;
+  const persistedItems = first.result.items;
+
+  // Staff changes the stop-list before the guest retries the exact key.
+  const retry = await createRequest(false);
+  assert.equal(retry.kind, 'ready');
+  if (retry.kind !== 'ready') return;
+  assert.equal(retry.result.idempotent, true);
+  assert.equal(retry.result.order.id, persistedOrder.id);
+  assert.deepEqual(retry.result.items, persistedItems);
+  assert.equal(retry.result.order.totalAmount, 700);
+  assert.equal(port.orders.size, 1);
+  assert.equal(port.insertCalls, 1);
+  assert.equal(validationRuns, 1);
+});
+
+test('ownership rejection with a known key happens before idempotency lookup or mutable validation', async () => {
+  const port = new InMemoryOrderWritePort();
+  await createIdempotentOrder(port, {
     tableSessionId,
     idempotencyKey,
     order: orderInput,
     items: itemInputs,
   });
+  const lookupsBefore = port.findCalls;
+  let validationRuns = 0;
+
+  const resolution = await verifyOwnershipThenPrepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey },
+    async () => 'TABLE_CONTEXT_MISMATCH',
+    async () => {
+      validationRuns += 1;
+      return { kind: 'ready' as const, order: orderInput, items: itemInputs };
+    }
+  );
+
+  assert.deepEqual(resolution, { kind: 'rejected', response: 'TABLE_CONTEXT_MISMATCH' });
+  assert.equal(port.findCalls, lookupsBefore);
+  assert.equal(validationRuns, 0);
+  assert.equal(port.orders.size, 1);
+});
+
+test('new keys still validate unavailable items, unavailable variants, and forged choices', async () => {
+  const port = new InMemoryOrderWritePort();
+  const hookah = menuItems.find((item) => item.id === 'item_1')!;
+  const unavailableItem = await prepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey: 'new-key-item' },
+    async () => {
+      const availability = new Map([[hookah.id, false]]);
+      const isAvailable = availability.get(hookah.id) ?? hookah.isAvailable ?? true;
+      return isAvailable
+        ? { kind: 'ready' as const, order: orderInput, items: itemInputs }
+        : { kind: 'rejected' as const, response: { status: 400, code: 'ITEM_UNAVAILABLE' } };
+    }
+  );
+  assert.deepEqual(unavailableItem, {
+    kind: 'rejected',
+    response: { status: 400, code: 'ITEM_UNAVAILABLE' },
+  });
+
+  const tea = menuItems.find((item) => item.id === 'tea_1')!;
+  const unavailableChoice = tea.choices![0].label;
+  const stoppedVariant = await prepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey: 'new-key-variant' },
+    async () => {
+      const result = validateCanonicalItemOptions(
+        tea,
+        { choice: unavailableChoice },
+        new Map([[`tea::${unavailableChoice}`, false]])
+      );
+      return result.ok
+        ? { kind: 'ready' as const, order: orderInput, items: itemInputs }
+        : { kind: 'rejected' as const, response: { status: 400, code: result.code } };
+    }
+  );
+  assert.deepEqual(stoppedVariant, {
+    kind: 'rejected',
+    response: { status: 400, code: 'CHOICE_UNAVAILABLE' },
+  });
+
+  const forgedChoice = await prepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey: 'new-key-forged-choice' },
+    async () => {
+      const result = validateCanonicalItemOptions(
+        tea,
+        { choice: 'not-a-canonical-choice' },
+        new Map()
+      );
+      return result.ok
+        ? { kind: 'ready' as const, order: orderInput, items: itemInputs }
+        : { kind: 'rejected' as const, response: { status: 400, code: result.code } };
+    }
+  );
+  assert.deepEqual(forgedChoice, {
+    kind: 'rejected',
+    response: { status: 400, code: 'INVALID_CHOICE' },
+  });
+  assert.equal(port.orders.size, 0);
+});
+
+test('concurrent requests with the same idempotency key converge on one complete order', async () => {
+  const port = new InMemoryOrderWritePort();
+  const request = () => verifyOwnershipThenPrepareOrReuseIdempotentOrder(
+    port,
+    { tableSessionId, idempotencyKey },
+    async () => null,
+    async () => ({ kind: 'ready' as const, order: orderInput, items: itemInputs })
+  );
 
   const [first, second] = await Promise.all([request(), request()]);
 
   assert.equal(port.orders.size, 1);
   assert.equal(port.items.size, 1);
-  assert.equal(first.order.id, second.order.id);
-  assert.equal(first.items.length, 2);
-  assert.equal(second.items.length, 2);
-  assert.equal([first, second].filter((result) => !result.idempotent).length, 1);
+  assert.equal(first.kind, 'ready');
+  assert.equal(second.kind, 'ready');
+  if (first.kind !== 'ready' || second.kind !== 'ready') return;
+  assert.equal(first.result.order.id, second.result.order.id);
+  assert.equal(first.result.items.length, 2);
+  assert.equal(second.result.items.length, 2);
+  assert.equal([first.result, second.result].filter((result) => !result.idempotent).length, 1);
 });
