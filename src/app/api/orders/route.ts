@@ -1,19 +1,18 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { tableSessions, orders, orderItems, menuItemAvailability } from '@/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { tableSessions, menuItemAvailability } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
 import { menuItems } from '@/lib/mock-data';
 import { getCanonicalOrderItemPrice } from '@/lib/menu-pricing';
+import { createIdempotentOrder, createNeonOrderWritePort } from '@/lib/order-persistence';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
 const MAX_ITEM_NOTES_LENGTH = 500;
 const MIN_IDEMPOTENCY_KEY_LENGTH = 8;
 const MAX_IDEMPOTENCY_KEY_LENGTH = 128;
-const IDEMPOTENT_ITEMS_RETRY_ATTEMPTS = 5;
-const IDEMPOTENT_ITEMS_RETRY_DELAY_MS = 100;
 
 const canonicalMenuItemById = new Map(menuItems.map((item) => [item.id, item]));
 
@@ -56,38 +55,6 @@ function getNormalizedItemOptions(options: unknown) {
   }
 
   return { ok: true as const, value: { notes: trimmedNotes } };
-}
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function getExistingIdempotentOrder(
-  db: ReturnType<typeof getDb>,
-  tableSessionId: string,
-  idempotencyKey: string
-) {
-  const existingOrder = await db.select().from(orders).where(
-    and(
-      eq(orders.tableSessionId, tableSessionId),
-      eq(orders.idempotencyKey, idempotencyKey)
-    )
-  ).limit(1).then(res => res[0]);
-
-  if (!existingOrder) {
-    return null;
-  }
-
-  for (let attempt = 0; attempt < IDEMPOTENT_ITEMS_RETRY_ATTEMPTS; attempt += 1) {
-    const existingItems = await db.select().from(orderItems).where(eq(orderItems.orderId, existingOrder.id));
-    if (existingItems.length > 0) {
-      return { order: existingOrder, items: existingItems };
-    }
-
-    if (attempt < IDEMPOTENT_ITEMS_RETRY_ATTEMPTS - 1) {
-      await wait(IDEMPOTENT_ITEMS_RETRY_DELAY_MS);
-    }
-  }
-
-  return { order: existingOrder, items: [] };
 }
 
 export async function POST(request: NextRequest) {
@@ -304,55 +271,44 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Insert order
-    const [newOrder] = await db.insert(orders).values({
+    const persistedOrder = await createIdempotentOrder(createNeonOrderWritePort(db), {
       tableSessionId,
-      guestSessionId: finalGuestSessionId,
       idempotencyKey: normalizedIdempotencyKey,
-      status: 'new',
-      totalAmount: serverTotalAmount,
-    }).onConflictDoNothing({
-      target: [orders.tableSessionId, orders.idempotencyKey],
-    }).returning();
+      order: {
+        tableSessionId,
+        guestSessionId: finalGuestSessionId,
+        idempotencyKey: normalizedIdempotencyKey,
+        status: 'new',
+        totalAmount: serverTotalAmount,
+      },
+      items: itemsToInsert,
+    });
 
-    if (!newOrder) {
-      const existingOrderResponse = await getExistingIdempotentOrder(db, tableSessionId, normalizedIdempotencyKey);
-      if (!existingOrderResponse || existingOrderResponse.items.length === 0) {
-        return NextResponse.json({ error: 'Idempotent order is still being created' }, { status: 503 });
-      }
-
+    if (persistedOrder.idempotent) {
       logInfo('order.idempotent_hit', {
-        orderId: existingOrderResponse.order.id,
+        orderId: persistedOrder.order.id,
         tableSessionId,
         tableIdOrSlug: safeTableIdOrSlug,
       });
 
       return NextResponse.json({
-        ...existingOrderResponse,
+        order: persistedOrder.order,
+        items: persistedOrder.items,
         idempotent: true,
       }, { status: 200 });
     }
 
-    // Insert order items
-    const orderItemsToInsert = itemsToInsert.map((item) => ({
-      orderId: newOrder.id,
-      ...item,
-    }));
-
-
-    const insertedItems = await db.insert(orderItems).values(orderItemsToInsert).returning();
-
     logInfo('order.created', {
-      orderId: newOrder.id,
+      orderId: persistedOrder.order.id,
       tableSessionId,
       tableIdOrSlug: safeTableIdOrSlug,
-      itemCount: insertedItems.length,
-      totalAmount: newOrder.totalAmount,
+      itemCount: persistedOrder.items.length,
+      totalAmount: persistedOrder.order.totalAmount,
     });
 
     return NextResponse.json({
-      order: newOrder,
-      items: insertedItems,
+      order: persistedOrder.order,
+      items: persistedOrder.items,
     }, { status: 201 });
 
   } catch (error: unknown) {
