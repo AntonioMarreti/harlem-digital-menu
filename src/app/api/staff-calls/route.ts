@@ -2,9 +2,10 @@ export const dynamic = 'force-dynamic';
 import { NextResponse, NextRequest } from 'next/server';
 import { getDb } from '@/db';
 import { staffCalls, tableSessions, tables } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { requireStaffAccess } from '@/lib/staff-auth';
 import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownership';
+import { lockTableSessionQuery } from '@/lib/table-session-lifecycle';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const validStaffCallReasons = new Set(['waiter', 'coals', 'bill', 'help']);
@@ -150,13 +151,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ call: existingActiveCall }, { status: 200 });
     }
 
-    // Insert staff call
-    const [newCall] = await db.insert(staffCalls).values({
-      tableSessionId,
-      guestSessionId: finalGuestSessionId,
-      reason,
-      status: 'new',
-    }).returning();
+    const staffCallGuardQuery = db.execute(sql`
+      SELECT 1 / COUNT(*) AS active
+      FROM table_sessions
+      WHERE id = ${tableSessionId}::uuid
+        AND status = 'active'
+        AND NOT EXISTS (
+          SELECT 1 FROM staff_calls
+          WHERE table_session_id = ${tableSessionId}::uuid
+            AND reason = ${reason}
+            AND status = 'new'
+        )
+    `);
+
+    let newCall: typeof staffCalls.$inferSelect | undefined;
+    try {
+      const [, , insertedCalls] = await db.batch([
+        lockTableSessionQuery(db, tableSessionId),
+        staffCallGuardQuery,
+        db.insert(staffCalls).values({
+          tableSessionId,
+          guestSessionId: finalGuestSessionId,
+          reason,
+          status: 'new',
+        }).returning(),
+      ]);
+      newCall = insertedCalls[0];
+    } catch (error) {
+      const [racedActiveCall, currentSession] = await Promise.all([
+        db.select().from(staffCalls).where(and(
+          eq(staffCalls.tableSessionId, tableSessionId),
+          eq(staffCalls.reason, reason),
+          eq(staffCalls.status, 'new')
+        )).limit(1).then((rows) => rows[0]),
+        db.select({ status: tableSessions.status }).from(tableSessions)
+          .where(eq(tableSessions.id, tableSessionId)).limit(1).then((rows) => rows[0]),
+      ]);
+
+      if (racedActiveCall) {
+        return NextResponse.json({ call: racedActiveCall }, { status: 200 });
+      }
+      if (!currentSession || currentSession.status !== 'active') {
+        return NextResponse.json({
+          error: 'Table session is not active',
+          code: 'TABLE_SESSION_NOT_ACTIVE',
+        }, { status: 409 });
+      }
+      throw error;
+    }
+
+    if (!newCall) {
+      return NextResponse.json({ error: 'Could not create staff call' }, { status: 409 });
+    }
 
     logInfo('staff_call.created', {
       callId: newCall.id,

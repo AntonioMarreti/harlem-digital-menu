@@ -112,10 +112,10 @@ test('Neon adapter submits order and item inserts together through Drizzle batch
   const insertedItems = dbItems.map((item) => ({ ...item, orderId: insertedOrder.id }));
 
   Object.defineProperty(db, 'batch', {
-    value: async (queries: Array<{ toSQL(): { sql: string } }>) => {
+    value: async (queries: Array<{ _prepare(): { getQuery(): { sql: string } } }>) => {
       batchCount += 1;
-      statementSql = queries.map((query) => query.toSQL().sql);
-      return [[insertedOrder], insertedItems];
+      statementSql = queries.map((query) => query._prepare().getQuery().sql);
+      return [[], [], [insertedOrder], insertedItems];
     },
   });
 
@@ -123,9 +123,11 @@ test('Neon adapter submits order and item inserts together through Drizzle batch
   const persisted = await port.insertOrderAndItems(orderInput, dbItems);
 
   assert.equal(batchCount, 1);
-  assert.equal(statementSql.length, 2);
-  assert.match(statementSql[0], /insert into "orders"/i);
-  assert.match(statementSql[1], /insert into "order_items"/i);
+  assert.equal(statementSql.length, 4);
+  assert.match(statementSql[0], /pg_advisory_xact_lock/i);
+  assert.match(statementSql[1], /1 \/ COUNT\(\*\)/i);
+  assert.match(statementSql[2], /insert into "orders"/i);
+  assert.match(statementSql[3], /insert into "order_items"/i);
   assert.equal(persisted?.items.length, 2);
 });
 

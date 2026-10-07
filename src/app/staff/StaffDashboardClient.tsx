@@ -175,7 +175,7 @@ function getNewOrderUrgency(createdAt: string): 'normal' | 'warning' | 'urgent' 
   return 'normal';
 }
 
-function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string) => void, onCancelClick: (id: string) => void }) {
+function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick }: { orders: Order[], onUpdateStatus: (id: string, status: 'new' | 'accepted' | 'preparing' | 'delivered' | 'closed' | 'cancelled') => void, onCloseTableSession: (tableId: string, tableSessionId: string) => void, onCancelClick: (id: string) => void }) {
   const statusTranslations: Record<string, string> = {
     new: 'Новый',
     accepted: 'Принят',
@@ -234,7 +234,7 @@ function OrderGrid({ orders, onUpdateStatus, onCloseTableSession, onCancelClick 
                   <Badge variant={badgeVariant} className={badgeClassName}>
                     {badgeText}
                   </Badge>
-                  <Button variant="outline" onClick={() => onCloseTableSession(order.tableId)}>
+                  <Button variant="outline" onClick={() => onCloseTableSession(order.tableId, order.tableSessionId)}>
                     Освободить стол
                   </Button>
                 </div>
@@ -485,20 +485,24 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleCloseTableSession = (tableId: string) => {
+  const handleCloseTableSession = (tableId: string, tableSessionId: string) => {
     requestConfirm(
       'Закрыть счёт?',
-      'Сессия стола будет закрыта, а стол станет свободным. Активные заказы этой сессии больше не будут отображаться как открытые.',
+      'Действие завершит визит и освободит стол. Сначала нужно завершить активные заказы и обработать вызовы персонала.',
       'Закрыть счёт',
       'destructive',
       async () => {
         try {
           const res = await fetch(`/api/tables/${tableId}/session/close`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tableSessionId }),
           });
 
           if (!res.ok) {
-            throw new Error('Не удалось освободить стол');
+            const body = await res.json().catch(() => null);
+            if (res.status === 409) await fetchData();
+            throw new Error(body?.error || 'Не удалось закрыть сессию. Обновите список столов.');
           }
 
           setFeedback('Стол освобожден, сессия закрыта.');
@@ -506,7 +510,7 @@ export default function StaffDashboard() {
           fetchData(); // Refresh data immediately
         } catch (err) {
           console.error(err);
-          setError('Ошибка при освобождении стола');
+          setError(err instanceof Error ? err.message : 'Ошибка при закрытии сессии');
           setTimeout(() => setError(null), 3000);
         }
       }
@@ -527,11 +531,8 @@ export default function StaffDashboard() {
 
           if (!res.ok) {
             const body = await res.json().catch(() => null);
-            if (res.status === 409 && body?.code === 'TABLE_SESSION_HAS_ORDERS') {
-              fetchData();
-              throw new Error('На этом столе уже появился заказ. Обновите список.');
-            }
-            throw new Error('Не удалось освободить пустой стол');
+            if (res.status === 409) await fetchData();
+            throw new Error(body?.error || 'Не удалось освободить пустой стол. Обновите список.');
           }
 
           setFeedback('Пустой стол освобожден.');
@@ -1070,7 +1071,7 @@ export default function StaffDashboard() {
                               <Button
                                 className="w-full"
                                 variant="outline"
-                                onClick={() => handleCloseTableSession(session.tableId)}
+                                onClick={() => handleCloseTableSession(session.tableId, session.id)}
                               >
                                 Освободить стол / Закрыть счёт
                               </Button>
