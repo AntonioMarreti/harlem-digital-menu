@@ -166,3 +166,22 @@ test('retry with the same idempotency key returns the same complete order withou
   assert.equal(retry.order.totalAmount, 1699);
   assert.equal(retry.items.length, 2);
 });
+
+test('concurrent requests with the same idempotency key converge on one complete order', async () => {
+  const port = new InMemoryOrderWritePort();
+  const request = () => createIdempotentOrder(port, {
+    tableSessionId,
+    idempotencyKey,
+    order: orderInput,
+    items: itemInputs,
+  });
+
+  const [first, second] = await Promise.all([request(), request()]);
+
+  assert.equal(port.orders.size, 1);
+  assert.equal(port.items.size, 1);
+  assert.equal(first.order.id, second.order.id);
+  assert.equal(first.items.length, 2);
+  assert.equal(second.items.length, 2);
+  assert.equal([first, second].filter((result) => !result.idempotent).length, 1);
+});
