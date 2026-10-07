@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../db';
-import { orderItems, orders } from '../db/schema';
+import { orderItems, orders, tableSessions } from '../db/schema';
+import {
+  lockTableSessionQuery,
+  requireActiveTableSessionQuery,
+  TableSessionNotActiveError,
+} from './table-session-lifecycle';
 
 export type CompleteOrder<TOrder, TItem> = {
   order: TOrder;
@@ -70,12 +75,32 @@ export function createNeonOrderWritePort(
 
     async insertOrderAndItems(order, items) {
       const orderId = randomUUID();
-      const [insertedOrders, insertedItems] = await db.batch([
-        db.insert(orders).values({ ...order, id: orderId }).onConflictDoNothing({
-          target: [orders.tableSessionId, orders.idempotencyKey],
-        }).returning(),
-        db.insert(orderItems).values(items.map((item) => ({ ...item, orderId }))).returning(),
-      ]);
+      let insertedOrders: DbOrder[];
+      let insertedItems: DbOrderItem[];
+      try {
+        [, , insertedOrders, insertedItems] = await db.batch([
+          lockTableSessionQuery(db, order.tableSessionId),
+          requireActiveTableSessionQuery(db, order.tableSessionId),
+          db.insert(orders).values({ ...order, id: orderId }).onConflictDoNothing({
+            target: [orders.tableSessionId, orders.idempotencyKey],
+          }).returning(),
+          db.insert(orderItems).values(items.map((item) => ({ ...item, orderId }))).returning(),
+        ]);
+      } catch (error) {
+        // The session may have closed after validation but before this transaction
+        // acquired its lock. Preserve the original write error if this check fails.
+        try {
+          const session = await db.select({ status: tableSessions.status })
+            .from(tableSessions)
+            .where(eq(tableSessions.id, order.tableSessionId))
+            .limit(1)
+            .then((rows) => rows[0]);
+          if (!session || session.status !== 'active') throw new TableSessionNotActiveError();
+        } catch (sessionError) {
+          if (sessionError instanceof TableSessionNotActiveError) throw sessionError;
+        }
+        throw error;
+      }
 
       const insertedOrder = insertedOrders[0];
       if (!insertedOrder) return null;

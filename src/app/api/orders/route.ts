@@ -7,6 +7,7 @@ import { verifyRequiredTableSessionOwnership } from '@/lib/table-session-ownersh
 import { menuItems } from '@/lib/mock-data';
 import { getCanonicalOrderItemPrice } from '@/lib/menu-pricing';
 import { createIdempotentOrder, createNeonOrderWritePort } from '@/lib/order-persistence';
+import { TableSessionNotActiveError } from '@/lib/table-session-lifecycle';
 import { logError, logInfo, logWarn } from '@/lib/server-logging';
 
 const MAX_ITEM_QUANTITY = 99;
@@ -312,6 +313,12 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error: unknown) {
+    if (error instanceof TableSessionNotActiveError) {
+      return NextResponse.json({
+        error: 'Table session is not active',
+        code: 'TABLE_SESSION_NOT_ACTIVE',
+      }, { status: 409 });
+    }
     logError('order.error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
